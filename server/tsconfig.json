@@ -1,0 +1,28 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "types": ["node"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
