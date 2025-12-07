@@ -2,6 +2,9 @@ import { Router } from 'express';
 import dashboardRoutes from './dashboard';
 import reagentsRoutes from './reagents';
 import inventoryRoutes from './inventory';
+import batchesRoutes from './batches';
+import suppliersRoutes from './suppliers';
+import ordersRoutes from './orders';
 
 const router = Router();
 
@@ -9,6 +12,9 @@ const router = Router();
 router.use('/dashboard', dashboardRoutes);
 router.use('/reagents', reagentsRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/batches', batchesRoutes);
+router.use('/suppliers', suppliersRoutes);
+router.use('/orders', ordersRoutes);
 
 // Health check at API level
 router.get('/health', (_req, res) => {
