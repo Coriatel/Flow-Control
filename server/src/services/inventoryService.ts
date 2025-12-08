@@ -90,7 +90,8 @@ class InventoryService {
       throw new AppError('Draft not found', 404);
     }
 
-    if (draft.entries.length === 0) {
+    const entries = draft.entries || [];
+    if (entries.length === 0) {
       throw new AppError('No entries in draft', 400);
     }
 
@@ -98,7 +99,7 @@ class InventoryService {
     return prisma.$transaction(async (tx) => {
       // Group entries by reagent
       const entriesByReagent = new Map<string, CountEntry[]>();
-      for (const entry of draft.entries) {
+      for (const entry of entries) {
         const list = entriesByReagent.get(entry.reagentId) || [];
         list.push({
           reagentId: entry.reagentId,
@@ -181,7 +182,7 @@ class InventoryService {
         data: {
           countDate: draft.startedAt,
           totalReagentsCounted: entriesByReagent.size,
-          totalBatchesCounted: draft.entries.length,
+          totalBatchesCounted: entries.length,
           completedById: userId,
         },
       });
@@ -201,7 +202,7 @@ class InventoryService {
           entityId: completed.id,
           details: {
             reagentsCount: entriesByReagent.size,
-            batchesCount: draft.entries.length,
+            batchesCount: entries.length,
           },
         },
       });
@@ -251,7 +252,7 @@ class InventoryService {
         return {
           reagentId: r.id,
           name: r.name,
-          supplier: r.supplier.name,
+          supplier: r.supplier?.name || '',
           currentQuantity: currentQty,
           averageUsage: avgUsage,
           monthsOfStock: Math.round(monthsOfStock * 10) / 10,

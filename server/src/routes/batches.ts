@@ -43,12 +43,11 @@ router.get(
 
     const data = await batchService.getExpiringSoon(days, category);
 
-    const response: ApiResponse = {
+    res.json({
       success: true,
       data,
       meta: { daysThreshold: days, total: data.length },
-    };
-    res.json(response);
+    });
   })
 );
 

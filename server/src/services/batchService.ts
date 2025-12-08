@@ -31,7 +31,7 @@ export interface WithdrawInput {
 
 export const batchService = {
   /**
-   * Get all batches with optional filters
+   * Get all batches with optional filters (simplified for basic pg client)
    */
   async getAll(filters: BatchFilters = {}) {
     const where: any = {};
@@ -55,43 +55,63 @@ export const batchService = {
 
     const batches = await prisma.reagentBatch.findMany({
       where,
-      include: {
-        reagent: {
-          include: {
-            supplier: true,
-          },
-        },
-      },
-      orderBy: [{ expiryDate: 'asc' }, { createdAt: 'desc' }],
+      orderBy: { expiryDate: 'asc' },
     });
 
-    return batches;
+    // Manually add reagent and supplier info
+    const results = [];
+    for (const batch of batches) {
+      const reagent = await prisma.reagent.findUnique({
+        where: { id: batch.reagentId },
+      });
+      let supplier = null;
+      if (reagent?.supplierId) {
+        supplier = await prisma.supplier.findUnique({
+          where: { id: reagent.supplierId },
+        });
+      }
+      results.push({
+        ...batch,
+        reagent: reagent ? { ...reagent, supplier } : null,
+      });
+    }
+
+    return results;
   },
 
   /**
-   * Get batch by ID
+   * Get batch by ID (simplified for basic pg client)
    */
   async getById(id: string) {
-    const batch = await prisma.reagentBatch.findUnique({
-      where: { id },
-      include: {
-        reagent: {
-          include: {
-            supplier: true,
-          },
-        },
-        transactions: {
-          orderBy: { transactionDate: 'desc' },
-          take: 50,
-        },
-      },
+    const batch = await prisma.reagentBatch.findUnique({ where: { id } });
+    if (!batch) return null;
+
+    const reagent = await prisma.reagent.findUnique({
+      where: { id: batch.reagentId },
     });
 
-    return batch;
+    let supplier = null;
+    if (reagent?.supplierId) {
+      supplier = await prisma.supplier.findUnique({
+        where: { id: reagent.supplierId },
+      });
+    }
+
+    const transactions = await prisma.inventoryTransaction.findMany({
+      where: { batchId: id },
+      orderBy: { transactionDate: 'desc' },
+      take: 50,
+    });
+
+    return {
+      ...batch,
+      reagent: reagent ? { ...reagent, supplier } : null,
+      transactions,
+    };
   },
 
   /**
-   * Create a new batch (when receiving reagent)
+   * Create a new batch (simplified for basic pg client)
    */
   async create(data: CreateBatchInput) {
     const batch = await prisma.reagentBatch.create({
@@ -104,9 +124,6 @@ export const batchService = {
         receivedDate: data.receivedDate || new Date(),
         status: 'ACTIVE',
         notes: data.notes,
-      },
-      include: {
-        reagent: true,
       },
     });
 
@@ -124,29 +141,35 @@ export const batchService = {
     // Update reagent aggregates
     await this.updateReagentAggregates(data.reagentId);
 
-    return batch;
+    // Get reagent for return value
+    const reagent = await prisma.reagent.findUnique({
+      where: { id: data.reagentId },
+    });
+
+    return { ...batch, reagent };
   },
 
   /**
-   * Update batch
+   * Update batch (simplified for basic pg client)
    */
   async update(id: string, data: UpdateBatchInput) {
     const batch = await prisma.reagentBatch.update({
       where: { id },
       data,
-      include: {
-        reagent: true,
-      },
     });
 
     // Update reagent aggregates
     await this.updateReagentAggregates(batch.reagentId);
 
-    return batch;
+    const reagent = await prisma.reagent.findUnique({
+      where: { id: batch.reagentId },
+    });
+
+    return { ...batch, reagent };
   },
 
   /**
-   * Withdraw quantity from batch
+   * Withdraw quantity from batch (simplified for basic pg client)
    */
   async withdraw(input: WithdrawInput) {
     const batch = await prisma.reagentBatch.findUnique({
@@ -178,9 +201,6 @@ export const batchService = {
         currentQuantity: newQuantity,
         status: newStatus as BatchStatus,
       },
-      include: {
-        reagent: true,
-      },
     });
 
     // Create withdrawal transaction
@@ -198,7 +218,11 @@ export const batchService = {
     // Update reagent aggregates
     await this.updateReagentAggregates(batch.reagentId);
 
-    return updatedBatch;
+    const reagent = await prisma.reagent.findUnique({
+      where: { id: batch.reagentId },
+    });
+
+    return { ...updatedBatch, reagent };
   },
 
   /**
@@ -256,39 +280,50 @@ export const batchService = {
   },
 
   /**
-   * Get batches expiring soon for a category
+   * Get batches expiring soon for a category (simplified for basic pg client)
    */
   async getExpiringSoon(daysThreshold: number, category?: string) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysThreshold);
+    const today = new Date();
 
-    const where: any = {
-      expiryDate: {
-        lte: futureDate,
-        gte: new Date(),
-      },
-      status: 'ACTIVE',
-    };
-
-    if (category) {
-      where.reagent = {
-        category,
-      };
-    }
-
+    // Get all active batches expiring within threshold
     const batches = await prisma.reagentBatch.findMany({
-      where,
-      include: {
-        reagent: {
-          include: {
-            supplier: true,
-          },
-        },
+      where: {
+        expiryDate: { lte: futureDate },
+        status: 'ACTIVE',
       },
       orderBy: { expiryDate: 'asc' },
     });
 
-    return batches;
+    // Filter by expiry >= today and optionally by category
+    const results = [];
+    for (const batch of batches) {
+      if (batch.expiryDate < today) continue;
+
+      const reagent = await prisma.reagent.findUnique({
+        where: { id: batch.reagentId },
+      });
+
+      if (!reagent) continue;
+
+      // Filter by category if specified
+      if (category && reagent.category !== category) continue;
+
+      let supplier = null;
+      if (reagent.supplierId) {
+        supplier = await prisma.supplier.findUnique({
+          where: { id: reagent.supplierId },
+        });
+      }
+
+      results.push({
+        ...batch,
+        reagent: { ...reagent, supplier },
+      });
+    }
+
+    return results;
   },
 
   /**

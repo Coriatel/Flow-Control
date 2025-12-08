@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma';
-import { OrderStatus } from '../generated/prisma';
+import { OrderStatus } from '../../generated/prisma';
 
 export interface OrderFilters {
   supplierId?: string;
@@ -31,7 +31,7 @@ export interface ReceiveItemInput {
 
 export const orderService = {
   /**
-   * Get all orders with optional filters
+   * Get all orders with optional filters (simplified for basic pg client)
    */
   async getAll(filters: OrderFilters = {}) {
     const where: any = {};
@@ -52,54 +52,90 @@ export const orderService = {
 
     const orders = await prisma.order.findMany({
       where,
-      include: {
-        supplier: true,
-        items: {
-          include: {
-            reagent: true,
-          },
-        },
-        _count: {
-          select: { items: true },
-        },
-      },
       orderBy: { orderDate: 'desc' },
     });
 
-    return orders;
+    // Manually add supplier, items, and count for each order
+    const results = [];
+    for (const order of orders) {
+      const supplier = await prisma.supplier.findUnique({
+        where: { id: order.supplierId },
+      });
+
+      const items = await prisma.orderItem.findMany({
+        where: { orderId: order.id },
+      });
+
+      // Get reagent info for each item
+      const itemsWithReagent = [];
+      for (const item of items) {
+        const reagent = await prisma.reagent.findUnique({
+          where: { id: item.reagentId },
+        });
+        itemsWithReagent.push({ ...item, reagent });
+      }
+
+      results.push({
+        ...order,
+        supplier,
+        items: itemsWithReagent,
+        _count: { items: items.length },
+      });
+    }
+
+    return results;
   },
 
   /**
-   * Get order by ID with full details
+   * Get order by ID with full details (simplified for basic pg client)
    */
   async getById(id: string) {
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        supplier: {
-          include: {
-            contacts: true,
-          },
-        },
-        items: {
-          include: {
-            reagent: true,
-          },
-        },
-        delivery: true,
-      },
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return null;
+
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: order.supplierId },
     });
 
-    return order;
+    let contacts: any[] = [];
+    if (supplier) {
+      contacts = await prisma.supplierContact.findMany({
+        where: { supplierId: supplier.id },
+      });
+    }
+
+    const items = await prisma.orderItem.findMany({
+      where: { orderId: id },
+    });
+
+    // Get reagent info for each item
+    const itemsWithReagent = [];
+    for (const item of items) {
+      const reagent = await prisma.reagent.findUnique({
+        where: { id: item.reagentId },
+      });
+      itemsWithReagent.push({ ...item, reagent });
+    }
+
+    // Note: delivery table may not exist yet, return null for now
+    const delivery = null;
+
+    return {
+      ...order,
+      supplier: supplier ? { ...supplier, contacts } : null,
+      items: itemsWithReagent,
+      delivery,
+    };
   },
 
   /**
-   * Create a new order
+   * Create a new order (simplified for basic pg client)
    */
   async create(data: CreateOrderInput) {
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
 
+    // Create order first
     const order = await prisma.order.create({
       data: {
         orderNumber,
@@ -107,25 +143,39 @@ export const orderService = {
         status: 'PENDING_APPROVAL',
         notes: data.notes,
         createdBy: data.createdBy,
-        items: {
-          create: data.items.map((item) => ({
-            reagentId: item.reagentId,
-            requestedQuantity: item.requestedQuantity,
-            notes: item.notes,
-          })),
-        },
-      },
-      include: {
-        supplier: true,
-        items: {
-          include: {
-            reagent: true,
-          },
-        },
       },
     });
 
-    return order;
+    // Create items separately
+    for (const item of data.items) {
+      await prisma.orderItem.create({
+        data: {
+          orderId: order.id,
+          reagentId: item.reagentId,
+          requestedQuantity: item.requestedQuantity,
+          notes: item.notes,
+        },
+      });
+    }
+
+    // Return order with supplier and items
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: data.supplierId },
+    });
+
+    const items = await prisma.orderItem.findMany({
+      where: { orderId: order.id },
+    });
+
+    const itemsWithReagent = [];
+    for (const item of items) {
+      const reagent = await prisma.reagent.findUnique({
+        where: { id: item.reagentId },
+      });
+      itemsWithReagent.push({ ...item, reagent });
+    }
+
+    return { ...order, supplier, items: itemsWithReagent };
   },
 
   /**
@@ -145,7 +195,7 @@ export const orderService = {
     });
 
     let sequence = 1;
-    if (lastOrder) {
+    if (lastOrder && lastOrder.orderNumber) {
       const lastSeq = parseInt(lastOrder.orderNumber.replace(prefix, ''));
       if (!isNaN(lastSeq)) {
         sequence = lastSeq + 1;
@@ -156,7 +206,7 @@ export const orderService = {
   },
 
   /**
-   * Approve order
+   * Approve order (simplified for basic pg client)
    */
   async approve(id: string, approvedBy?: string) {
     const order = await prisma.order.update({
@@ -166,13 +216,16 @@ export const orderService = {
         approvedDate: new Date(),
         approvedBy,
       },
-      include: {
-        supplier: true,
-        items: true,
-      },
     });
 
-    return order;
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: order.supplierId },
+    });
+    const items = await prisma.orderItem.findMany({
+      where: { orderId: id },
+    });
+
+    return { ...order, supplier, items };
   },
 
   /**
@@ -191,7 +244,7 @@ export const orderService = {
   },
 
   /**
-   * Add item to existing order
+   * Add item to existing order (simplified for basic pg client)
    */
   async addItem(orderId: string, item: CreateOrderItemInput) {
     const orderItem = await prisma.orderItem.create({
@@ -201,12 +254,13 @@ export const orderService = {
         requestedQuantity: item.requestedQuantity,
         notes: item.notes,
       },
-      include: {
-        reagent: true,
-      },
     });
 
-    return orderItem;
+    const reagent = await prisma.reagent.findUnique({
+      where: { id: item.reagentId },
+    });
+
+    return { ...orderItem, reagent };
   },
 
   /**
@@ -234,22 +288,23 @@ export const orderService = {
   },
 
   /**
-   * Receive items (partial or full)
+   * Receive items (partial or full) - simplified for basic pg client
    */
   async receiveItems(orderId: string, items: ReceiveItemInput[], receivedBy?: string) {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
-    });
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
 
     if (!order) {
       throw new Error('Order not found');
     }
 
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId },
+    });
+
     const results = [];
 
     for (const item of items) {
-      const orderItem = order.items.find((i) => i.id === item.orderItemId);
+      const orderItem = orderItems.find((i: any) => i.id === item.orderItemId);
       if (!orderItem) continue;
 
       // Update order item received quantity
@@ -296,35 +351,32 @@ export const orderService = {
     }
 
     // Update order status based on received quantities
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
+    const updatedItems = await prisma.orderItem.findMany({
+      where: { orderId },
     });
 
-    if (updatedOrder) {
-      const allReceived = updatedOrder.items.every(
-        (i) => Number(i.receivedQuantity) >= Number(i.requestedQuantity)
-      );
-      const someReceived = updatedOrder.items.some(
-        (i) => Number(i.receivedQuantity) > 0
-      );
+    const allReceived = updatedItems.every(
+      (i: any) => Number(i.receivedQuantity) >= Number(i.requestedQuantity)
+    );
+    const someReceived = updatedItems.some(
+      (i: any) => Number(i.receivedQuantity) > 0
+    );
 
-      let newStatus: OrderStatus = updatedOrder.status;
-      if (allReceived) {
-        newStatus = 'RECEIVED';
-      } else if (someReceived) {
-        newStatus = 'PARTIALLY_RECEIVED';
-      }
+    let newStatus: OrderStatus = order.status;
+    if (allReceived) {
+      newStatus = 'RECEIVED';
+    } else if (someReceived) {
+      newStatus = 'PARTIALLY_RECEIVED';
+    }
 
-      if (newStatus !== updatedOrder.status) {
-        await prisma.order.update({
-          where: { id: orderId },
-          data: {
-            status: newStatus,
-            receivedDate: allReceived ? new Date() : undefined,
-          },
-        });
-      }
+    if (newStatus !== order.status) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: newStatus,
+          receivedDate: allReceived ? new Date() : undefined,
+        },
+      });
     }
 
     return results;
@@ -348,54 +400,78 @@ export const orderService = {
   },
 
   /**
-   * Get pending orders count by supplier
+   * Get pending orders count by supplier (simplified - no groupBy support)
    */
   async getPendingBySupplier() {
-    const orders = await prisma.order.groupBy({
-      by: ['supplierId'],
+    const orders = await prisma.order.findMany({
       where: {
-        status: {
-          in: ['PENDING_APPROVAL', 'APPROVED', 'ORDERED', 'PARTIALLY_RECEIVED'],
-        },
-      },
-      _count: {
-        id: true,
+        status: { in: ['PENDING_APPROVAL', 'APPROVED', 'ORDERED', 'PARTIALLY_RECEIVED'] },
       },
     });
 
-    return orders;
+    // Group by supplier in memory
+    const grouped: Record<string, number> = {};
+    for (const order of orders) {
+      grouped[order.supplierId] = (grouped[order.supplierId] || 0) + 1;
+    }
+
+    return Object.entries(grouped).map(([supplierId, count]) => ({
+      supplierId,
+      _count: { id: count },
+    }));
   },
 
   /**
-   * Get orders needing attention (pending approval, overdue, etc.)
+   * Get orders needing attention (simplified for basic pg client)
    */
   async getOrdersNeedingAttention() {
-    const pendingApproval = await prisma.order.findMany({
+    const pendingApprovalOrders = await prisma.order.findMany({
       where: { status: 'PENDING_APPROVAL' },
-      include: {
-        supplier: true,
-        _count: { select: { items: true } },
-      },
       orderBy: { orderDate: 'asc' },
     });
+
+    // Add supplier and count for each order
+    const pendingApproval = [];
+    for (const order of pendingApprovalOrders) {
+      const supplier = await prisma.supplier.findUnique({
+        where: { id: order.supplierId },
+      });
+      const itemCount = await prisma.orderItem.count({
+        where: { orderId: order.id },
+      });
+      pendingApproval.push({
+        ...order,
+        supplier,
+        _count: { items: itemCount },
+      });
+    }
 
     // Orders that have been "ordered" but not received for more than 14 days
     const overdueDate = new Date();
     overdueDate.setDate(overdueDate.getDate() - 14);
 
-    const overdue = await prisma.order.findMany({
+    const overdueOrders = await prisma.order.findMany({
       where: {
         status: 'ORDERED',
-        orderedDate: {
-          lt: overdueDate,
-        },
-      },
-      include: {
-        supplier: true,
-        _count: { select: { items: true } },
+        orderedDate: { lt: overdueDate },
       },
       orderBy: { orderedDate: 'asc' },
     });
+
+    const overdue = [];
+    for (const order of overdueOrders) {
+      const supplier = await prisma.supplier.findUnique({
+        where: { id: order.supplierId },
+      });
+      const itemCount = await prisma.orderItem.count({
+        where: { orderId: order.id },
+      });
+      overdue.push({
+        ...order,
+        supplier,
+        _count: { items: itemCount },
+      });
+    }
 
     return {
       pendingApproval,

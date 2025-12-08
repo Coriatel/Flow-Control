@@ -17,14 +17,14 @@ export interface UpdateReagentInput extends Partial<CreateReagentInput> {
   useManualUsage?: boolean;
 }
 
-export interface ReagentWithBatches extends Reagent {
+export interface ReagentWithBatches extends Omit<Reagent, 'supplier'> {
   batches: ReagentBatch[];
-  supplier: { id: string; name: string };
+  supplier?: { id: string; name: string };
 }
 
 class ReagentService {
   /**
-   * Get all reagents with optional filters
+   * Get all reagents with optional filters (simplified for basic pg client)
    */
   async getAll(filters?: {
     category?: Category;
@@ -32,7 +32,7 @@ class ReagentService {
     stockStatus?: StockStatus;
     search?: string;
     includeDeleted?: boolean;
-  }): Promise<Reagent[]> {
+  }): Promise<any[]> {
     const where: any = {};
 
     if (!filters?.includeDeleted) {
@@ -51,22 +51,37 @@ class ReagentService {
       where.currentStockStatus = filters.stockStatus;
     }
 
-    if (filters?.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { catalogNumber: { contains: filters.search, mode: 'insensitive' } },
-      ];
+    // Simplified: no OR search support in basic client
+    // If search needed, do it in memory after fetching
+
+    const reagents = await prisma.reagent.findMany({
+      where,
+      orderBy: { name: 'asc' },
+    });
+
+    // Manually add supplier info
+    const results = [];
+    for (const reagent of reagents) {
+      let supplier = null;
+      if (reagent.supplierId) {
+        supplier = await prisma.supplier.findUnique({ where: { id: reagent.supplierId } });
+      }
+
+      // Filter by search in memory
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesName = reagent.name?.toLowerCase().includes(searchLower);
+        const matchesCatalog = reagent.catalogNumber?.toLowerCase().includes(searchLower);
+        if (!matchesName && !matchesCatalog) continue;
+      }
+
+      results.push({
+        ...reagent,
+        supplier: supplier ? { id: supplier.id, name: supplier.name } : null,
+      });
     }
 
-    return prisma.reagent.findMany({
-      where,
-      include: {
-        supplier: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: [{ supplier: { name: 'asc' } }, { name: 'asc' }],
-    });
+    return results;
   }
 
   /**
@@ -93,21 +108,33 @@ class ReagentService {
   }
 
   /**
-   * Get a single reagent by ID with all batches
+   * Get a single reagent by ID with all batches (simplified for basic pg client)
    */
   async getById(id: string): Promise<ReagentWithBatches | null> {
-    return prisma.reagent.findUnique({
-      where: { id },
-      include: {
-        supplier: {
-          select: { id: true, name: true },
-        },
-        batches: {
-          where: { status: { not: 'DESTROYED' } },
-          orderBy: { expiryDate: 'asc' },
-        },
-      },
-    }) as Promise<ReagentWithBatches | null>;
+    const reagent = await prisma.reagent.findUnique({ where: { id } });
+    if (!reagent) return null;
+
+    // Get supplier info
+    let supplier = null;
+    if (reagent.supplierId) {
+      const s = await prisma.supplier.findUnique({ where: { id: reagent.supplierId } });
+      if (s) supplier = { id: s.id, name: s.name };
+    }
+
+    // Get active batches
+    const allBatches = await prisma.reagentBatch.findMany({
+      where: { reagentId: id },
+      orderBy: { expiryDate: 'asc' },
+    });
+
+    // Filter out destroyed batches in memory
+    const batches = allBatches.filter((b: any) => b.status !== 'DESTROYED');
+
+    return {
+      ...reagent,
+      supplier,
+      batches,
+    } as ReagentWithBatches;
   }
 
   /**
