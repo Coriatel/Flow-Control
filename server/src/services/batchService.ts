@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma';
-import { BatchStatus, TransactionType } from '../generated/prisma';
+import { BatchStatus, TransactionType } from '../../generated/prisma';
 
 export interface BatchFilters {
   reagentId?: string;
