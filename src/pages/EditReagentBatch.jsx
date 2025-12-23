@@ -129,8 +129,9 @@ export default function EditReagentBatchPage() {
   // Load batch data
   useEffect(() => {
     if (!batchId) {
-      toast.error('שגיאה', { description: 'מזהה אצווה חסר' });
-      navigate(createPageUrl('ManageReagents'));
+      // Silent redirect without error toast - this happens on normal back navigation
+      console.log('[EditReagentBatch] No batch ID in URL, redirecting to BatchAndExpiryManagement');
+      navigate(createPageUrl('BatchAndExpiryManagement'), { replace: true });
       return;
     }
     fetchBatchData();
