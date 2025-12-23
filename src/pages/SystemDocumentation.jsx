@@ -9,16 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Folder, File, FileText, Code, Database, 
-  Edit, Loader2, Search, 
+import {
+  Folder, File, FileText, Code, Database,
+  Edit, Loader2, Search,
   BookOpen, Server, Component, Eye, FileCode,
-  Check, Clock, Save, X, Download, FileArchive, Lightbulb
+  Check, Clock, Save, X, Download, FileArchive, Lightbulb,
+  Plus, Trash2, MessageSquare, Copy, FileDown, History,
+  ClipboardList, Map, Users, TestTube, Workflow
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import BackButton from '@/components/ui/BackButton';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 // Feature structure - organized like file system
 const featureStructure = {
@@ -109,14 +113,216 @@ const featureStructure = {
   }
 };
 
+// System Specification Content
+const systemSpecification = `
+# אפיון מערכת Flow Control - מערכת ניהול מלאי ריאגנטים
+
+## סקירה כללית
+מערכת Flow Control היא מערכת לניהול מלאי ריאגנטים עבור בנק הדם. המערכת מאפשרת מעקב אחר מלאי, תפוגות, הזמנות ומשיכות.
+
+---
+
+## דפים ראשיים ומסעות משתמש
+
+### 1. מרכז הבקרה (Dashboard)
+**מטרה:** מסך בית המציג סיכום מצב המערכת
+**מה יש בדף:**
+- כרטיסי סיכום: פריטים בפג תוקף קרוב, מלאי נמוך, הזמנות ממתינות, אספקות צפויות
+- פעולות קריטיות: התראות שדורשות טיפול מיידי
+- פעילות אחרונה: לוג של פעולות אחרונות במערכת
+- ניווט מהיר לכל אזורי המערכת
+
+**מסע משתמש:**
+1. משתמש נכנס למערכת → מגיע לדשבורד
+2. רואה התראות על פריטים שפג תוקפם
+3. לוחץ על התראה → מועבר לדף ניהול אצוות
+
+### 2. קליטת משלוח (NewDelivery)
+**מטרה:** קליטת משלוחים שהתקבלו מספקים
+**מה יש בדף:**
+- בחירת ספק
+- הוספת פריטים: ריאגנט, כמות, מספר אצווה, תאריך תפוגה
+- סריקת תעודת משלוח
+- אישור וביצוע קליטה
+
+**מסע משתמש:**
+1. הגעת משלוח פיזי → משתמש נכנס לקליטת משלוח
+2. בוחר ספק → מזין פריטים
+3. מאשר קליטה → המערכת מעדכנת מלאי
+
+### 3. ספירת מלאי (InventoryCount)
+**מטרה:** ביצוע ספירות מלאי תקופתיות
+**מה יש בדף:**
+- סינון לפי קטגוריה וספק
+- רשימת ריאגנטים עם כמות נוכחית
+- הזנת כמות נספרת
+- שמירת טיוטה והשלמת ספירה
+
+**מסע משתמש:**
+1. משתמש מתחיל ספירה → בוחר קטגוריה
+2. מזין כמויות לכל ריאגנט
+3. שומר טיוטה → ממשיך מאוחר יותר
+4. משלים ספירה → המערכת מעדכנת מלאי
+
+### 4. ניהול אצוות ופגי תוקף (BatchAndExpiryManagement)
+**מטרה:** מעקב אחר אצוות ותפוגות
+**מה יש בדף:**
+- טבלת אצוות עם סינון לפי סטטוס
+- צביעה לפי קרבה לתפוגה (אדום=פג, כתום=קרוב)
+- טיפול בפריטים שפג תוקפם
+- העלאת תעודות COA
+
+**מסע משתמש:**
+1. משתמש רואה התראה על פג תוקף → נכנס לדף
+2. מסנן לפי סטטוס "פג תוקף"
+3. מסמן פריט → בוחר פעולה (השמדה/שימוש אחר)
+4. מתעד את הפעולה
+
+### 5. הקמת מסמך רכש (NewOrder)
+**מטרה:** יצירת הזמנות חדשות לספקים
+**מה יש בדף:**
+- בחירת ספק
+- הוספת פריטים להזמנה
+- הגדרת סוג הזמנה (מסגרת/חד פעמית)
+- שמירה ושליחה
+
+**מסע משתמש:**
+1. מזהים צורך במלאי → יוצרים הזמנה
+2. בוחרים ספק ופריטים
+3. שומרים → הזמנה בסטטוס "טיוטה"
+4. שולחים → הזמנה נשלחת לספק
+
+### 6. ניהול דרישות רכש (Orders)
+**מטרה:** מעקב וניהול הזמנות
+**מה יש בדף:**
+- טבלת הזמנות עם סינון לפי סטטוס
+- פרטי הזמנה וסטטוס
+- עריכה וביטול הזמנות
+- מעקב אספקות
+
+### 7. משיכת ריאגנטים (NewWithdrawalRequest)
+**מטרה:** יצירת בקשות משיכה מהזמנות מסגרת
+**מה יש בדף:**
+- בחירת הזמנת מסגרת
+- בחירת פריטים וכמויות
+- אישור משיכה
+
+**מסע משתמש:**
+1. צורך בריאגנט → בודקים יתרות בהזמנות מסגרת
+2. יוצרים בקשת משיכה
+3. מאשרים → נשלחת בקשה לספק
+
+### 8. חישוב השלמות מלאי (InventoryReplenishment)
+**מטרה:** חישוב אוטומטי של כמויות להזמנה
+**מה יש בדף:**
+- טבלת ריאגנטים עם מלאי נוכחי
+- חישוב צריכה ממוצעת
+- המלצות להזמנה
+- יצירת הזמנה מהמלצות
+
+---
+
+## זרימות עבודה עיקריות
+
+### זרימת קבלת משלוח
+\`\`\`
+משלוח מגיע → קליטת משלוח → עדכון מלאי → עדכון אצוות → יומן פעילות
+\`\`\`
+
+### זרימת הזמנה
+\`\`\`
+זיהוי חוסר → בדיקת יתרות מסגרת → משיכה/הזמנה חדשה → מעקב → קבלת משלוח
+\`\`\`
+
+### זרימת פג תוקף
+\`\`\`
+התראה על תפוגה קרובה → בדיקה פיזית → תיעוד פעולה (השמדה/שימוש) → עדכון מלאי
+\`\`\`
+
+---
+
+## בדיקות נדרשות
+
+### בדיקות פונקציונליות
+1. **קליטת משלוח:** וידוא עדכון מלאי נכון
+2. **ספירת מלאי:** וידוא שמירת טיוטה ועדכון
+3. **חישוב צריכה:** וידוא חישוב ממוצעים נכון
+4. **התראות תפוגה:** וידוא הצגה נכונה לפי ימים
+
+### בדיקות UI/UX
+1. רספונסיביות על מובייל
+2. נגישות (קורא מסך)
+3. שפה עברית RTL
+4. זמני טעינה
+
+### בדיקות אינטגרציה
+1. חיבור בין דפים (ניווט)
+2. עדכון נתונים בזמן אמת
+3. סנכרון בין משתמשים
+
+---
+
+## הנחיות כלליות לפרויקט
+
+1. **גמישות:** בנייה מודולרית לאפשרות הרחבה
+2. **עצמאות רכיבים:** כל רכיב פועל באופן עצמאי
+3. **חישובים בשרת:** הפחתת עומס על הדפדפן
+4. **קבצים קטנים:** ניהול קל יותר של הקוד
+5. **אבחון תקלות:** בקשת לוגים ומידע לפני תיקון
+6. **הסבר פעולות:** תיעוד לוגיקה ותועלת
+`;
+
+// Development History Content
+const developmentHistory = `
+# היסטוריית פיתוח - Flow Control
+
+## סיכום תהליך הפיתוח
+
+### שלב 1: הקמת המערכת
+- יצירת מבנה בסיסי של הישויות (Reagent, Order, Delivery, etc.)
+- בניית דפים ראשוניים: Dashboard, InventoryCount, NewDelivery
+- הגדרת ניווט וממשק משתמש בסיסי
+
+### שלב 2: שיפורי יציבות
+- **תיקון שגיאות Rate Limit:** הוספת safeFetch לפונקציות שרת
+- **תיקון קריסות React #31:** תיקון הצגת אובייקטים במקום טקסט בדפים:
+  - WithdrawalRequests
+  - Orders
+  - InventoryReplenishment
+- **תיקון שגיאת selectedItems.size:** אתחול נכון של Set
+
+### שלב 3: שיפורי ביצועים
+- העברת לוגיקה כבדה לפונקציות שרת
+- הוספת caching בצד הלקוח
+- אופטימיזציה של טעינת נתונים
+
+### שלב 4: שיפורי UX
+- הוספת מערכת הודעות משופרת
+- שיפור ניווט עם היסטוריה
+- הוספת מסנני טבלאות מתקדמים
+
+### בעיות שטופלו
+1. ✅ React error #31 - הצגת אובייקטים
+2. ✅ Rate Limit - הגנה על קריאות API
+3. ✅ TypeError: selectedItems.size - אתחול Set
+4. ✅ ניווט BatchAndExpiryManagement - הסרת שגיאה מיותרת
+5. ✅ Toast שלא נסגר - הוספת auto-dismiss
+
+### עקרונות מנחים
+- **תכנות הגנתי:** בדיקת קיום לפני שימוש
+- **הפרדת אחריויות:** נתונים, לוגיקה, תצוגה
+- **חווית משתמש:** מצבי טעינה ושגיאה ברורים
+`;
+
 export default function SystemDocumentation() {
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState('explorer');
   const [selectedFolder, setSelectedFolder] = useState('pages');
   const [selectedFile, setSelectedFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('explorer');
 
+  // Documentation states
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [editingDocType, setEditingDocType] = useState(null);
@@ -124,18 +330,21 @@ export default function SystemDocumentation() {
   const [showDocDialog, setShowDocDialog] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
 
+  // Personal notes states
+  const [notes, setNotes] = useState([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [editingNote, setEditingNote] = useState(null);
+  const [showNoteDialog, setShowNoteDialog] = useState(false);
+
+  // Load documentation
   const loadDocs = useCallback(async () => {
     console.log("[SystemDoc] Loading documentation...");
     setLoadingDocs(true);
     try {
       const docsData = await base44.entities.FeatureDocumentation.list();
       console.log("[SystemDoc] ✅ Loaded docs:", docsData.length, "documents");
-      console.log("[SystemDoc] First doc sample:", docsData[0]?.feature_name, {
-        hasFunctional: !!docsData[0]?.functional_spec,
-        hasTechnical: !!docsData[0]?.technical_spec,
-        hasTest: !!docsData[0]?.test_plan,
-        hasDeveloper: !!docsData[0]?.developer_request
-      });
       setDocs(Array.isArray(docsData) ? docsData : []);
     } catch (error) {
       console.error('[SystemDoc] ❌ Error loading docs:', error);
@@ -145,54 +354,145 @@ export default function SystemDocumentation() {
     }
   }, []);
 
+  // Load personal notes
+  const loadNotes = useCallback(async () => {
+    setLoadingNotes(true);
+    try {
+      // Try to load from localStorage first
+      const savedNotes = localStorage.getItem('developmentNotes');
+      if (savedNotes) {
+        setNotes(JSON.parse(savedNotes));
+      }
+    } catch (error) {
+      console.error('[SystemDoc] Error loading notes:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadDocs();
-  }, [loadDocs]);
+    loadNotes();
+  }, [loadDocs, loadNotes]);
+
+  // Save notes to localStorage
+  const saveNotes = (updatedNotes) => {
+    localStorage.setItem('developmentNotes', JSON.stringify(updatedNotes));
+    setNotes(updatedNotes);
+  };
+
+  const handleAddNote = () => {
+    if (!newNoteTitle.trim()) {
+      toast.error('יש להזין כותרת להערה');
+      return;
+    }
+    const newNote = {
+      id: Date.now().toString(),
+      title: newNoteTitle,
+      content: newNoteContent,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    saveNotes([newNote, ...notes]);
+    setNewNoteTitle('');
+    setNewNoteContent('');
+    setShowNoteDialog(false);
+    toast.success('הערה נוספה בהצלחה');
+  };
+
+  const handleUpdateNote = () => {
+    if (!editingNote) return;
+    const updatedNotes = notes.map(note =>
+      note.id === editingNote.id
+        ? { ...note, title: newNoteTitle, content: newNoteContent, updatedAt: new Date().toISOString() }
+        : note
+    );
+    saveNotes(updatedNotes);
+    setEditingNote(null);
+    setNewNoteTitle('');
+    setNewNoteContent('');
+    setShowNoteDialog(false);
+    toast.success('הערה עודכנה בהצלחה');
+  };
+
+  const handleDeleteNote = (noteId) => {
+    const updatedNotes = notes.filter(note => note.id !== noteId);
+    saveNotes(updatedNotes);
+    toast.success('הערה נמחקה');
+  };
+
+  const openEditNote = (note) => {
+    setEditingNote(note);
+    setNewNoteTitle(note.title);
+    setNewNoteContent(note.content);
+    setShowNoteDialog(true);
+  };
+
+  // Download functions
+  const downloadAsMarkdown = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('קובץ MD הורד בהצלחה');
+  };
+
+  const downloadAsHTML = (content, filename) => {
+    const htmlContent = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${filename}</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+    h1, h2, h3 { color: #1e3a5f; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    code { background: #e7e7e7; padding: 2px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<pre>${content}</pre>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('קובץ HTML הורד בהצלחה');
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('הועתק ללוח');
+    } catch (error) {
+      toast.error('שגיאה בהעתקה');
+    }
+  };
 
   const getCurrentDoc = useCallback(() => {
-    if (!selectedFile) {
-      console.log("[SystemDoc] No file selected");
-      return null;
-    }
-    console.log("[SystemDoc] Looking for doc:", {
-      feature_type: selectedFolder,
-      feature_name: selectedFile.name,
-      available: docs.map(d => `${d.feature_type}/${d.feature_name}`)
-    });
-    
-    const found = docs.find(doc => 
-      doc.feature_type === selectedFolder && 
+    if (!selectedFile) return null;
+    return docs.find(doc =>
+      doc.feature_type === selectedFolder &&
       doc.feature_name === selectedFile.name
-    );
-    
-    if (found) {
-      console.log("[SystemDoc] ✅ Found doc:", found.feature_name, {
-        hasFunctional: !!found.functional_spec,
-        hasTechnical: !!found.technical_spec,
-        hasTest: !!found.test_plan,
-        hasDeveloper: !!found.developer_request,
-        functionalLength: found.functional_spec?.length || 0,
-        technicalLength: found.technical_spec?.length || 0,
-        testLength: found.test_plan?.length || 0,
-        developerLength: found.developer_request?.length || 0
-      });
-    } else {
-      console.log("[SystemDoc] ❌ Doc not found");
-    }
-    
-    return found || null;
+    ) || null;
   }, [docs, selectedFile, selectedFolder]);
 
   const currentDoc = getCurrentDoc();
 
   const handleSaveDoc = async () => {
     if (!selectedFile || !editingDocType) return;
-
-    console.log("[SystemDoc] Saving doc:", {
-      file: selectedFile.name,
-      type: editingDocType,
-      contentLength: docContent.length
-    });
 
     try {
       const docData = {
@@ -205,7 +505,6 @@ export default function SystemDocumentation() {
       };
 
       if (currentDoc) {
-        // Update existing doc - preserve other fields
         const updateData = {
           ...docData,
           functional_spec: editingDocType === 'functional' ? docContent : (currentDoc.functional_spec || ''),
@@ -213,12 +512,9 @@ export default function SystemDocumentation() {
           test_plan: editingDocType === 'test' ? docContent : (currentDoc.test_plan || ''),
           developer_request: editingDocType === 'developer_request' ? docContent : (currentDoc.developer_request || '')
         };
-
-        console.log("[SystemDoc] Updating doc ID:", currentDoc.id, "with field:", editingDocType);
         await base44.entities.FeatureDocumentation.update(currentDoc.id, updateData);
         toast.success('מסמך עודכן בהצלחה');
       } else {
-        // Create new doc
         const createData = {
           ...docData,
           functional_spec: editingDocType === 'functional' ? docContent : '',
@@ -226,8 +522,6 @@ export default function SystemDocumentation() {
           test_plan: editingDocType === 'test' ? docContent : '',
           developer_request: editingDocType === 'developer_request' ? docContent : ''
         };
-
-        console.log("[SystemDoc] Creating new doc");
         await base44.entities.FeatureDocumentation.create(createData);
         toast.success('מסמך חדש נוצר');
       }
@@ -235,107 +529,29 @@ export default function SystemDocumentation() {
       setShowDocDialog(false);
       setEditingDocType(null);
       setDocContent('');
-      
-      // Reload docs and wait for it
       await loadDocs();
-      console.log("[SystemDoc] ✅ Docs reloaded after save");
-      
     } catch (error) {
-      console.error('[SystemDoc] ❌ Error saving doc:', error);
-      toast.error('שגיאה בשמירת מסמך', {
-        description: error.message
-      });
+      console.error('[SystemDoc] Error saving doc:', error);
+      toast.error('שגיאה בשמירת מסמך');
     }
   };
 
   const handleEditDoc = (docType) => {
-    console.log("[SystemDoc] Edit doc clicked:", docType);
-    console.log("[SystemDoc] Current doc:", currentDoc?.feature_name || 'none');
-    
     if (!currentDoc) {
-      console.log("[SystemDoc] No current doc, setting empty content");
       setDocContent('');
     } else {
       const fieldName = docType === 'developer_request' ? 'developer_request' : `${docType}_spec`;
-      const content = currentDoc[fieldName] || '';
-      console.log("[SystemDoc] Loading content for:", fieldName, "length:", content.length);
-      setDocContent(content);
+      setDocContent(currentDoc[fieldName] || '');
     }
     setEditingDocType(docType);
     setShowDocDialog(true);
   };
 
-  const handleViewDoc = (docType) => {
-    const fieldName = docType === 'developer_request' ? 'developer_request' : `${docType}_spec`;
-    setDocContent(currentDoc?.[fieldName] || 'אין תוכן');
-    setEditingDocType(null);
-    setShowDocDialog(true);
-  };
-
-  const handleDownloadSingleDoc = (docType) => {
-    const fieldName = docType === 'developer_request' ? 'developer_request' : `${docType}_spec`;
-    
-    if (!currentDoc || !currentDoc[fieldName]) {
-      toast.error('אין תוכן להורדה');
-      return;
-    }
-
-    const content = currentDoc[fieldName];
-    const fileName = `${selectedFile.name}_${docType}_${new Date().toISOString().split('T')[0]}.md`;
-    
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast.success('קובץ הורד בהצלחה');
-  };
-
-  const handleDownloadAllDocs = async () => {
-    setDownloadingAll(true);
-    try {
-      const response = await base44.functions.invoke('exportAllDocumentation');
-      
-      if (response.data.success) {
-        const zipBlob = new Blob([Uint8Array.from(atob(response.data.zipBase64), c => c.charCodeAt(0))], 
-          { type: 'application/zip' });
-        const url = URL.createObjectURL(zipBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `documentation_${new Date().toISOString().split('T')[0]}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success('קובץ ZIP הורד בהצלחה', {
-          description: `${response.data.fileCount} מסמכים נכללו`
-        });
-      } else {
-        throw new Error(response.data.error || 'Failed to export');
-      }
-    } catch (error) {
-      console.error('Error downloading all docs:', error);
-      toast.error('שגיאה בהורדת המסמכים', {
-        description: error.message
-      });
-    } finally {
-      setDownloadingAll(false);
-    }
-  };
-
   const getFilteredFiles = useCallback(() => {
     const folder = featureStructure[selectedFolder];
     if (!folder) return [];
-    
     if (!searchTerm) return folder.items;
-    
-    return folder.items.filter(item => 
+    return folder.items.filter(item =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -344,20 +560,12 @@ export default function SystemDocumentation() {
   const filteredFiles = getFilteredFiles();
 
   const getDocStatusBadge = (doc) => {
-    if (!doc) {
-      return <Badge className="bg-gray-100 text-gray-600">ללא תיעוד</Badge>;
-    }
-
+    if (!doc) return <Badge className="bg-gray-100 text-gray-600">ללא תיעוד</Badge>;
     const hasAll = doc.functional_spec && doc.technical_spec && doc.test_plan && doc.developer_request;
     const hasSome = doc.functional_spec || doc.technical_spec || doc.test_plan || doc.developer_request;
-
-    if (hasAll) {
-      return <Badge className="bg-green-100 text-green-700"><Check className="h-3 w-3 ml-1" />מלא</Badge>;
-    } else if (hasSome) {
-      return <Badge className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />חלקי</Badge>;
-    } else {
-      return <Badge className="bg-gray-100 text-gray-600">ריק</Badge>;
-    }
+    if (hasAll) return <Badge className="bg-green-100 text-green-700"><Check className="h-3 w-3 ml-1" />מלא</Badge>;
+    if (hasSome) return <Badge className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />חלקי</Badge>;
+    return <Badge className="bg-gray-100 text-gray-600">ריק</Badge>;
   };
 
   return (
@@ -367,30 +575,32 @@ export default function SystemDocumentation() {
           <BackButton />
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-            ניהול תיעוד מערכת
+            מסמכי פיתוח ותיעוד
           </h1>
         </div>
-        
-        <Button
-          onClick={handleDownloadAllDocs}
-          disabled={downloadingAll || docs.length === 0}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {downloadingAll ? (
-            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-          ) : (
-            <FileArchive className="h-4 w-4 ml-2" />
-          )}
-          הורד הכל (ZIP)
-        </Button>
       </div>
 
-      <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="explorer">סייר מסמכים</TabsTrigger>
-          <TabsTrigger value="legacy">תיעוד היסטורי</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="explorer" className="flex items-center gap-1">
+            <Folder className="h-4 w-4" />
+            סייר מסמכים
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="flex items-center gap-1">
+            <MessageSquare className="h-4 w-4" />
+            הערות אישיות
+          </TabsTrigger>
+          <TabsTrigger value="specification" className="flex items-center gap-1">
+            <Map className="h-4 w-4" />
+            אפיון מערכת
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-1">
+            <History className="h-4 w-4" />
+            היסטוריית פיתוח
+          </TabsTrigger>
         </TabsList>
 
+        {/* Explorer Tab */}
         <TabsContent value="explorer" className="space-y-4">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -402,277 +612,9 @@ export default function SystemDocumentation() {
             />
           </div>
 
-          {/* Debug Info - Temporary */}
-          {selectedFile && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-xs">
-              <strong>🐛 Debug Info:</strong>
-              <div>Selected: {selectedFile.name} ({selectedFolder})</div>
-              <div>Current doc exists: {currentDoc ? 'Yes' : 'No'}</div>
-              {currentDoc && (
-                <>
-                  <div>Has functional_spec: {currentDoc.functional_spec ? `Yes (${currentDoc.functional_spec.length} chars)` : 'No'}</div>
-                  <div>Has technical_spec: {currentDoc.technical_spec ? `Yes (${currentDoc.technical_spec.length} chars)` : 'No'}</div>
-                  <div>Has test_plan: {currentDoc.test_plan ? `Yes (${currentDoc.test_plan.length} chars)` : 'No'}</div>
-                  <div>Has developer_request: {currentDoc.developer_request ? `Yes (${currentDoc.developer_request.length} chars)` : 'No'}</div>
-                </>
-              )}
-              <div>Total docs loaded: {docs.length}</div>
-            </div>
-          )}
-
-          {/* Dual Pane Layout - SWAPPED: Files Right, Details Left */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            
-            {/* LEFT Pane: Documentation Details */}
-            <Card className="h-[70vh] order-2 lg:order-1">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileCode className="h-5 w-5 text-blue-500" />
-                    {selectedFile ? selectedFile.displayName : 'בחר מסמך'}
-                  </div>
-                  {selectedFile && currentDoc && (
-                    <Badge className={
-                      currentDoc.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      currentDoc.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                      currentDoc.status === 'needs_review' ? 'bg-amber-100 text-amber-700' :
-                      'bg-gray-100 text-gray-700'
-                    }>
-                      {currentDoc.status === 'approved' ? 'מאושר' :
-                       currentDoc.status === 'completed' ? 'הושלם' :
-                       currentDoc.status === 'needs_review' ? 'לבדיקה' : 'בעבודה'}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!selectedFile ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                    <Folder className="h-16 w-16 mb-4" />
-                    <p className="text-center">בחר מסמך מהרשימה<br />כדי לצפות או לערוך את התיעוד</p>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[calc(70vh-120px)]">
-                    <div className="space-y-4">
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <p className="text-sm text-gray-600">נתיב קובץ:</p>
-                        <p className="text-xs font-mono text-gray-800 mt-1">{selectedFile.path}</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-gray-700">מסמכי תיעוד:</h3>
-                        
-                        {/* Developer Request - NEW! */}
-                        <Card className="border-r-4 border-amber-400">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Lightbulb className="h-5 w-5 text-amber-600" />
-                                <h4 className="font-medium">בקשת המפתח</h4>
-                              </div>
-                              <div className="flex gap-1">
-                                {currentDoc?.developer_request && (
-                                  <>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDownloadSingleDoc('developer_request')}
-                                      title="הורד מסמך"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleViewDoc('developer_request')}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditDoc('developer_request')}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {currentDoc?.developer_request ? (
-                              <p className="text-xs text-gray-600 line-clamp-2">
-                                {currentDoc.developer_request.substring(0, 100)}...
-                              </p>
-                            ) : (
-                              <p className="text-xs text-gray-400">לחץ על עריכה ליצירת מסמך</p>
-                            )}
-                          </CardContent>
-                        </Card>
-
-                        {/* Functional Spec */}
-                        <Card className="border-r-4 border-blue-400">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <BookOpen className="h-5 w-5 text-blue-600" />
-                                <h4 className="font-medium">אפיון תפקודי</h4>
-                              </div>
-                              <div className="flex gap-1">
-                                {currentDoc?.functional_spec && (
-                                  <>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDownloadSingleDoc('functional')}
-                                      title="הורד מסמך"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleViewDoc('functional')}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditDoc('functional')}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {currentDoc?.functional_spec ? (
-                              <p className="text-xs text-gray-600 line-clamp-2">
-                                {currentDoc.functional_spec.substring(0, 100)}...
-                              </p>
-                            ) : (
-                              <p className="text-xs text-gray-400">לחץ על עריכה ליצירת מסמך</p>
-                            )}
-                          </CardContent>
-                        </Card>
-
-                        {/* Technical Spec */}
-                        <Card className="border-r-4 border-purple-400">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Code className="h-5 w-5 text-purple-600" />
-                                <h4 className="font-medium">מסמך טכני</h4>
-                              </div>
-                              <div className="flex gap-1">
-                                {currentDoc?.technical_spec && (
-                                  <>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDownloadSingleDoc('technical')}
-                                      title="הורד מסמך"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleViewDoc('technical')}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditDoc('technical')}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {currentDoc?.technical_spec ? (
-                              <p className="text-xs text-gray-600 line-clamp-2">
-                                {currentDoc.technical_spec.substring(0, 100)}...
-                              </p>
-                            ) : (
-                              <p className="text-xs text-gray-400">לחץ על עריכה ליצירת מסמך</p>
-                            )}
-                          </CardContent>
-                        </Card>
-
-                        {/* Test Plan */}
-                        <Card className="border-r-4 border-green-400">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Check className="h-5 w-5 text-green-600" />
-                                <h4 className="font-medium">מסמך בדיקות</h4>
-                              </div>
-                              <div className="flex gap-1">
-                                {currentDoc?.test_plan && (
-                                  <>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDownloadSingleDoc('test')}
-                                      title="הורד מסמך"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleViewDoc('test')}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditDoc('test')}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {currentDoc?.test_plan ? (
-                              <p className="text-xs text-gray-600 line-clamp-2">
-                                {currentDoc.test_plan.substring(0, 100)}...
-                              </p>
-                            ) : (
-                              <p className="text-xs text-gray-400">לחץ על עריכה ליצירת מסמך</p>
-                            )}
-                          </CardContent>
-                        </Card>
-
-                        {currentDoc && (
-                          <div className="bg-blue-50 p-3 rounded-md text-sm">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <span className="text-gray-600">עודכן:</span>
-                                <p className="font-medium">{new Date(currentDoc.updated_date).toLocaleDateString('he-IL')}</p>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">גרסה:</span>
-                                <p className="font-medium">{currentDoc.version || '1.0'}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* RIGHT Pane: Folders and Files */}
-            <Card className="h-[70vh] order-1 lg:order-2">
+            {/* Files List */}
+            <Card className="h-[70vh]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Folder className="h-5 w-5 text-amber-500" />
@@ -680,48 +622,34 @@ export default function SystemDocumentation() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {/* Folder Tabs - Split to 2 rows on mobile */}
                 <div className="flex flex-wrap border-b bg-gray-50 px-2 py-1 gap-1">
                   {Object.entries(featureStructure).map(([key, folder]) => {
                     const Icon = folder.icon;
                     return (
                       <button
                         key={key}
-                        onClick={() => {
-                          setSelectedFolder(key);
-                          setSelectedFile(null);
-                        }}
+                        onClick={() => { setSelectedFolder(key); setSelectedFile(null); }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-t-md transition-colors ${
-                          selectedFolder === key
-                            ? 'bg-white border-t-2 border-blue-500 font-medium'
-                            : 'hover:bg-white/50'
+                          selectedFolder === key ? 'bg-white border-t-2 border-blue-500 font-medium' : 'hover:bg-white/50'
                         }`}
                       >
                         <Icon className={`h-4 w-4 ${folder.color}`} />
                         <span className="text-sm">{folder.shortName}</span>
-                        <Badge variant="outline" className="text-xs">{folder.items.length}</Badge>
                       </button>
                     );
                   })}
                 </div>
-
                 <ScrollArea className="h-[calc(70vh-120px)]">
                   <div className="p-2 space-y-1">
                     {filteredFiles.map((file) => {
-                      const fileDoc = docs.find(d => 
-                        d.feature_type === selectedFolder && 
-                        d.feature_name === file.name
-                      );
+                      const fileDoc = docs.find(d => d.feature_type === selectedFolder && d.feature_name === file.name);
                       const isSelected = selectedFile?.name === file.name;
-                      
                       return (
                         <button
                           key={file.name}
                           onClick={() => setSelectedFile(file)}
                           className={`w-full text-right px-3 py-2 rounded-md transition-colors ${
-                            isSelected 
-                              ? 'bg-blue-50 border-r-4 border-blue-500' 
-                              : 'hover:bg-gray-50'
+                            isSelected ? 'bg-blue-50 border-r-4 border-blue-500' : 'hover:bg-gray-50'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -737,146 +665,250 @@ export default function SystemDocumentation() {
                         </button>
                       );
                     })}
-                    
-                    {filteredFiles.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                        <p>לא נמצאו מסמכים</p>
-                      </div>
-                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {docs.filter(d => d.functional_spec && d.technical_spec && d.test_plan && d.developer_request).length}
-                </p>
-                <p className="text-xs text-gray-600">מתועדים מלא</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-amber-600">
-                  {docs.filter(d => (d.functional_spec || d.technical_spec || d.test_plan || d.developer_request) && 
-                    !(d.functional_spec && d.technical_spec && d.test_plan && d.developer_request)).length}
-                </p>
-                <p className="text-xs text-gray-600">תיעוד חלקי</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-gray-600">
-                  {Object.values(featureStructure).reduce((sum, folder) => sum + folder.items.length, 0) - docs.length}
-                </p>
-                <p className="text-xs text-gray-600">ללא תיעוד</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">
-                  {Math.round((docs.filter(d => d.functional_spec && d.technical_spec && d.test_plan && d.developer_request).length / 
-                    Object.values(featureStructure).reduce((sum, folder) => sum + folder.items.length, 0)) * 100)}%
-                </p>
-                <p className="text-xs text-gray-600">אחוז השלמה</p>
+            {/* Document Details */}
+            <Card className="h-[70vh]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileCode className="h-5 w-5 text-blue-500" />
+                  {selectedFile ? selectedFile.displayName : 'בחר מסמך'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedFile ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <Folder className="h-16 w-16 mb-4" />
+                    <p className="text-center">בחר מסמך מהרשימה</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[calc(70vh-120px)]">
+                    <div className="space-y-3">
+                      {['developer_request', 'functional', 'technical', 'test'].map((type) => {
+                        const fieldName = type === 'developer_request' ? 'developer_request' : `${type}_spec`;
+                        const hasContent = currentDoc?.[fieldName];
+                        const titles = {
+                          developer_request: 'בקשת המפתח',
+                          functional: 'אפיון תפקודי',
+                          technical: 'מסמך טכני',
+                          test: 'מסמך בדיקות'
+                        };
+                        return (
+                          <Card key={type} className="border-r-4 border-blue-400">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium">{titles[type]}</h4>
+                                <div className="flex gap-1">
+                                  {hasContent && (
+                                    <Button variant="ghost" size="sm" onClick={() => { setDocContent(currentDoc[fieldName]); setEditingDocType(null); setShowDocDialog(true); }}>
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="sm" onClick={() => handleEditDoc(type)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {hasContent ? (
+                                <p className="text-xs text-gray-600 line-clamp-2">{currentDoc[fieldName].substring(0, 100)}...</p>
+                              ) : (
+                                <p className="text-xs text-gray-400">לחץ על עריכה ליצירת מסמך</p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="legacy">
+        {/* Personal Notes Tab */}
+        <TabsContent value="notes" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">הערות אישיות</h2>
+            <Button onClick={() => { setEditingNote(null); setNewNoteTitle(''); setNewNoteContent(''); setShowNoteDialog(true); }}>
+              <Plus className="h-4 w-4 ml-2" />
+              הערה חדשה
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {notes.length === 0 ? (
+              <Card className="col-span-full">
+                <CardContent className="p-8 text-center text-gray-500">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>אין הערות עדיין. לחץ על "הערה חדשה" להוספת הערה ראשונה.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              notes.map(note => (
+                <Card key={note.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <span className="truncate">{note.title}</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEditNote(note)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNote(note.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 line-clamp-4 whitespace-pre-wrap">{note.content}</p>
+                    <p className="text-xs text-gray-400 mt-3">
+                      {format(new Date(note.updatedAt), 'dd/MM/yyyy HH:mm', { locale: he })}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* System Specification Tab */}
+        <TabsContent value="specification" className="space-y-4">
           <Card>
-            <CardContent className="p-6">
-              <p className="text-gray-600 text-center py-8">
-                התיעוד הישן נשמר כאן לעיון היסטורי.
-                <br />
-                השתמש ב"סייר מסמכים" לניהול תיעוד עדכני.
-              </p>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Map className="h-5 w-5" />
+                  אפיון מערכת מפורט
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(systemSpecification)}>
+                    <Copy className="h-4 w-4 ml-2" />
+                    העתק
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => downloadAsMarkdown(systemSpecification, 'system-specification')}>
+                    <FileDown className="h-4 w-4 ml-2" />
+                    MD
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => downloadAsHTML(systemSpecification, 'system-specification')}>
+                    <FileDown className="h-4 w-4 ml-2" />
+                    HTML
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[60vh]">
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">{systemSpecification}</pre>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Development History Tab */}
+        <TabsContent value="history" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  היסטוריית פיתוח
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(developmentHistory)}>
+                    <Copy className="h-4 w-4 ml-2" />
+                    העתק
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => downloadAsMarkdown(developmentHistory, 'development-history')}>
+                    <FileDown className="h-4 w-4 ml-2" />
+                    MD
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => downloadAsHTML(developmentHistory, 'development-history')}>
+                    <FileDown className="h-4 w-4 ml-2" />
+                    HTML
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[60vh]">
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">{developmentHistory}</pre>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Edit/View Document Dialog */}
+      {/* Document Edit/View Dialog */}
       <Dialog open={showDocDialog} onOpenChange={setShowDocDialog}>
         <DialogContent className="max-w-4xl max-h-[85vh]" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {editingDocType ? (
-                <>
-                  <Edit className="h-5 w-5" />
-                  עריכת {editingDocType === 'functional' ? 'אפיון תפקודי' : 
-                          editingDocType === 'technical' ? 'מסמך טכני' : 
-                          editingDocType === 'test' ? 'מסמך בדיקות' : 'בקשת המפתח'}
-                </>
-              ) : (
-                <>
-                  <Eye className="h-5 w-5" />
-                  צפייה במסמך
-                </>
-              )}
+            <DialogTitle>
+              {editingDocType ? 'עריכת מסמך' : 'צפייה במסמך'}
             </DialogTitle>
-            {selectedFile && (
-              <DialogDescription>
-                {selectedFile.displayName} ({selectedFile.path})
-              </DialogDescription>
-            )}
           </DialogHeader>
-
           <div className="py-4">
             {editingDocType ? (
-              <div>
-                <Label>תוכן המסמך:</Label>
-                <Textarea
-                  value={docContent}
-                  onChange={(e) => setDocContent(e.target.value)}
-                  className="min-h-[400px] font-mono text-sm mt-2"
-                  placeholder={
-                    editingDocType === 'functional' ? 
-                      'תאר את מטרת המסמך, מקרי שימוש, כללי עסקים, ותיאור UI/UX...' :
-                    editingDocType === 'technical' ?
-                      'תאר את הארכיטקטורה, ישויות מעורבות, פונקציות Backend, תלויות...' :
-                    editingDocType === 'test' ?
-                      'תאר תרחישי בדיקה, מקרי קצה, בדיקות רספונסיביות...' :
-                      'נתח את כל הבקשות והדרישות של המפתח, התווה את החזון והמטרות...'
-                  }
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  תומך ב-Markdown. השתמש בפסקות, כותרות ורשימות לעיצוב המסמך.
-                </p>
-              </div>
+              <Textarea
+                value={docContent}
+                onChange={(e) => setDocContent(e.target.value)}
+                className="min-h-[400px] font-mono text-sm"
+                placeholder="הזן תוכן מסמך..."
+              />
             ) : (
               <ScrollArea className="h-[400px] border rounded-md p-4 bg-gray-50">
-                <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-                  {docContent}
-                </div>
+                <pre className="whitespace-pre-wrap text-sm">{docContent}</pre>
               </ScrollArea>
             )}
           </div>
-
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowDocDialog(false);
-                setEditingDocType(null);
-                setDocContent('');
-              }}
-            >
-              <X className="h-4 w-4 ml-2" />
+            <Button variant="outline" onClick={() => { setShowDocDialog(false); setEditingDocType(null); }}>
               {editingDocType ? 'ביטול' : 'סגור'}
             </Button>
             {editingDocType && (
-              <Button onClick={handleSaveDoc} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleSaveDoc}>
                 <Save className="h-4 w-4 ml-2" />
-                שמור מסמך
+                שמור
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Note Edit Dialog */}
+      <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>{editingNote ? 'עריכת הערה' : 'הערה חדשה'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>כותרת</Label>
+              <Input
+                value={newNoteTitle}
+                onChange={(e) => setNewNoteTitle(e.target.value)}
+                placeholder="כותרת ההערה..."
+              />
+            </div>
+            <div>
+              <Label>תוכן</Label>
+              <Textarea
+                value={newNoteContent}
+                onChange={(e) => setNewNoteContent(e.target.value)}
+                className="min-h-[200px]"
+                placeholder="תוכן ההערה..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNoteDialog(false)}>ביטול</Button>
+            <Button onClick={editingNote ? handleUpdateNote : handleAddNote}>
+              <Save className="h-4 w-4 ml-2" />
+              {editingNote ? 'עדכן' : 'שמור'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
