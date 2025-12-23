@@ -1,15 +1,922 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Flow Control - Blood Bank Inventory Management System
+// Prisma Schema - Complete Data Model
+// Created: December 2025
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Category {
+  REAGENT    // ריאגנטים
+  CELLS      // כדוריות
+  CONSUMABLE // מתכלים
+}
+
+enum StockStatus {
+  NORMAL
+  LOW
+  CRITICAL
+  OUT_OF_STOCK
+}
+
+enum BatchStatus {
+  INCOMING  // בדרך
+  ACTIVE    // פעיל
+  EXPIRED   // פג תוקף
+  CONSUMED  // נצרך
+  ON_HOLD   // בהסגר
+  DESTROYED // הושמד
+}
+
+enum QCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REQUIRES_REVIEW
+}
+
+enum OrderType {
+  IMMEDIATE // הזמנה רגילה
+  FRAMEWORK // הזמנת מסגרת
+}
+
+enum OrderStatus {
+  DRAFT              // טיוטה
+  PENDING_SAP        // ממתין לפרטי SAP
+  APPROVED           // מאושר
+  PARTIALLY_RECEIVED // התקבל חלקית
+  FULLY_RECEIVED     // התקבל מלא
+  CLOSED             // סגור
+  CANCELLED          // בוטל
+}
+
+enum WithdrawalStatus {
+  DRAFT     // טיוטה
+  SUBMITTED // הוגש
+  APPROVED  // מאושר
+  SHIPPING  // באספקה
+  CLOSED    // סגור
+  CANCELLED // בוטל
+}
+
+enum DeliveryStatus {
+  NEW        // חדש
+  PROCESSING // בעיבוד
+  COMPLETED  // הושלם
+  CANCELLED  // בוטל
+}
+
+enum ShipmentStatus {
+  DRAFT     // טיוטה
+  SENT      // נשלח
+  RECEIVED  // התקבל
+  CANCELLED // בוטל
+}
+
+enum CountDraftStatus {
+  DRAFT       // טיוטה
+  IN_PROGRESS // בתהליך
+  COMPLETED   // הושלם
+}
+
+enum TransactionType {
+  RECEIPT      // קבלה
+  CONSUMPTION  // צריכה
+  WITHDRAWAL   // משיכה
+  ADJUSTMENT   // התאמה
+  DESTRUCTION  // השמדה
+  TRANSFER_IN  // העברה נכנסת
+  TRANSFER_OUT // העברה יוצאת
+}
+
+enum ExpiredAction {
+  DESTROYED    // הושמד
+  CONSUMED     // שימוש
+  NOT_IN_STOCK // לא במלאי
+  OTHER        // אחר
+}
+
+enum AlertRuleType {
+  EXPIRY_WARNING // פג תוקף קרוב
+  LOW_STOCK      // מלאי נמוך
+  PENDING_SUPPLY // אספקה ממתינה
+  COUNT_REQUIRED // נדרשת ספירה
+  COA_MISSING    // חסר COA
+  CUSTOM         // מותאם אישית
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+enum NoteType {
+  GENERAL
+  TASK
+  REMINDER
+  ALERT
+  INFO
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  READONLY
+}
+
+// ============================================================================
+// CORE ENTITIES
+// ============================================================================
+
+/// ספק - Supplier master data
+model Supplier {
+  id              String  @id @default(cuid())
+  name            String  @unique
+  shortCode       String?
+
+  // פרטים
+  address         String?
+  phone           String?
+  email           String?
+  website         String?
+
+  // תנאים
+  defaultCurrency String  @default("ILS")
+  paymentTerms    String?
+  leadTimeDays    Int?
+
+  // סטטוס
+  isPreferred     Boolean @default(false)
+  isActive        Boolean @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // קשרים
+  reagents           Reagent[]
+  contacts           SupplierContact[]
+  orders             Order[]
+  deliveries         Delivery[]
+  withdrawalRequests WithdrawalRequest[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+/// איש קשר של ספק
+model SupplierContact {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  name       String
+  role       String?
+  phone      String?
+  mobile     String?
+  email      String?
+  notes      String?
+
+  isPrimary  Boolean  @default(false)
+  isActive   Boolean  @default(true)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([supplierId])
+}
+
+/// ריאגנט - פריט קטלוגי עם מידע מצטבר
+model Reagent {
+  id                    String      @id @default(cuid())
+  name                  String
+  catalogNumber         String?
+  category              Category    @default(REAGENT)
+  supplierId            String
+  supplier              Supplier    @relation(fields: [supplierId], references: [id])
+
+  // מידע מלאי מצטבר (מתעדכן אוטומטית)
+  totalQuantity         Decimal     @default(0) @db.Decimal(10, 2)
+  activeBatchesCount    Int         @default(0)
+  nearestExpiryDate     DateTime?
+  currentStockStatus    StockStatus @default(NORMAL)
+  monthsOfStock         Decimal?    @db.Decimal(5, 2)
+
+  // צריכה
+  averageMonthlyUsage   Decimal?    @db.Decimal(10, 2)
+  manualMonthlyUsage    Decimal?    @db.Decimal(10, 2)
+  useManualUsage        Boolean     @default(false)
+
+  // מטא
+  isConsumable          Boolean     @default(false)
+  requiresBatches       Boolean     @default(true)
+  isDeleted             Boolean     @default(false)
+  notes                 String?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  // קשרים
+  batches               ReagentBatch[]
+  transactions          InventoryTransaction[]
+  orderItems            OrderItem[]
+  withdrawalItems       WithdrawalItem[]
+  deliveryItems         DeliveryItem[]
+  shipmentItems         ShipmentItem[]
+  frameworkOrderItems   FrameworkOrderItem[]
+
+  @@unique([name, supplierId])
+  @@index([supplierId])
+  @@index([category])
+  @@index([currentStockStatus])
+  @@index([nearestExpiryDate])
+  @@index([isDeleted])
+}
+
+/// אצווה של ריאגנט
+model ReagentBatch {
+  id                String      @id @default(cuid())
+  reagentId         String
+  reagent           Reagent     @relation(fields: [reagentId], references: [id])
+
+  batchNumber       String
+  expiryDate        DateTime
+  manufactureDate   DateTime?
+
+  // כמויות
+  initialQuantity   Decimal     @db.Decimal(10, 2)
+  currentQuantity   Decimal     @db.Decimal(10, 2)
+  reservedQuantity  Decimal     @default(0) @db.Decimal(10, 2)
+
+  // קבלה
+  receivedDate      DateTime
+  deliveryId        String?
+  delivery          Delivery?   @relation(fields: [deliveryId], references: [id])
+  firstOpenedDate   DateTime?
+
+  // אחסון
+  storageLocation   String?
+  storageConditions String?
+
+  // סטטוס ואיכות
+  status            BatchStatus @default(ACTIVE)
+  qcStatus          QCStatus    @default(PENDING)
+  coaDocumentUrl    String?
+  qcNotes           String?
+  generalNotes      String?
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // קשרים
+  transactions      InventoryTransaction[]
+  expiredProductLogs ExpiredProductLog[]
+
+  @@unique([reagentId, batchNumber])
+  @@index([reagentId])
+  @@index([expiryDate])
+  @@index([status])
+  @@index([deliveryId])
+}
+
+// ============================================================================
+// ORDERS & PROCUREMENT
+// ============================================================================
+
+/// הזמנה
+model Order {
+  id                    String      @id @default(cuid())
+
+  // מספרים
+  tempNumber            String      @unique
+  permanentNumber       String?
+  sapPurchaseOrder      String?
+
+  // ספק
+  supplierId            String
+  supplier              Supplier    @relation(fields: [supplierId], references: [id])
+  supplierSnapshot      String      // שם ספק בעת ההזמנה
+
+  // סוג וסטטוס
+  orderType             OrderType   @default(IMMEDIATE)
+  status                OrderStatus @default(DRAFT)
+
+  // תאריכים
+  orderDate             DateTime    @default(now())
+  expectedDeliveryStart DateTime?
+  expectedDeliveryEnd   DateTime?
+  closedDate            DateTime?
+
+  // כספים
+  totalValue            Decimal?    @db.Decimal(12, 2)
+  currency              String      @default("ILS")
+
+  // הערות
+  internalNotes         String?
+  supplierNotes         String?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  // קשרים
+  items                 OrderItem[]
+  deliveries            Delivery[]
+  frameworkOrder        FrameworkOrder?
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderType])
+  @@index([orderDate])
+}
+
+/// פריט בהזמנה
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reagentId         String
+  reagent           Reagent  @relation(fields: [reagentId], references: [id])
+
+  requestedQuantity Decimal  @db.Decimal(10, 2)
+  approvedQuantity  Decimal? @db.Decimal(10, 2)
+  receivedQuantity  Decimal  @default(0) @db.Decimal(10, 2)
+  remainingQuantity Decimal? @db.Decimal(10, 2)
+
+  unitPrice         Decimal? @db.Decimal(10, 2)
+  currency          String   @default("ILS")
+
+  notes             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([reagentId])
+}
+
+/// הזמנת מסגרת - הרחבה להזמנה רגילה
+model FrameworkOrder {
+  id                String   @id @default(cuid())
+  orderId           String   @unique
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  validFrom         DateTime
+  validTo           DateTime
+  maxTotalQuantity  Decimal? @db.Decimal(12, 2)
+  availableQuantity Decimal? @db.Decimal(12, 2)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // קשרים
+  items              FrameworkOrderItem[]
+  withdrawalRequests WithdrawalRequest[]
+
+  @@index([validFrom, validTo])
+}
+
+/// פריט בהזמנת מסגרת
+model FrameworkOrderItem {
+  id                String         @id @default(cuid())
+  frameworkOrderId  String
+  frameworkOrder    FrameworkOrder @relation(fields: [frameworkOrderId], references: [id], onDelete: Cascade)
+  reagentId         String
+  reagent           Reagent        @relation(fields: [reagentId], references: [id])
+
+  allocatedQuantity Decimal        @db.Decimal(10, 2)
+  consumedQuantity  Decimal        @default(0) @db.Decimal(10, 2)
+  availableQuantity Decimal        @db.Decimal(10, 2)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([frameworkOrderId])
+  @@index([reagentId])
+}
+
+// ============================================================================
+// WITHDRAWALS
+// ============================================================================
+
+/// בקשת משיכה
+model WithdrawalRequest {
+  id                  String           @id @default(cuid())
+  withdrawalNumber    String           @unique
+
+  // ספק ומסגרת
+  supplierId          String
+  supplier            Supplier         @relation(fields: [supplierId], references: [id])
+  supplierSnapshot    String
+  frameworkOrderId    String?
+  frameworkOrder      FrameworkOrder?  @relation(fields: [frameworkOrderId], references: [id])
+
+  // סטטוס
+  status              WithdrawalStatus @default(DRAFT)
+
+  // תאריכים
+  requestDate         DateTime         @default(now())
+  approvalDate        DateTime?
+  completionDate      DateTime?
+
+  // כספים
+  totalValueRequested Decimal?         @db.Decimal(12, 2)
+  totalValueApproved  Decimal?         @db.Decimal(12, 2)
+
+  // הערות
+  requesterNotes      String?
+  approverNotes       String?
+
+  // משתמשים
+  requestedById       String?
+  approvedById        String?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // קשרים
+  items               WithdrawalItem[]
+  deliveries          Delivery[]
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([frameworkOrderId])
+  @@index([requestDate])
+}
+
+/// פריט בבקשת משיכה
+model WithdrawalItem {
+  id                  String            @id @default(cuid())
+  withdrawalRequestId String
+  withdrawalRequest   WithdrawalRequest @relation(fields: [withdrawalRequestId], references: [id], onDelete: Cascade)
+  reagentId           String
+  reagent             Reagent           @relation(fields: [reagentId], references: [id])
+
+  requestedQuantity   Decimal           @db.Decimal(10, 2)
+  approvedQuantity    Decimal?          @db.Decimal(10, 2)
+  fulfilledQuantity   Decimal           @default(0) @db.Decimal(10, 2)
+
+  unitPrice           Decimal?          @db.Decimal(10, 2)
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([withdrawalRequestId])
+  @@index([reagentId])
+}
+
+// ============================================================================
+// DELIVERIES & SHIPMENTS
+// ============================================================================
+
+/// משלוח נכנס
+model Delivery {
+  id                  String            @id @default(cuid())
+  deliveryNumber      String            @unique
+
+  // ספק
+  supplierId          String
+  supplier            Supplier          @relation(fields: [supplierId], references: [id])
+  supplierSnapshot    String
+
+  // קישורים
+  orderId             String?
+  order               Order?            @relation(fields: [orderId], references: [id])
+  withdrawalRequestId String?
+  withdrawalRequest   WithdrawalRequest? @relation(fields: [withdrawalRequestId], references: [id])
+
+  // תאריכים וסטטוס
+  deliveryDate        DateTime
+  status              DeliveryStatus    @default(NEW)
+
+  // תיעוד
+  documentUrl         String?
+  isRecurringSupply   Boolean           @default(false)
+  notes               String?
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // קשרים
+  items               DeliveryItem[]
+  batches             ReagentBatch[]
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([deliveryDate])
+  @@index([orderId])
+}
+
+/// פריט במשלוח נכנס
+model DeliveryItem {
+  id              String   @id @default(cuid())
+  deliveryId      String
+  delivery        Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  reagentId       String
+  reagent         Reagent  @relation(fields: [reagentId], references: [id])
+
+  batchNumber     String
+  quantity        Decimal  @db.Decimal(10, 2)
+  expiryDate      DateTime
+
+  acceptedQuantity  Decimal? @db.Decimal(10, 2)
+  rejectedQuantity  Decimal? @db.Decimal(10, 2)
+  rejectionReason   String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([deliveryId])
+  @@index([reagentId])
+}
+
+/// משלוח יוצא
+model Shipment {
+  id                    String         @id @default(cuid())
+  shipmentNumber        String         @unique
+
+  destinationHospital   String
+  destinationDepartment String?
+
+  shipmentDate          DateTime
+  status                ShipmentStatus @default(DRAFT)
+
+  documentUrl           String?
+  notes                 String?
+
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  // קשרים
+  items                 ShipmentItem[]
+
+  @@index([status])
+  @@index([shipmentDate])
+}
+
+/// פריט במשלוח יוצא
+model ShipmentItem {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  reagentId  String
+  reagent    Reagent  @relation(fields: [reagentId], references: [id])
+  batchId    String?
+
+  quantity   Decimal  @db.Decimal(10, 2)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([shipmentId])
+  @@index([reagentId])
+}
+
+// ============================================================================
+// INVENTORY MANAGEMENT
+// ============================================================================
+
+/// טיוטת ספירת מלאי
+model InventoryCountDraft {
+  id          String           @id @default(cuid())
+
+  startedAt   DateTime         @default(now())
+  lastSavedAt DateTime         @updatedAt
+  status      CountDraftStatus @default(DRAFT)
+
+  startedById String?
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // קשרים
+  entries     InventoryCountEntry[]
+
+  @@index([status])
+}
+
+/// שורת ספירה
+model InventoryCountEntry {
+  id            String              @id @default(cuid())
+  countDraftId  String
+  countDraft    InventoryCountDraft @relation(fields: [countDraftId], references: [id], onDelete: Cascade)
+
+  reagentId     String
+  batchNumber   String?
+
+  countedQuantity Decimal  @db.Decimal(10, 2)
+  expiryDate      DateTime?
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([countDraftId])
+  @@index([reagentId])
+}
+
+/// ספירת מלאי מושלמת
+model CompletedInventoryCount {
+  id                   String   @id @default(cuid())
+
+  countDate            DateTime
+  completedAt          DateTime @default(now())
+
+  totalReagentsCounted Int
+  totalBatchesCounted  Int
+  varianceSummary      Json?
+
+  csvExportUrl         String?
+  pdfReportUrl         String?
+
+  completedById        String?
+
+  createdAt            DateTime @default(now())
+
+  @@index([countDate])
+}
+
+/// תנועת מלאי
+model InventoryTransaction {
+  id              String          @id @default(cuid())
+
+  reagentId       String
+  reagent         Reagent         @relation(fields: [reagentId], references: [id])
+  batchId         String?
+  batch           ReagentBatch?   @relation(fields: [batchId], references: [id])
+
+  transactionType TransactionType
+  quantityDelta   Decimal         @db.Decimal(10, 2) // חיובי להוספה, שלילי להפחתה
+
+  // מקור
+  sourceType      String?         // delivery, withdrawal, count, destruction
+  sourceId        String?
+
+  performedById   String?
+  notes           String?
+
+  createdAt       DateTime        @default(now())
+
+  @@index([reagentId])
+  @@index([batchId])
+  @@index([transactionType])
+  @@index([createdAt])
+}
+
+/// רישום מוצר פג תוקף
+model ExpiredProductLog {
+  id          String        @id @default(cuid())
+
+  reagentId   String
+  batchId     String
+  batch       ReagentBatch  @relation(fields: [batchId], references: [id])
+
+  quantity    Decimal       @db.Decimal(10, 2)
+  actionTaken ExpiredAction
+
+  handledById String?
+  handledAt   DateTime      @default(now())
+  reason      String?
+  notes       String?
+
+  createdAt   DateTime      @default(now())
+
+  @@index([batchId])
+  @@index([handledAt])
+}
+
+// ============================================================================
+// ALERTS & NOTIFICATIONS
+// ============================================================================
+
+/// כלל התראה
+model AlertRule {
+  id                String        @id @default(cuid())
+
+  ruleType          AlertRuleType
+  name              String
+  description       String?
+
+  // פרמטרים
+  thresholdDays     Int?          // לפגי תוקף
+  thresholdQuantity Decimal?      @db.Decimal(10, 2) // למלאי נמוך
+  thresholdMonths   Decimal?      @db.Decimal(5, 2)  // לחודשי מלאי
+
+  // קטגוריות - stored as JSON array
+  appliesToCategories String[]    @default([])
+
+  isActive          Boolean       @default(true)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // קשרים
+  alerts            ActiveAlert[]
+
+  @@index([ruleType])
+  @@index([isActive])
+}
+
+/// התראה פעילה
+model ActiveAlert {
+  id              String        @id @default(cuid())
+
+  alertRuleId     String
+  alertRule       AlertRule     @relation(fields: [alertRuleId], references: [id])
+
+  // מה מתריע
+  entityType      String        // reagent, batch, order, etc.
+  entityId        String
+
+  severity        AlertSeverity @default(MEDIUM)
+  status          AlertStatus   @default(NEW)
+
+  message         String
+  details         Json?
+
+  // טיפול
+  resolvedById    String?
+  resolvedAt      DateTime?
+  resolutionNotes String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([alertRuleId])
+  @@index([entityType, entityId])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// הערת דשבורד / משימה
+model DashboardNote {
+  id          String   @id @default(cuid())
+
+  title       String?
+  content     String
+  noteType    NoteType @default(GENERAL)
+
+  priority    Int      @default(0)
+  isPinned    Boolean  @default(false)
+
+  ctaRoute    String?  // קישור לדף
+
+  createdById String?
+  dismissedAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([noteType])
+  @@index([isPinned])
+  @@index([dismissedAt])
+}
+
+/// תזכורת מתוזמנת
+model ScheduledReminder {
+  id           String   @id @default(cuid())
+
+  reminderType String
+  targetDate   DateTime
+  assignedTo   String?
+
+  title        String
+  message      String?
+
+  isCompleted  Boolean  @default(false)
+  completedAt  DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([targetDate])
+  @@index([isCompleted])
+}
+
+// ============================================================================
+// SYSTEM & CONFIGURATION
+// ============================================================================
+
+/// הגדרות מערכת
+model SystemSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+
+  updatedAt   DateTime @updatedAt
+}
+
+/// נתונים בארכיון
+model ArchivedData {
+  id           String    @id @default(cuid())
+
+  entityType   String
+  entityId     String
+  payload      Json
+
+  archivedAt   DateTime  @default(now())
+  archivedById String?
+
+  restoredAt   DateTime?
+  restoredById String?
+
+  @@index([entityType])
+  @@index([archivedAt])
+}
+
+/// דוח בארכיון
+model ArchivedReport {
+  id          String   @id @default(cuid())
+
+  reportType  String
+  reportDate  DateTime
+  title       String
+
+  fileUrl     String?
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([reportType])
+  @@index([reportDate])
+}
+
+/// תיעוד פיצ'ר / ידע
+model DocumentationNote {
+  id              String   @id @default(cuid())
+
+  pageId          String?
+  title           String
+  content         String   @db.Text
+  category        String?
+
+  relatedEntities String[] @default([])
+
+  lastEditorId    String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([pageId])
+  @@index([category])
+}
+
+/// משתמש
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  role        UserRole @default(USER)
+
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+/// יומן פעילות
+model ActivityLog {
+  id          String   @id @default(cuid())
+
+  userId      String?
+  action      String
+  entityType  String?
+  entityId    String?
+
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
