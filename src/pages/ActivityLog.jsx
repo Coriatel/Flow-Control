@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { getAggregatedActivityLog } from '@/api/functions';
 import {
   ArrowLeft,
   Activity,
@@ -150,7 +150,7 @@ export default function ActivityLogPage() {
       };
 
       // 🚀 קריאה אחת בלבד!
-      const response = await base44.functions.invoke('getAggregatedActivityLog', params);
+      const response = await getAggregatedActivityLog(params);
 
       if (response.data.success) {
         // פשוט מעדכן state - הכל כבר מעובד בשרת!

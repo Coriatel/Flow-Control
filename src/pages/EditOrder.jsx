@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-    Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2, 
-    FileText, Package, Calendar, User, AlertCircle, ExternalLink, Truck, ShoppingCart
+import {
+    Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2,
+    FileText, Package, Calendar, AlertCircle, ExternalLink, Truck, ShoppingCart
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { toast as sonnerToast } from 'sonner';
