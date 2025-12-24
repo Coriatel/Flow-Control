@@ -34,7 +34,8 @@ import BackButton from '@/components/ui/BackButton';
 import ResizableTable from '@/components/ui/ResizableTable';
 import ContactCard from '../components/contacts/ContactCard';
 import ContactForm from '../components/contacts/ContactForm';
-import { base44 } from '@/api/base44Client';
+import { getContactsData } from '@/api/functions';
+import { SupplierContact } from '@/api/entities';
 
 export default function ContactsPage() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function ContactsPage() {
       console.log("[Contacts Frontend] Fetching from backend function...");
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
-      const response = await base44.functions.invoke('getContactsData');
+      const response = await getContactsData();
       
       if (response.data.success) {
         setContacts(response.data.data.contacts);
@@ -215,7 +216,7 @@ export default function ContactsPage() {
 
     setDeletingContact(true);
     try {
-      await base44.entities.SupplierContact.delete(contactToDelete.id);
+      await SupplierContact.delete(contactToDelete.id);
       toast.success('איש הקשר נמחק בהצלחה');
       await fetchData();
       setContactToDelete(null);

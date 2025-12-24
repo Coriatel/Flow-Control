@@ -1,6 +1,15 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import {
+  getInventoryCountDraftData,
+  processCompletedCount,
+  getInventoryCountsHistoryData,
+  getSingleInventoryCountDetails
+} from '@/api/functions';
+import {
+  InventoryCountDraft,
+  Reagent
+} from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,7 +122,7 @@ export default function InventoryCountPage() {
     try {
       console.log('[InventoryCount] Fetching smart inventory data...');
       
-      const response = await base44.functions.invoke('getInventoryCountDraftData');
+      const response = await getInventoryCountDraftData();
       
       if (response.data.success) {
         const { reagents: smartReagents, lastCompletedCount, summary } = response.data.data;
@@ -129,7 +138,7 @@ export default function InventoryCountPage() {
           });
         }
         
-        const draftsData = await base44.entities.InventoryCountDraft.list('-last_update', 1);
+        const draftsData = await InventoryCountDraft.list('-last_update', 1);
         if (draftsData && draftsData.length > 0 && !draftsData[0].completed) {
           setCurrentDraft(draftsData[0]);
           setLastUpdate(draftsData[0].last_update);
@@ -150,8 +159,8 @@ export default function InventoryCountPage() {
   const fetchReagentsAndDraftFallback = async () => {
     try {
       const [reagentsData, draftsData] = await Promise.all([
-        base44.entities.Reagent.list(),
-        base44.entities.InventoryCountDraft.list('-last_update', 1)
+        Reagent.list(),
+        InventoryCountDraft.list('-last_update', 1)
       ]);
 
       setReagents(reagentsData || []);
@@ -212,11 +221,11 @@ export default function InventoryCountPage() {
       };
 
       if (currentDraft) {
-        await base44.entities.InventoryCountDraft.update(currentDraft.id, draftData);
+        await InventoryCountDraft.update(currentDraft.id, draftData);
       } else {
         draftData.start_date = now;
         draftData.completed = false;
-        const newDraft = await base44.entities.InventoryCountDraft.create(draftData);
+        const newDraft = await InventoryCountDraft.create(draftData);
         setCurrentDraft(newDraft);
       }
 
@@ -237,7 +246,7 @@ export default function InventoryCountPage() {
 
     try {
       if (currentDraft) {
-        await base44.entities.InventoryCountDraft.delete(currentDraft.id);
+        await InventoryCountDraft.delete(currentDraft.id);
       }
       setCurrentDraft(null);
       setLastUpdate(null);
@@ -258,7 +267,7 @@ export default function InventoryCountPage() {
       
       if (!draftToProcess) {
         await saveDraft();
-        const drafts = await base44.entities.InventoryCountDraft.list('-last_update', 1);
+        const drafts = await InventoryCountDraft.list('-last_update', 1);
         if (!drafts || drafts.length === 0) {
           throw new Error('Failed to create draft');
         }
@@ -266,7 +275,7 @@ export default function InventoryCountPage() {
         setCurrentDraft(draftToProcess);
       }
 
-      const response = await base44.functions.invoke('processCompletedCount', {
+      const response = await processCompletedCount({
         draftId: draftToProcess.id
       });
 
@@ -295,7 +304,7 @@ export default function InventoryCountPage() {
   const fetchHistory = useCallback(async (page = 1) => {
     setHistoryLoading(true);
     try {
-      const response = await base44.functions.invoke('getInventoryCountsHistoryData', {
+      const response = await getInventoryCountsHistoryData({
         page,
         page_size: historyPagination.page_size,
         search_term: historySearchTerm, // Corrected parameter name
@@ -328,8 +337,8 @@ export default function InventoryCountPage() {
     setLoadingCountDetails(true);
     setShowCountDetailsDialog(true);
     try {
-      const response = await base44.functions.invoke('getSingleInventoryCountDetails', { 
-        count_id: countId 
+      const response = await getSingleInventoryCountDetails({
+        count_id: countId
       });
       if (response.data.success) {
         setSelectedCountDetails(response.data.data);
