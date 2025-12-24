@@ -98,7 +98,13 @@ import EditReagentBatch from "./EditReagentBatch";
 
 import Reports from "./Reports";
 
+import Login from "./Login";
+
+import Register from "./Register";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/auth';
 
 const PAGES = {
     
@@ -221,119 +227,86 @@ function PagesContent() {
     const currentPage = _getCurrentPage(location.pathname);
     
     return (
-        <Layout currentPageName={currentPage}>
-            <Routes>            
+        <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Protected routes */}
+            <Route path="/" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Dashboard />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+
+            <Route path="/Dashboard" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Dashboard />
+                    </Layout>
+                </ProtectedRoute>
+            } />
                 
-                    <Route path="/" element={<Dashboard />} />
-                
-                
-                <Route path="/Dashboard" element={<Dashboard />} />
-                
-                <Route path="/InventoryCount" element={<InventoryCount />} />
-                
-                <Route path="/SecuritySettings" element={<SecuritySettings />} />
-                
-                <Route path="/SystemDocumentation" element={<SystemDocumentation />} />
-                
-                <Route path="/CodeAnalysis" element={<CodeAnalysis />} />
-                
-                <Route path="/TestingStrategy" element={<TestingStrategy />} />
-                
-                <Route path="/processCompletedCount" element={<processCompletedCount />} />
-                
-                <Route path="/AdminPanel" element={<AdminPanel />} />
-                
-                <Route path="/DevelopmentStrategy" element={<DevelopmentStrategy />} />
-                
-                <Route path="/TechnicalSpecs" element={<TechnicalSpecs />} />
-                
-                <Route path="/NewDelivery" element={<NewDelivery />} />
-                
-                <Route path="/EditDelivery" element={<EditDelivery />} />
-                
-                <Route path="/Orders" element={<Orders />} />
-                
-                <Route path="/NewOrder" element={<NewOrder />} />
-                
-                <Route path="/ManageReagents" element={<ManageReagents />} />
-                
-                <Route path="/EditOrder" element={<EditOrder />} />
-                
-                <Route path="/NewShipment" element={<NewShipment />} />
-                
-                <Route path="/InventoryReplenishment" element={<InventoryReplenishment />} />
-                
-                <Route path="/NewWithdrawalRequest" element={<NewWithdrawalRequest />} />
-                
-                <Route path="/QualityAssurance" element={<QualityAssurance />} />
-                
-                <Route path="/CleanupData" element={<CleanupData />} />
-                
-                <Route path="/QuickCleanup" element={<QuickCleanup />} />
-                
-                <Route path="/BackendManagement" element={<BackendManagement />} />
-                
-                <Route path="/FixReagents" element={<FixReagents />} />
-                
-                <Route path="/NewReagent" element={<NewReagent />} />
-                
-                <Route path="/SystemAnalysis" element={<SystemAnalysis />} />
-                
-                <Route path="/WithdrawalRequests" element={<WithdrawalRequests />} />
-                
-                <Route path="/SupplyTracking" element={<SupplyTracking />} />
-                
-                <Route path="/EditWithdrawalRequest" element={<EditWithdrawalRequest />} />
-                
-                <Route path="/PerformanceAnalysis" element={<PerformanceAnalysis />} />
-                
-                <Route path="/ActivityLog" element={<ActivityLog />} />
-                
-                <Route path="/Contacts" element={<Contacts />} />
-                
-                <Route path="/DashboardNotes" element={<DashboardNotes />} />
-                
-                <Route path="/ImportContacts" element={<ImportContacts />} />
-                
-                <Route path="/SystemSettings" element={<SystemSettings />} />
-                
-                <Route path="/Deliveries" element={<Deliveries />} />
-                
-                <Route path="/BatchAndExpiryManagement" element={<BatchAndExpiryManagement />} />
-                
-                <Route path="/SystemManagement" element={<SystemManagement />} />
-                
-                <Route path="/ArchivedDataViewer" element={<ArchivedDataViewer />} />
-                
-                <Route path="/AlertsManagement" element={<AlertsManagement />} />
-                
-                <Route path="/UploadCOA" element={<UploadCOA />} />
-                
-                <Route path="/UsageDataManagement" element={<UsageDataManagement />} />
-                
-                <Route path="/OutgoingShipments" element={<OutgoingShipments />} />
-                
-                <Route path="/EditShipment" element={<EditShipment />} />
-                
-                <Route path="/ManageSuppliers" element={<ManageSuppliers />} />
-                
-                <Route path="/EditReagent" element={<EditReagent />} />
-                
-                <Route path="/BatchAndExpiryTechnicalSpec" element={<BatchAndExpiryTechnicalSpec />} />
-                
-                <Route path="/EditReagentBatch" element={<EditReagentBatch />} />
-                
-                <Route path="/Reports" element={<Reports />} />
-                
+                <Route path="/InventoryCount" element={<ProtectedRoute><Layout currentPageName={currentPage}><InventoryCount /></Layout></ProtectedRoute>} />
+                <Route path="/SecuritySettings" element={<ProtectedRoute><Layout currentPageName={currentPage}><SecuritySettings /></Layout></ProtectedRoute>} />
+                <Route path="/SystemDocumentation" element={<ProtectedRoute><Layout currentPageName={currentPage}><SystemDocumentation /></Layout></ProtectedRoute>} />
+                <Route path="/CodeAnalysis" element={<ProtectedRoute><Layout currentPageName={currentPage}><CodeAnalysis /></Layout></ProtectedRoute>} />
+                <Route path="/TestingStrategy" element={<ProtectedRoute><Layout currentPageName={currentPage}><TestingStrategy /></Layout></ProtectedRoute>} />
+                <Route path="/processCompletedCount" element={<ProtectedRoute><Layout currentPageName={currentPage}><processCompletedCount /></Layout></ProtectedRoute>} />
+                <Route path="/AdminPanel" element={<ProtectedRoute><Layout currentPageName={currentPage}><AdminPanel /></Layout></ProtectedRoute>} />
+                <Route path="/DevelopmentStrategy" element={<ProtectedRoute><Layout currentPageName={currentPage}><DevelopmentStrategy /></Layout></ProtectedRoute>} />
+                <Route path="/TechnicalSpecs" element={<ProtectedRoute><Layout currentPageName={currentPage}><TechnicalSpecs /></Layout></ProtectedRoute>} />
+                <Route path="/NewDelivery" element={<ProtectedRoute><Layout currentPageName={currentPage}><NewDelivery /></Layout></ProtectedRoute>} />
+                <Route path="/EditDelivery" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditDelivery /></Layout></ProtectedRoute>} />
+                <Route path="/Orders" element={<ProtectedRoute><Layout currentPageName={currentPage}><Orders /></Layout></ProtectedRoute>} />
+                <Route path="/NewOrder" element={<ProtectedRoute><Layout currentPageName={currentPage}><NewOrder /></Layout></ProtectedRoute>} />
+                <Route path="/ManageReagents" element={<ProtectedRoute><Layout currentPageName={currentPage}><ManageReagents /></Layout></ProtectedRoute>} />
+                <Route path="/EditOrder" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditOrder /></Layout></ProtectedRoute>} />
+                <Route path="/NewShipment" element={<ProtectedRoute><Layout currentPageName={currentPage}><NewShipment /></Layout></ProtectedRoute>} />
+                <Route path="/InventoryReplenishment" element={<ProtectedRoute><Layout currentPageName={currentPage}><InventoryReplenishment /></Layout></ProtectedRoute>} />
+                <Route path="/NewWithdrawalRequest" element={<ProtectedRoute><Layout currentPageName={currentPage}><NewWithdrawalRequest /></Layout></ProtectedRoute>} />
+                <Route path="/QualityAssurance" element={<ProtectedRoute><Layout currentPageName={currentPage}><QualityAssurance /></Layout></ProtectedRoute>} />
+                <Route path="/CleanupData" element={<ProtectedRoute><Layout currentPageName={currentPage}><CleanupData /></Layout></ProtectedRoute>} />
+                <Route path="/QuickCleanup" element={<ProtectedRoute><Layout currentPageName={currentPage}><QuickCleanup /></Layout></ProtectedRoute>} />
+                <Route path="/BackendManagement" element={<ProtectedRoute><Layout currentPageName={currentPage}><BackendManagement /></Layout></ProtectedRoute>} />
+                <Route path="/FixReagents" element={<ProtectedRoute><Layout currentPageName={currentPage}><FixReagents /></Layout></ProtectedRoute>} />
+                <Route path="/NewReagent" element={<ProtectedRoute><Layout currentPageName={currentPage}><NewReagent /></Layout></ProtectedRoute>} />
+                <Route path="/SystemAnalysis" element={<ProtectedRoute><Layout currentPageName={currentPage}><SystemAnalysis /></Layout></ProtectedRoute>} />
+                <Route path="/WithdrawalRequests" element={<ProtectedRoute><Layout currentPageName={currentPage}><WithdrawalRequests /></Layout></ProtectedRoute>} />
+                <Route path="/SupplyTracking" element={<ProtectedRoute><Layout currentPageName={currentPage}><SupplyTracking /></Layout></ProtectedRoute>} />
+                <Route path="/EditWithdrawalRequest" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditWithdrawalRequest /></Layout></ProtectedRoute>} />
+                <Route path="/PerformanceAnalysis" element={<ProtectedRoute><Layout currentPageName={currentPage}><PerformanceAnalysis /></Layout></ProtectedRoute>} />
+                <Route path="/ActivityLog" element={<ProtectedRoute><Layout currentPageName={currentPage}><ActivityLog /></Layout></ProtectedRoute>} />
+                <Route path="/Contacts" element={<ProtectedRoute><Layout currentPageName={currentPage}><Contacts /></Layout></ProtectedRoute>} />
+                <Route path="/DashboardNotes" element={<ProtectedRoute><Layout currentPageName={currentPage}><DashboardNotes /></Layout></ProtectedRoute>} />
+                <Route path="/ImportContacts" element={<ProtectedRoute><Layout currentPageName={currentPage}><ImportContacts /></Layout></ProtectedRoute>} />
+                <Route path="/SystemSettings" element={<ProtectedRoute><Layout currentPageName={currentPage}><SystemSettings /></Layout></ProtectedRoute>} />
+                <Route path="/Deliveries" element={<ProtectedRoute><Layout currentPageName={currentPage}><Deliveries /></Layout></ProtectedRoute>} />
+                <Route path="/BatchAndExpiryManagement" element={<ProtectedRoute><Layout currentPageName={currentPage}><BatchAndExpiryManagement /></Layout></ProtectedRoute>} />
+                <Route path="/SystemManagement" element={<ProtectedRoute><Layout currentPageName={currentPage}><SystemManagement /></Layout></ProtectedRoute>} />
+                <Route path="/ArchivedDataViewer" element={<ProtectedRoute><Layout currentPageName={currentPage}><ArchivedDataViewer /></Layout></ProtectedRoute>} />
+                <Route path="/AlertsManagement" element={<ProtectedRoute><Layout currentPageName={currentPage}><AlertsManagement /></Layout></ProtectedRoute>} />
+                <Route path="/UploadCOA" element={<ProtectedRoute><Layout currentPageName={currentPage}><UploadCOA /></Layout></ProtectedRoute>} />
+                <Route path="/UsageDataManagement" element={<ProtectedRoute><Layout currentPageName={currentPage}><UsageDataManagement /></Layout></ProtectedRoute>} />
+                <Route path="/OutgoingShipments" element={<ProtectedRoute><Layout currentPageName={currentPage}><OutgoingShipments /></Layout></ProtectedRoute>} />
+                <Route path="/EditShipment" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditShipment /></Layout></ProtectedRoute>} />
+                <Route path="/ManageSuppliers" element={<ProtectedRoute><Layout currentPageName={currentPage}><ManageSuppliers /></Layout></ProtectedRoute>} />
+                <Route path="/EditReagent" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditReagent /></Layout></ProtectedRoute>} />
+                <Route path="/BatchAndExpiryTechnicalSpec" element={<ProtectedRoute><Layout currentPageName={currentPage}><BatchAndExpiryTechnicalSpec /></Layout></ProtectedRoute>} />
+                <Route path="/EditReagentBatch" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditReagentBatch /></Layout></ProtectedRoute>} />
+                <Route path="/Reports" element={<ProtectedRoute><Layout currentPageName={currentPage}><Reports /></Layout></ProtectedRoute>} />
             </Routes>
-        </Layout>
     );
 }
 
 export default function Pages() {
     return (
         <Router>
-            <PagesContent />
+            <AuthProvider>
+                <PagesContent />
+            </AuthProvider>
         </Router>
     );
 }
