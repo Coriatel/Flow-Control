@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getWithdrawalRequestsData, deleteWithdrawal } from '@/api/functions';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -92,8 +92,8 @@ export default function WithdrawalRequestsPage() {
     setLoading(true);
     try {
       console.log('[WithdrawalRequests Frontend] Fetching withdrawals from backend...');
-      
-      const response = await base44.functions.invoke('getWithdrawalRequestsData', {
+
+      const response = await getWithdrawalRequestsData({
         status: statusFilter !== 'all' ? statusFilter : null,
         urgency: urgencyFilter !== 'all' ? urgencyFilter : null,
         limit: '200'
@@ -187,7 +187,7 @@ export default function WithdrawalRequestsPage() {
 
     setDeleting(true);
     try {
-      const response = await base44.functions.invoke('deleteWithdrawal', {
+      const response = await deleteWithdrawal({
         withdrawalId: withdrawalToDelete.id,
         reason: 'Deleted by user from WithdrawalRequests page'
       });

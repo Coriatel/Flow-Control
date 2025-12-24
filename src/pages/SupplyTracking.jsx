@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getSupplyTrackingData } from '@/api/functions';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,8 +108,8 @@ export default function SupplyTracking() {
     setLoading(true);
     try {
       console.log('[SupplyTracking Frontend] Fetching supplies from backend...');
-      
-      const response = await base44.functions.invoke('getSupplyTrackingData', {
+
+      const response = await getSupplyTrackingData({
         limit: '100',
         sortBy: sortDirection === 'desc' ? `-${sortField}` : sortField
       });

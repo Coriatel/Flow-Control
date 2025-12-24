@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getOutgoingShipmentsData } from '@/api/functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -75,8 +75,8 @@ export default function OutgoingShipmentsPage() {
     setLoading(true);
     try {
       console.log('[OutgoingShipments Frontend] Fetching shipments from backend...');
-      
-      const response = await base44.functions.invoke('getOutgoingShipmentsData', {
+
+      const response = await getOutgoingShipmentsData({
         status: statusFilter !== 'all' ? statusFilter : null,
         recipientType: recipientTypeFilter !== 'all' ? recipientTypeFilter : null,
         includeDeleted: 'false',

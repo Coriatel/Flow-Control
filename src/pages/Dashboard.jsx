@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { getDashboardData } from '@/api/functions';
+import { User } from '@/api/entities';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -128,13 +129,13 @@ export default function Dashboard() {
     setError(null);
     try {
       console.log("[Dashboard Frontend] Fetching dashboard data from backend...");
-      
+
       // Fetch user data
-      const userData = await base44.auth.me();
+      const userData = await User.me();
       setUser(userData);
 
       // 🎯 קריאה אחת בלבד לפונקציית Backend - כל הלוגיקה בשרת!
-      const response = await base44.functions.invoke('getDashboardData');
+      const response = await getDashboardData();
       
       if (response.data.error) {
         throw new Error(response.data.error);
