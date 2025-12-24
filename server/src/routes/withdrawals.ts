@@ -1,41 +1,117 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
+import { ApiResponse, WithdrawalStatus } from '../types';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // All withdrawal routes require authentication
 router.use(authenticate);
 
 /**
  * GET /api/withdrawals
- * Get all withdrawal requests
+ * Get all withdrawal requests with optional filters
  */
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { supplierId, status, frameworkOrderId, fromDate, toDate } = req.query;
+
+  const where: any = {};
+
+  if (supplierId) {
+    where.supplierId = supplierId as string;
+  }
+
+  if (status) {
+    where.status = status as WithdrawalStatus;
+  }
+
+  if (frameworkOrderId) {
+    where.frameworkOrderId = frameworkOrderId as string;
+  }
+
+  if (fromDate || toDate) {
+    where.requestDate = {};
+    if (fromDate) {
+      where.requestDate.gte = new Date(fromDate as string);
+    }
+    if (toDate) {
+      where.requestDate.lte = new Date(toDate as string);
+    }
+  }
+
   const withdrawals = await prisma.withdrawalRequest.findMany({
-    where: { isDeleted: false },
+    where,
     include: {
+      supplier: true,
+      frameworkOrder: {
+        select: {
+          id: true,
+          validFrom: true,
+          validTo: true,
+          order: {
+            select: {
+              tempNumber: true,
+              permanentNumber: true
+            }
+          }
+        }
+      },
       items: {
         include: {
-          reagent: true,
-          batch: true
+          reagent: {
+            select: {
+              id: true,
+              name: true,
+              catalogNumber: true
+            }
+          }
         }
       }
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { requestDate: 'desc' }
   });
 
-  res.json({
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawals,
+    meta: { total: withdrawals.length }
+  };
+  res.json(response);
+}));
+
+/**
+ * GET /api/withdrawals/pending
+ * Get pending withdrawal requests that need attention
+ */
+router.get('/pending', asyncHandler(async (req: Request, res: Response) => {
+  const withdrawals = await prisma.withdrawalRequest.findMany({
+    where: {
+      status: {
+        in: ['DRAFT', 'SUBMITTED']
+      }
+    },
+    include: {
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
+    },
+    orderBy: { requestDate: 'asc' }
+  });
+
+  const response: ApiResponse = {
     success: true,
     data: withdrawals
-  });
+  };
+  res.json(response);
 }));
 
 /**
  * GET /api/withdrawals/:id
- * Get withdrawal by ID
+ * Get withdrawal request by ID with full details
  */
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -43,23 +119,35 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const withdrawal = await prisma.withdrawalRequest.findUnique({
     where: { id },
     include: {
+      supplier: true,
+      frameworkOrder: {
+        include: {
+          order: true,
+          items: true
+        }
+      },
       items: {
         include: {
-          reagent: true,
-          batch: true
+          reagent: true
+        }
+      },
+      deliveries: {
+        include: {
+          items: true
         }
       }
     }
   });
 
-  if (!withdrawal || withdrawal.isDeleted) {
+  if (!withdrawal) {
     throw new AppError('Withdrawal request not found', 404);
   }
 
-  res.json({
+  const response: ApiResponse = {
     success: true,
     data: withdrawal
-  });
+  };
+  res.json(response);
 }));
 
 /**
@@ -67,25 +155,87 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
  * Create new withdrawal request
  */
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
-  const data = req.body;
+  const { supplierId, frameworkOrderId, items, requesterNotes } = req.body;
+
+  if (!supplierId) {
+    throw new AppError('supplierId is required', 400);
+  }
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    throw new AppError('At least one item is required', 400);
+  }
+
+  // Get supplier for snapshot
+  const supplier = await prisma.supplier.findUnique({
+    where: { id: supplierId }
+  });
+
+  if (!supplier) {
+    throw new AppError('Supplier not found', 404);
+  }
+
+  // If frameworkOrderId provided, validate it exists and is active
+  if (frameworkOrderId) {
+    const frameworkOrder = await prisma.frameworkOrder.findUnique({
+      where: { id: frameworkOrderId }
+    });
+
+    if (!frameworkOrder) {
+      throw new AppError('Framework order not found', 404);
+    }
+
+    const now = new Date();
+    if (now < frameworkOrder.validFrom || now > frameworkOrder.validTo) {
+      throw new AppError('Framework order is not currently valid', 400);
+    }
+  }
+
+  // Generate withdrawal number
+  const count = await prisma.withdrawalRequest.count();
+  const withdrawalNumber = `WD-${String(count + 1).padStart(6, '0')}`;
+
+  // Calculate total value
+  let totalValueRequested = 0;
+  for (const item of items) {
+    if (item.unitPrice && item.requestedQuantity) {
+      totalValueRequested += item.unitPrice * item.requestedQuantity;
+    }
+  }
 
   const withdrawal = await prisma.withdrawalRequest.create({
     data: {
-      ...data,
-      items: data.items ? {
-        create: data.items
-      } : undefined
+      withdrawalNumber,
+      supplierId,
+      supplierSnapshot: supplier.name,
+      frameworkOrderId,
+      status: 'DRAFT',
+      requesterNotes,
+      requestedById: req.user?.id,
+      totalValueRequested: totalValueRequested > 0 ? totalValueRequested : null,
+      items: {
+        create: items.map((item: any) => ({
+          reagentId: item.reagentId,
+          requestedQuantity: item.requestedQuantity,
+          unitPrice: item.unitPrice
+        }))
+      }
     },
     include: {
-      items: true
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
     }
   });
 
-  res.status(201).json({
+  const response: ApiResponse = {
     success: true,
-    message: 'Withdrawal request created successfully',
-    data: withdrawal
-  });
+    data: withdrawal,
+    message: 'Withdrawal request created successfully'
+  };
+  res.status(201).json(response);
 }));
 
 /**
@@ -94,64 +244,466 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
  */
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const data = req.body;
+  const { requesterNotes } = req.body;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new AppError('Can only update withdrawal requests in DRAFT status', 400);
+  }
 
   const withdrawal = await prisma.withdrawalRequest.update({
     where: { id },
-    data,
+    data: {
+      requesterNotes
+    },
     include: {
-      items: true
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
     }
   });
 
-  res.json({
+  const response: ApiResponse = {
     success: true,
-    message: 'Withdrawal request updated successfully',
-    data: withdrawal
-  });
+    data: withdrawal,
+    message: 'Withdrawal request updated successfully'
+  };
+  res.json(response);
 }));
 
 /**
- * DELETE /api/withdrawals/:id
- * Soft delete withdrawal request
+ * POST /api/withdrawals/:id/submit
+ * Submit withdrawal request for approval
  */
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/submit', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  await prisma.withdrawalRequest.update({
+  const existing = await prisma.withdrawalRequest.findUnique({
     where: { id },
-    data: { isDeleted: true }
+    include: { items: true }
   });
 
-  res.json({
-    success: true,
-    message: 'Withdrawal request deleted successfully'
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new AppError('Can only submit withdrawal requests in DRAFT status', 400);
+  }
+
+  if (existing.items.length === 0) {
+    throw new AppError('Cannot submit withdrawal request with no items', 400);
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.update({
+    where: { id },
+    data: {
+      status: 'SUBMITTED',
+      requestDate: new Date()
+    },
+    include: {
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
+    }
   });
+
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawal,
+    message: 'Withdrawal request submitted for approval'
+  };
+  res.json(response);
 }));
 
 /**
  * POST /api/withdrawals/:id/approve
  * Approve withdrawal request
  */
-router.post('/:id/approve', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/approve', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { approverNotes, approvedItems } = req.body;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id },
+    include: { items: true }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'SUBMITTED') {
+    throw new AppError('Can only approve withdrawal requests in SUBMITTED status', 400);
+  }
+
+  // Update approved quantities for items if provided
+  if (approvedItems && Array.isArray(approvedItems)) {
+    for (const approvedItem of approvedItems) {
+      await prisma.withdrawalItem.update({
+        where: { id: approvedItem.itemId },
+        data: { approvedQuantity: approvedItem.approvedQuantity }
+      });
+    }
+  } else {
+    // If no specific approved items, approve all with requested quantities
+    for (const item of existing.items) {
+      await prisma.withdrawalItem.update({
+        where: { id: item.id },
+        data: { approvedQuantity: item.requestedQuantity }
+      });
+    }
+  }
+
+  // Calculate total approved value
+  const updatedItems = await prisma.withdrawalItem.findMany({
+    where: { withdrawalRequestId: id }
+  });
+
+  let totalValueApproved = 0;
+  for (const item of updatedItems) {
+    if (item.unitPrice && item.approvedQuantity) {
+      totalValueApproved += Number(item.unitPrice) * Number(item.approvedQuantity);
+    }
+  }
 
   const withdrawal = await prisma.withdrawalRequest.update({
     where: { id },
     data: {
       status: 'APPROVED',
-      approvedAt: new Date()
+      approvalDate: new Date(),
+      approvedById: req.user?.id,
+      approverNotes,
+      totalValueApproved: totalValueApproved > 0 ? totalValueApproved : null
     },
     include: {
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawal,
+    message: 'Withdrawal request approved successfully'
+  };
+  res.json(response);
+}));
+
+/**
+ * POST /api/withdrawals/:id/reject
+ * Reject withdrawal request
+ */
+router.post('/:id/reject', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  if (!reason) {
+    throw new AppError('Rejection reason is required', 400);
+  }
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'SUBMITTED') {
+    throw new AppError('Can only reject withdrawal requests in SUBMITTED status', 400);
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.update({
+    where: { id },
+    data: {
+      status: 'CANCELLED',
+      approverNotes: reason,
+      approvedById: req.user?.id
+    },
+    include: {
+      supplier: true,
       items: true
     }
   });
 
-  res.json({
+  const response: ApiResponse = {
     success: true,
-    message: 'Withdrawal request approved successfully',
-    data: withdrawal
+    data: withdrawal,
+    message: 'Withdrawal request rejected'
+  };
+  res.json(response);
+}));
+
+/**
+ * POST /api/withdrawals/:id/ship
+ * Mark withdrawal as being shipped
+ */
+router.post('/:id/ship', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
   });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'APPROVED') {
+    throw new AppError('Can only ship approved withdrawal requests', 400);
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.update({
+    where: { id },
+    data: { status: 'SHIPPING' },
+    include: {
+      supplier: true,
+      items: true
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawal,
+    message: 'Withdrawal is now being shipped'
+  };
+  res.json(response);
+}));
+
+/**
+ * POST /api/withdrawals/:id/complete
+ * Complete withdrawal request
+ */
+router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { fulfilledItems } = req.body;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id },
+    include: { items: true }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'SHIPPING' && existing.status !== 'APPROVED') {
+    throw new AppError('Can only complete withdrawal requests in APPROVED or SHIPPING status', 400);
+  }
+
+  // Update fulfilled quantities for items
+  if (fulfilledItems && Array.isArray(fulfilledItems)) {
+    for (const fulfilledItem of fulfilledItems) {
+      await prisma.withdrawalItem.update({
+        where: { id: fulfilledItem.itemId },
+        data: { fulfilledQuantity: fulfilledItem.fulfilledQuantity }
+      });
+    }
+  } else {
+    // If no specific fulfilled items, mark all as fully fulfilled
+    for (const item of existing.items) {
+      await prisma.withdrawalItem.update({
+        where: { id: item.id },
+        data: { fulfilledQuantity: item.approvedQuantity || item.requestedQuantity }
+      });
+    }
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.update({
+    where: { id },
+    data: {
+      status: 'CLOSED',
+      completionDate: new Date()
+    },
+    include: {
+      supplier: true,
+      items: {
+        include: {
+          reagent: true
+        }
+      }
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawal,
+    message: 'Withdrawal request completed'
+  };
+  res.json(response);
+}));
+
+/**
+ * POST /api/withdrawals/:id/cancel
+ * Cancel withdrawal request
+ */
+router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status === 'CLOSED' || existing.status === 'CANCELLED') {
+    throw new AppError('Cannot cancel completed or already cancelled withdrawal request', 400);
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.update({
+    where: { id },
+    data: {
+      status: 'CANCELLED',
+      approverNotes: existing.approverNotes
+        ? `${existing.approverNotes}\n\nCancellation reason: ${reason}`
+        : `Cancellation reason: ${reason}`
+    },
+    include: {
+      supplier: true,
+      items: true
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: withdrawal,
+    message: 'Withdrawal request cancelled'
+  };
+  res.json(response);
+}));
+
+/**
+ * POST /api/withdrawals/:id/items
+ * Add item to withdrawal request
+ */
+router.post('/:id/items', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reagentId, requestedQuantity, unitPrice } = req.body;
+
+  if (!reagentId || !requestedQuantity || requestedQuantity <= 0) {
+    throw new AppError('reagentId and positive requestedQuantity are required', 400);
+  }
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new AppError('Can only add items to withdrawal requests in DRAFT status', 400);
+  }
+
+  const item = await prisma.withdrawalItem.create({
+    data: {
+      withdrawalRequestId: id,
+      reagentId,
+      requestedQuantity,
+      unitPrice
+    },
+    include: {
+      reagent: true
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: item,
+    message: 'Item added to withdrawal request'
+  };
+  res.status(201).json(response);
+}));
+
+/**
+ * PUT /api/withdrawals/:id/items/:itemId
+ * Update withdrawal item
+ */
+router.put('/:id/items/:itemId', asyncHandler(async (req: Request, res: Response) => {
+  const { id, itemId } = req.params;
+  const { requestedQuantity, unitPrice } = req.body;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new AppError('Can only update items in withdrawal requests in DRAFT status', 400);
+  }
+
+  const item = await prisma.withdrawalItem.update({
+    where: { id: itemId },
+    data: {
+      requestedQuantity,
+      unitPrice
+    },
+    include: {
+      reagent: true
+    }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: item,
+    message: 'Item updated'
+  };
+  res.json(response);
+}));
+
+/**
+ * DELETE /api/withdrawals/:id/items/:itemId
+ * Remove item from withdrawal request
+ */
+router.delete('/:id/items/:itemId', asyncHandler(async (req: Request, res: Response) => {
+  const { id, itemId } = req.params;
+
+  const existing = await prisma.withdrawalRequest.findUnique({
+    where: { id }
+  });
+
+  if (!existing) {
+    throw new AppError('Withdrawal request not found', 404);
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new AppError('Can only remove items from withdrawal requests in DRAFT status', 400);
+  }
+
+  await prisma.withdrawalItem.delete({
+    where: { id: itemId }
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    message: 'Item removed from withdrawal request'
+  };
+  res.json(response);
 }));
 
 export default router;
