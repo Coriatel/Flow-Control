@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { getEditWithdrawalData, deleteWithdrawal } from '@/api/functions';
+import { WithdrawalRequest, WithdrawalItem } from '@/api/entities';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,7 +49,7 @@ export default function EditWithdrawalRequestPage() {
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await base44.functions.invoke('getEditWithdrawalData', {
+            const response = await getEditWithdrawalData({
                 withdrawal_request_id: withdrawalId
             });
 
@@ -85,7 +86,7 @@ export default function EditWithdrawalRequestPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await base44.entities.WithdrawalRequest.update(withdrawalId, {
+            await WithdrawalRequest.update(withdrawalId, {
                 urgency_level: withdrawalRequest.urgency_level,
                 requested_delivery_date: withdrawalRequest.requested_delivery_date,
                 requester_notes: withdrawalRequest.requester_notes,
@@ -94,13 +95,13 @@ export default function EditWithdrawalRequestPage() {
 
             for (const item of items) {
                 if (item.withdrawal_item_id) {
-                    await base44.entities.WithdrawalItem.update(item.withdrawal_item_id, {
+                    await WithdrawalItem.update(item.withdrawal_item_id, {
                         quantity_requested: item.requested_quantity,
                         justification: item.justification,
                         notes: item.notes
                     });
                 } else if (item.requested_quantity > 0) {
-                    await base44.entities.WithdrawalItem.create({
+                    await WithdrawalItem.create({
                         withdrawal_request_id: withdrawalId,
                         reagent_id: item.reagent_id,
                         reagent_name_snapshot: item.reagent_name_snapshot,
@@ -133,7 +134,7 @@ export default function EditWithdrawalRequestPage() {
 
     const handleDelete = async () => {
         try {
-            const response = await base44.functions.invoke('deleteWithdrawal', {
+            const response = await deleteWithdrawal({
                 withdrawalId: withdrawalId
             });
 

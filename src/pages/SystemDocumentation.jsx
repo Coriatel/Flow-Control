@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { FeatureDocumentation } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -343,7 +343,7 @@ export default function SystemDocumentation() {
     console.log("[SystemDoc] Loading documentation...");
     setLoadingDocs(true);
     try {
-      const docsData = await base44.entities.FeatureDocumentation.list();
+      const docsData = await FeatureDocumentation.list();
       console.log("[SystemDoc] ✅ Loaded docs:", docsData.length, "documents");
       setDocs(Array.isArray(docsData) ? docsData : []);
     } catch (error) {
@@ -512,7 +512,7 @@ export default function SystemDocumentation() {
           test_plan: editingDocType === 'test' ? docContent : (currentDoc.test_plan || ''),
           developer_request: editingDocType === 'developer_request' ? docContent : (currentDoc.developer_request || '')
         };
-        await base44.entities.FeatureDocumentation.update(currentDoc.id, updateData);
+        await FeatureDocumentation.update(currentDoc.id, updateData);
         toast.success('מסמך עודכן בהצלחה');
       } else {
         const createData = {
@@ -522,7 +522,7 @@ export default function SystemDocumentation() {
           test_plan: editingDocType === 'test' ? docContent : '',
           developer_request: editingDocType === 'developer_request' ? docContent : ''
         };
-        await base44.entities.FeatureDocumentation.create(createData);
+        await FeatureDocumentation.create(createData);
         toast.success('מסמך חדש נוצר');
       }
 

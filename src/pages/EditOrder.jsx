@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { Order, OrderItem, User } from '@/api/entities';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,8 +46,8 @@ export default function EditOrderPage() {
         setLoading(true);
         try {
             const [orderData, itemsData] = await Promise.all([
-                base44.entities.Order.filter({ id: orderId }),
-                base44.entities.OrderItem.filter({ order_id: orderId })
+                Order.filter({ id: orderId }),
+                OrderItem.filter({ order_id: orderId })
             ]);
 
             if (!orderData || orderData.length === 0) {
@@ -82,7 +82,7 @@ export default function EditOrderPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await base44.entities.Order.update(orderId, {
+            await Order.update(orderId, {
                 order_number_permanent: order.order_number_permanent,
                 purchase_order_number_sap: order.purchase_order_number_sap,
                 expected_delivery_start_date: order.expected_delivery_start_date,
@@ -112,10 +112,10 @@ export default function EditOrderPage() {
 
     const handleDelete = async () => {
         try {
-            await base44.entities.Order.update(orderId, {
+            await Order.update(orderId, {
                 is_deleted: true,
                 deleted_date: new Date().toISOString(),
-                deleted_by: (await base44.auth.me()).email,
+                deleted_by: (await User.me()).email,
                 deleted_reason: 'נמחק על ידי המשתמש'
             });
 
