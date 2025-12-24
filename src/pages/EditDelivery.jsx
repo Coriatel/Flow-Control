@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { getEditDeliveryData } from '@/api/functions';
+import { Delivery } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,7 +103,7 @@ export default function EditDeliveryPage() {
   const fetchDeliveryData = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('getEditDeliveryData', {
+      const response = await getEditDeliveryData({
         delivery_id: deliveryId
       });
 
@@ -158,7 +159,7 @@ export default function EditDeliveryPage() {
         status: formData.status
       };
 
-      await base44.entities.Delivery.update(deliveryId, updateData);
+      await Delivery.update(deliveryId, updateData);
 
       toast.success('המשלוח עודכן בהצלחה');
       setIsEditMode(false);
@@ -177,7 +178,7 @@ export default function EditDeliveryPage() {
 
   const handleDelete = async () => {
     try {
-      await base44.entities.Delivery.delete(deliveryId);
+      await Delivery.delete(deliveryId);
       toast.success('המשלוח נמחק בהצלחה');
       navigate(createPageUrl('Deliveries'));
     } catch (error) {

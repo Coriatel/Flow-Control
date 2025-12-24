@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { getEditReagentData, deleteReagent } from '@/api/functions';
+import { Reagent } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,7 +105,7 @@ export default function EditReagentPage() {
   const fetchReagentData = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('getEditReagentData', {
+      const response = await getEditReagentData({
         reagent_id: reagentId
       });
 
@@ -149,7 +150,7 @@ export default function EditReagentPage() {
         is_critical: formData.is_critical
       };
 
-      await base44.entities.Reagent.update(reagentId, updateData);
+      await Reagent.update(reagentId, updateData);
 
       toast.success('הריאגנט עודכן בהצלחה');
       setIsEditMode(false);
@@ -166,7 +167,7 @@ export default function EditReagentPage() {
 
   const handleDelete = async () => {
     try {
-      const response = await base44.functions.invoke('deleteReagent', {
+      const response = await deleteReagent({
         reagentId: reagentId
       });
 

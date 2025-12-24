@@ -9,7 +9,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/components/ui/use-toast';
 import QATable from '@/components/quality-assurance/QATable';
-import { base44 } from '@/api/base44Client';
+import { getQualityAssuranceData } from '@/api/functions';
+import {
+    User,
+    ReagentBatch,
+    ExpiredProductLog,
+    InventoryTransaction
+} from '@/api/entities';
+import { base44 } from '@/api/base44Client'; // Keep for integrations.Core.UploadFile
 import { createPageUrl } from '@/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatQuantity } from '../components/utils/formatters';
@@ -209,8 +216,8 @@ export default function QualityAssurancePage() {
     setError(null);
     try {
       const [user, { data: fetchedData }] = await Promise.all([
-        base44.auth.me(),
-        base44.functions.invoke('getQualityAssuranceData')
+        User.me(),
+        getQualityAssuranceData()
       ]);
       setCurrentUser(user);
       if (!Array.isArray(fetchedData)) throw new Error("Data format is incorrect");
@@ -325,7 +332,7 @@ export default function QualityAssurancePage() {
         const existingCoaDocuments = coaUploadDialog.coa_documents || [];
         const updatedCoaDocumentsArray = [...existingCoaDocuments, newCOADocument];
 
-        await base44.entities.ReagentBatch.update(coaUploadDialog.reagent_batch_id, {
+        await ReagentBatch.update(coaUploadDialog.reagent_batch_id, {
           coa_documents: updatedCoaDocumentsArray, // Update the array field
           // These fields might be for single COA tracking, if `coa_documents` is for multiple.
           // Or they might be redundant if `coa_documents` is the primary.
@@ -426,7 +433,7 @@ export default function QualityAssurancePage() {
     if (!confirm('האם אתה בטוח שברצונך למחוק אצווה זו? פעולה זו בלתי הפיכה.')) return;
 
     try {
-      await base44.entities.ReagentBatch.delete(batchId);
+      await ReagentBatch.delete(batchId);
       setData(prevData => prevData.filter(item => item.reagent_batch_id !== batchId));
       toast({ title: "האצווה נמחקה בהצלחה" });
     } catch (error) {
@@ -458,7 +465,7 @@ export default function QualityAssurancePage() {
 
     setIsHandlingAction(true);
     try {
-      const user = await base44.auth.me();
+      const user = await User.me();
       const affectedQty = parseFloat(handlingQuantity) || 0;
       const currentQty = remainingQuantity;
 
@@ -472,7 +479,7 @@ export default function QualityAssurancePage() {
         return;
       }
 
-      await base44.entities.ExpiredProductLog.create({
+      await ExpiredProductLog.create({
         reagent_id: handlingItemDialog?.reagent_id,
         reagent_name_snapshot: handlingItemDialog?.reagent_name || 'לא ידוע',
         batch_number_snapshot: handlingItemDialog?.batch_number,
@@ -498,7 +505,7 @@ export default function QualityAssurancePage() {
         }
       }
 
-      await base44.entities.ReagentBatch.update(handlingItemDialog?.id, {
+      await ReagentBatch.update(handlingItemDialog?.id, {
         current_quantity: newQuantity,
         status: newStatus
       });
@@ -506,7 +513,7 @@ export default function QualityAssurancePage() {
       const transactionType = actionType === 'consumed_by_expiry' ? 'withdrawal' :
                             actionType === 'disposed' ? 'disposal' : 'other_use_expired';
 
-      await base44.entities.InventoryTransaction.create({
+      await InventoryTransaction.create({
         reagent_id: handlingItemDialog?.reagent_id,
         transaction_type: transactionType,
         quantity: -affectedQty,

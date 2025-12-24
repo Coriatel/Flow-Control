@@ -17,7 +17,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import BackButton from '@/components/ui/BackButton';
 import PrintDialog from '@/components/ui/PrintDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { base44 } from '@/api/base44Client';
+import {
+    getReplenishmentData,
+    createAutomaticWithdrawal,
+    createAutomaticOrder
+} from '@/api/functions';
 import SmartTooltip from '@/components/ui/SmartTooltip';
 import TableHeaderTooltip from '@/components/ui/TableHeaderTooltip';
 import { COLUMN_DESCRIPTIONS } from '@/components/utils/tooltipDescriptions';
@@ -170,7 +174,7 @@ export default function InventoryReplenishmentPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await base44.functions.invoke('getReplenishmentData', {});
+            const response = await getReplenishmentData({});
             if (response.data && !response.data.error) {
                 const {
                     reagentsData = [], 
@@ -479,7 +483,7 @@ export default function InventoryReplenishmentPage() {
                 quantity: item.quantity
             }));
 
-            const response = await base44.functions.invoke('createAutomaticWithdrawal', {
+            const response = await createAutomaticWithdrawal({
                 frameworkOrderId: frameworkOrderId,
                 items: itemsPayload,
                 urgencyLevel: 'routine'
@@ -526,7 +530,7 @@ export default function InventoryReplenishmentPage() {
             setLoading(true);
             
             const supplier = processingItems[0].supplier;
-            const response = await base44.functions.invoke('createAutomaticOrder', {
+            const response = await createAutomaticOrder({
                 supplier,
                 orderType,
                 items: processingItems.map(item => ({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getDeliveriesData } from '@/api/functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,8 +76,8 @@ export default function DeliveriesPage() {
     setLoading(true);
     try {
       console.log('[Deliveries Frontend] Fetching deliveries from backend...');
-      
-      const response = await base44.functions.invoke('getDeliveriesData', {
+
+      const response = await getDeliveriesData({
         status: statusFilter !== 'all' ? statusFilter : null,
         type: typeFilter !== 'all' ? typeFilter : null,
         limit: '500'

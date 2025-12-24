@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { Reagent } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,7 +101,7 @@ export default function ManageReagentsPage() {
   const fetchReagents = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Reagent.list();
+      const data = await Reagent.list();
       
       const processedData = data.map(reagent => {
         const missingFields = [];

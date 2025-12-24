@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { getEditShipmentData, deleteShipment } from '@/api/functions';
+import { Shipment } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,7 +115,7 @@ export default function EditShipmentPage() {
   const fetchShipmentData = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('getEditShipmentData', {
+      const response = await getEditShipmentData({
         shipment_id: shipmentId
       });
 
@@ -177,7 +178,7 @@ export default function EditShipmentPage() {
         updateData.confirmation_date = new Date().toISOString();
       }
 
-      await base44.entities.Shipment.update(shipmentId, updateData);
+      await Shipment.update(shipmentId, updateData);
 
       toast.success('המשלוח עודכן בהצלחה');
       setIsEditMode(false);
@@ -196,7 +197,7 @@ export default function EditShipmentPage() {
 
   const handleDelete = async () => {
     try {
-      const response = await base44.functions.invoke('deleteShipment', {
+      const response = await deleteShipment({
         shipmentId: shipmentId,
         deleteReason: 'נמחק על ידי המשתמש במסך עריכה'
       });

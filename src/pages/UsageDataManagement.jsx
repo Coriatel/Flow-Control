@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { runSummaryUpdates } from '@/api/functions';
+import { Reagent } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,7 +63,7 @@ export default function UsageDataManagement() {
   const fetchReagents = async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Reagent.list();
+      const data = await Reagent.list();
       setReagents(data || []);
     } catch (error) {
       console.error('Error fetching reagents:', error);
@@ -100,14 +101,14 @@ export default function UsageDataManagement() {
         if (key.endsWith('_manual')) {
           const reagentId = key.replace('_manual', '');
           updates.push(
-            base44.entities.Reagent.update(reagentId, {
+            Reagent.update(reagentId, {
               use_manual_usage: editedUsages[key]
             })
           );
         } else {
           const reagentId = key;
           updates.push(
-            base44.entities.Reagent.update(reagentId, {
+            Reagent.update(reagentId, {
               manual_monthly_usage: parseFloat(editedUsages[key]) || 0
             })
           );
@@ -136,7 +137,7 @@ export default function UsageDataManagement() {
         description: 'פעולה זו עשויה לקחת מספר דקות'
       });
 
-      const response = await base44.functions.invoke('runSummaryUpdates', {
+      const response = await runSummaryUpdates({
         operation: 'calculate_all_usage',
         data: { periodMonths: 6 }
       });

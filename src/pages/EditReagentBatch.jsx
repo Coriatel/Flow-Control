@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { getEditReagentBatchData } from '@/api/functions';
+import { ReagentBatch } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -140,7 +141,7 @@ export default function EditReagentBatchPage() {
   const fetchBatchData = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('getEditReagentBatchData', {
+      const response = await getEditReagentBatchData({
         batch_id: batchId
       });
 
@@ -205,7 +206,7 @@ export default function EditReagentBatchPage() {
         order_reference: formData.order_reference
       };
 
-      await base44.entities.ReagentBatch.update(batchId, updateData);
+      await ReagentBatch.update(batchId, updateData);
 
       toast.success('✅ האצווה עודכנה בהצלחה');
       setIsEditMode(false);

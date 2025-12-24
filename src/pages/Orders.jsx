@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getOrdersData } from '@/api/functions';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,7 @@ export default function OrdersPage() {
         try {
             console.log('[Orders Frontend] Fetching orders from backend...');
 
-            const response = await base44.functions.invoke('getOrdersData', {
+            const response = await getOrdersData({
                 status: statusFilter !== 'all' ? statusFilter : null,
                 orderType: orderTypeFilter !== 'all' ? orderTypeFilter : null,
                 limit: '200'

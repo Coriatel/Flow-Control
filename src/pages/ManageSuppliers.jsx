@@ -35,7 +35,8 @@ import BackButton from '@/components/ui/BackButton';
 import ResizableTable from '@/components/ui/ResizableTable';
 import SupplierCard from '../components/suppliers/SupplierCard';
 import SupplierForm from '../components/suppliers/SupplierForm';
-import { base44 } from '@/api/base44Client';
+import { getManageSuppliersData } from '@/api/functions';
+import { Supplier } from '@/api/entities';
 
 export default function ManageSuppliersPage() {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export default function ManageSuppliersPage() {
       console.log("[ManageSuppliers Frontend] Fetching from backend function...");
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
-      const response = await base44.functions.invoke('getManageSuppliersData');
+      const response = await getManageSuppliersData();
       
       if (response.data.success) {
         setSuppliers(response.data.data.suppliers);
@@ -219,7 +220,7 @@ export default function ManageSuppliersPage() {
     try {
       if (supplierToDelete.has_associated_data) {
         // Soft delete
-        await base44.entities.Supplier.update(supplierToDelete.id, {
+        await Supplier.update(supplierToDelete.id, {
           is_active: false,
           deactivation_reason: 'הושבת על ידי המשתמש',
           deactivated_date: new Date().toISOString()
@@ -229,7 +230,7 @@ export default function ManageSuppliersPage() {
         });
       } else {
         // Hard delete
-        await base44.entities.Supplier.delete(supplierToDelete.id);
+        await Supplier.delete(supplierToDelete.id);
         toast.success('הספק נמחק בהצלחה');
       }
       
