@@ -7,60 +7,79 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Database Schema | ✅ Complete | 27 tables, 16 enums |
-| SQL Migration | ✅ Complete | PostgreSQL 16 |
 | Backend API | ✅ Complete | Express 5.1 + TypeScript |
 | Services Layer | ✅ Complete | 6 services |
 | API Routes | ✅ Complete | RESTful endpoints |
 | Prisma ORM | ⚠️ Needs Setup | See "Local Setup" below |
-| Frontend | ❌ Not Started | React + Vite planned |
+| Frontend | ✅ 90% Complete | 52 pages, React + Vite |
+| Mobile Support | ✅ Responsive | Android/iOS ready |
 
 ## Tech Stack
 
+- **Frontend**: React 18, Vite 6.1, TailwindCSS, Radix UI
 - **Backend**: Node.js 22, Express 5.1, TypeScript 5.9
-- **Database**: PostgreSQL 16
+- **Database**: PostgreSQL 15+
 - **ORM**: Prisma 6.x
-- **Frontend** (planned): React 18, Vite, TailwindCSS
 
-## Local Setup (IMPORTANT!)
+## Quick Start
 
-The development environment had network restrictions that blocked Prisma binary downloads. A workaround was used. **On your local machine, you need to set up Prisma properly:**
-
+### Option 1: Android/Mobile Development
 ```bash
-# 1. Clone and enter the project
-git clone https://github.com/Coriatel/Flow-Control.git
-cd Flow-Control/server
+# הרצה על מכשיר Android (Xiaomi או אחר)
+./run-android.sh
+```
 
-# 2. Install dependencies
+### Option 2: Standard Development
+```bash
+# 1. התקנת תלויות
 npm install
+cd server && npm install
 
-# 3. Install Prisma (if not already)
-npm install @prisma/client prisma
+# 2. הפעלת מסד נתונים
+docker-compose up -d
 
-# 4. Create .env file
+# 3. הגדרת סביבה
+cd server
 cp .env.example .env
-# Edit .env with your PostgreSQL credentials:
-# DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/flow_control"
-
-# 5. Generate Prisma client
 npx prisma generate
-
-# 6. Create database and run migrations
 npx prisma migrate dev --name init
 
-# 7. (Optional) Delete the workaround file
-rm -rf generated/prisma/index.ts
-
-# 8. Start the server
-npm run dev
+# 4. הרצה
+npm run dev          # Frontend (port 5173)
+cd server && npm run dev  # Backend (port 4000)
 ```
+
+### Option 3: Production Deployment
+```bash
+# בנייה מקומית
+./deploy.sh local
+
+# Docker containers
+./deploy.sh docker
+
+# Fly.io
+./deploy.sh fly
+
+# Railway
+./deploy.sh railway
+
+# Render
+./deploy.sh render
+```
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `./run-android.sh` | הרצה עם תמיכה בנייד Android |
+| `./deploy.sh [mode]` | פריסה לסביבות שונות |
+| `./stop-dev.sh` | עצירת שרתי פיתוח |
 
 ## API Endpoints
 
 ### Health
-- `GET /api/health` - Server status
-
-### Dashboard
-- `GET /api/dashboard` - Dashboard with statistics
+- `GET /health` - Server health check
+- `GET /api/health` - API status
 
 ### Reagents (ריאגנטים)
 - `GET /api/reagents` - List reagents
@@ -93,78 +112,100 @@ npm run dev
 - `POST /api/inventory/drafts` - Create draft
 - `POST /api/inventory/drafts/:id/complete` - Complete count
 
+## Frontend Pages (52 screens)
+
+### Core
+- Dashboard - לוח בקרה
+- InventoryCount - ספירת מלאי
+- ManageReagents - ניהול ריאגנטים
+- ManageSuppliers - ניהול ספקים
+- Orders - הזמנות
+- Deliveries - משלוחים
+- WithdrawalRequests - בקשות משיכה
+- BatchAndExpiryManagement - אצוות ותפוגות
+- QualityAssurance - בקרת איכות
+
+### More
+- OutgoingShipments, NewShipment, EditShipment
+- AlertsManagement, Reports, ActivityLog
+- Contacts, SystemSettings, AdminPanel
+- And 30+ more...
+
 ## Database Schema
 
-### Main Entities
+### Main Entities (27 tables)
 - **Supplier** - ספקים
 - **SupplierContact** - אנשי קשר
-- **Reagent** - ריאגנטים/מוצרים
+- **Reagent** - ריאגנטים
 - **ReagentBatch** - אצוות
-- **Order** - הזמנות
-- **OrderItem** - פריטי הזמנה
-- **InventoryTransaction** - תנועות מלאי
-- **InventoryDraft** - טיוטות ספירה
+- **Order** / **OrderItem** - הזמנות
 - **WithdrawalRequest** - בקשות משיכה
+- **Delivery** / **DeliveryItem** - משלוחים
+- **Shipment** / **ShipmentItem** - משלוחים יוצאים
+- **InventoryTransaction** - תנועות מלאי
+- **InventoryCountDraft** - טיוטות ספירה
+- **ActiveAlert** / **AlertRule** - התראות
+- **User** - משתמשים
 - **ActivityLog** - יומן פעילות
 
-### Key Enums
-- **Category**: REAGENT, KIT, CONTROL, CALIBRATOR, CONSUMABLE, OTHER
-- **StockStatus**: NORMAL, LOW, CRITICAL, OUT_OF_STOCK
-- **BatchStatus**: ACTIVE, EXPIRED, CONSUMED, DESTROYED
-- **OrderStatus**: DRAFT, PENDING_APPROVAL, APPROVED, ORDERED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+### Key Enums (16)
+- Category: REAGENT, CELLS, CONSUMABLE
+- StockStatus: NORMAL, LOW, CRITICAL, OUT_OF_STOCK
+- BatchStatus: INCOMING, ACTIVE, EXPIRED, CONSUMED, ON_HOLD, DESTROYED
+- OrderStatus: DRAFT, PENDING_SAP, APPROVED, PARTIALLY_RECEIVED, FULLY_RECEIVED, CLOSED, CANCELLED
 
 ## Project Structure
 
 ```
 Flow-Control/
-├── docs/
-│   └── requirements-analysis.md    # מסמך דרישות (64K שורות צ'אט)
-├── server/
-│   ├── prisma/
-│   │   └── schema.prisma           # Prisma schema (27 models)
-│   ├── sql/
-│   │   └── migration.sql           # SQL migration (backup)
+├── DOCS/                    # Documentation (8+ files)
+│   ├── complete-requirements-analysis.md
+│   ├── data-dictionary.md
+│   └── ...
+├── server/                  # Backend
+│   ├── prisma/schema.prisma # 27 models
 │   ├── src/
-│   │   ├── routes/                 # API routes
-│   │   ├── services/               # Business logic
-│   │   ├── middleware/             # Error handling, auth
-│   │   ├── types/                  # TypeScript types
-│   │   └── server.ts               # Entry point
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
+│   │   ├── routes/         # 6 API route files
+│   │   ├── services/       # 6 service files
+│   │   └── ...
+│   └── package.json
+├── src/                     # Frontend
+│   ├── pages/              # 52 page components
+│   ├── components/         # 15 component folders
+│   └── ...
+├── docker-compose.yml       # PostgreSQL
+├── run-android.sh          # Mobile dev script
+├── deploy.sh               # Deployment script
+├── PROJECT_STATUS.md       # Full status report
 └── README.md
 ```
 
 ## Environment Variables
 
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/flow_control"
+# Server (.env)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/flow_control"
 PORT=4000
 NODE_ENV=development
+
+# Frontend (.env)
+VITE_API_URL=http://localhost:4000/api
 ```
-
-## Development Scripts
-
-```bash
-npm run dev      # Start with hot reload
-npm run build    # Compile TypeScript
-npm run start    # Run compiled version
-npm run lint     # Run ESLint
-```
-
-## What's Next
-
-1. **Set up Prisma properly** (see Local Setup above)
-2. **Add seed data** for testing
-3. **Build the React frontend**
-4. **Add authentication** (JWT)
-5. **Deploy** to production
 
 ## Documentation
 
-- `docs/requirements-analysis.md` - Full requirements from original chat
-- `DOCS/` folder - Original Base44 documentation
+- `PROJECT_STATUS.md` - Comprehensive status report
+- `DOCS/complete-requirements-analysis.md` - Full requirements
+- `DOCS/data-dictionary.md` - Data dictionary
+- `DOCS/backend-work-plan.md` - Backend implementation plan
+
+## What's Next
+
+1. ✅ ~~Build React frontend~~ (Complete!)
+2. ⚠️ Connect frontend to backend API
+3. ⬜ Add authentication (JWT)
+4. ⬜ Add file upload (COA documents)
+5. ⬜ Deploy to production
 
 ## License
 
