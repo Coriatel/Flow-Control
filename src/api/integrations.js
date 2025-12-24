@@ -1,26 +1,70 @@
-import { base44 } from './base44Client';
+// Local API Integrations - replaces @base44/sdk integrations
+// These integrations communicate with our local Express backend
 
+import { apiClient } from './client';
 
+// File Upload Integration
+export const UploadFile = async (params) => {
+  const formData = new FormData();
 
+  if (params.file) {
+    formData.append('file', params.file);
+  }
 
-export const Core = base44.integrations.Core;
+  if (params.metadata) {
+    formData.append('metadata', JSON.stringify(params.metadata));
+  }
 
-export const InvokeLLM = base44.integrations.Core.InvokeLLM;
+  return apiClient.post('/files/upload', formData);
+};
 
-export const SendEmail = base44.integrations.Core.SendEmail;
+// Create File Signed URL
+export const CreateFileSignedUrl = async (params) => {
+  return apiClient.post('/files/signed-url', params);
+};
 
-export const UploadFile = base44.integrations.Core.UploadFile;
+// Upload Private File
+export const UploadPrivateFile = async (params) => {
+  const formData = new FormData();
 
-export const GenerateImage = base44.integrations.Core.GenerateImage;
+  if (params.file) {
+    formData.append('file', params.file);
+  }
 
-export const ExtractDataFromUploadedFile = base44.integrations.Core.ExtractDataFromUploadedFile;
+  if (params.metadata) {
+    formData.append('metadata', JSON.stringify(params.metadata));
+  }
 
-export const CreateFileSignedUrl = base44.integrations.Core.CreateFileSignedUrl;
+  return apiClient.post('/files/upload-private', formData);
+};
 
-export const UploadPrivateFile = base44.integrations.Core.UploadPrivateFile;
+// Extract Data from Uploaded File
+export const ExtractDataFromUploadedFile = async (params) => {
+  return apiClient.post('/files/extract-data', params);
+};
 
+// Send Email Integration (will use backend SMTP)
+export const SendEmail = async (params) => {
+  return apiClient.post('/integrations/send-email', params);
+};
 
+// LLM Integration (optional - for AI features)
+export const InvokeLLM = async (params) => {
+  return apiClient.post('/integrations/invoke-llm', params);
+};
 
+// Image Generation (optional)
+export const GenerateImage = async (params) => {
+  return apiClient.post('/integrations/generate-image', params);
+};
 
-
-
+// Core integration object (for backwards compatibility)
+export const Core = {
+  UploadFile,
+  CreateFileSignedUrl,
+  UploadPrivateFile,
+  ExtractDataFromUploadedFile,
+  SendEmail,
+  InvokeLLM,
+  GenerateImage
+};

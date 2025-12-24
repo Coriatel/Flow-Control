@@ -1,65 +1,123 @@
-import { base44 } from './base44Client';
+// Local API Entities - replaces @base44/sdk entities
+// These entities communicate with our local Express backend
 
+import { apiClient } from './client';
 
-export const Reagent = base44.entities.Reagent;
+// Helper function to create entity CRUD operations
+function createEntity(entityName) {
+  const basePath = `/${entityName.toLowerCase()}s`; // e.g., /reagents, /suppliers
 
-export const InventoryTransaction = base44.entities.InventoryTransaction;
+  return {
+    // List all items
+    async list(params = {}) {
+      const queryString = new URLSearchParams(params).toString();
+      const endpoint = queryString ? `${basePath}?${queryString}` : basePath;
+      return apiClient.get(endpoint);
+    },
 
-export const InventoryCountDraft = base44.entities.InventoryCountDraft;
+    // Get single item by ID
+    async get(id) {
+      return apiClient.get(`${basePath}/${id}`);
+    },
 
-export const CompletedInventoryCount = base44.entities.CompletedInventoryCount;
+    // Create new item
+    async create(data) {
+      return apiClient.post(basePath, data);
+    },
 
-export const Delivery = base44.entities.Delivery;
+    // Update existing item
+    async update(id, data) {
+      return apiClient.put(`${basePath}/${id}`, data);
+    },
 
-export const DeliveryItem = base44.entities.DeliveryItem;
+    // Delete item
+    async delete(id) {
+      return apiClient.delete(`${basePath}/${id}`);
+    },
 
-export const Order = base44.entities.Order;
+    // Find with filters
+    async find(filters = {}) {
+      return this.list(filters);
+    },
 
-export const OrderItem = base44.entities.OrderItem;
+    // Count items
+    async count(filters = {}) {
+      const queryString = new URLSearchParams(filters).toString();
+      const endpoint = queryString ? `${basePath}/count?${queryString}` : `${basePath}/count`;
+      return apiClient.get(endpoint);
+    }
+  };
+}
 
-export const ExpiredProductLog = base44.entities.ExpiredProductLog;
+// Create entities for each model
+export const Reagent = createEntity('reagent');
+export const ReagentBatch = createEntity('reagentbatch');
+export const ReagentCatalog = createEntity('reagentcatalog');
+export const InventoryTransaction = createEntity('inventorytransaction');
+export const InventoryCountDraft = createEntity('inventorycountdraft');
+export const CompletedInventoryCount = createEntity('completedinventorycount');
+export const Delivery = createEntity('delivery');
+export const DeliveryItem = createEntity('deliveryitem');
+export const Order = createEntity('order');
+export const OrderItem = createEntity('orderitem');
+export const Shipment = createEntity('shipment');
+export const ShipmentItem = createEntity('shipmentitem');
+export const WithdrawalRequest = createEntity('withdrawalrequest');
+export const WithdrawalItem = createEntity('withdrawalitem');
+export const FrameworkOrder = createEntity('frameworkorder');
+export const FrameworkOrderItem = createEntity('frameworkorderitem');
+export const ExpiredProductLog = createEntity('expiredproductlog');
+export const Supplier = createEntity('supplier');
+export const SupplierContact = createEntity('suppliercontact');
+export const DashboardNote = createEntity('dashboardnote');
+export const SystemSettings = createEntity('systemsettings');
+export const ArchivedReport = createEntity('archivedreport');
+export const ArchivedData = createEntity('archiveddata');
+export const AlertRule = createEntity('alertrule');
+export const ActiveAlert = createEntity('activealert');
+export const ScheduledReminder = createEntity('scheduledreminder');
+export const DocumentationNote = createEntity('documentationnote');
+export const ReagentReceiptEvent = createEntity('reagentreceiptevent');
+export const FeatureDocumentation = createEntity('featuredocumentation');
 
-export const ReagentBatch = base44.entities.ReagentBatch;
+// User/Auth entity - special case with auth methods
+export const User = {
+  async me() {
+    return apiClient.get('/auth/me');
+  },
 
-export const Shipment = base44.entities.Shipment;
+  async login(email, password) {
+    const response = await apiClient.post('/auth/login', { email, password });
+    if (response.token) {
+      apiClient.setToken(response.token);
+    }
+    return response;
+  },
 
-export const FrameworkOrder = base44.entities.FrameworkOrder;
+  async register(data) {
+    const response = await apiClient.post('/auth/register', data);
+    if (response.token) {
+      apiClient.setToken(response.token);
+    }
+    return response;
+  },
 
-export const WithdrawalRequest = base44.entities.WithdrawalRequest;
+  async logout() {
+    apiClient.setToken(null);
+    return apiClient.post('/auth/logout');
+  },
 
-export const WithdrawalItem = base44.entities.WithdrawalItem;
+  async update(id, data) {
+    return apiClient.put(`/users/${id}`, data);
+  },
 
-export const ReagentCatalog = base44.entities.ReagentCatalog;
+  async list(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/users?${queryString}` : '/users';
+    return apiClient.get(endpoint);
+  },
 
-export const SupplierContact = base44.entities.SupplierContact;
-
-export const DashboardNote = base44.entities.DashboardNote;
-
-export const SystemSettings = base44.entities.SystemSettings;
-
-export const ArchivedReport = base44.entities.ArchivedReport;
-
-export const ArchivedData = base44.entities.ArchivedData;
-
-export const AlertRule = base44.entities.AlertRule;
-
-export const ActiveAlert = base44.entities.ActiveAlert;
-
-export const ScheduledReminder = base44.entities.ScheduledReminder;
-
-export const Supplier = base44.entities.Supplier;
-
-export const ShipmentItem = base44.entities.ShipmentItem;
-
-export const FrameworkOrderItem = base44.entities.FrameworkOrderItem;
-
-export const DocumentationNote = base44.entities.DocumentationNote;
-
-export const ReagentReceiptEvent = base44.entities.ReagentReceiptEvent;
-
-export const FeatureDocumentation = base44.entities.FeatureDocumentation;
-
-
-
-// auth sdk:
-export const User = base44.auth;
+  async get(id) {
+    return apiClient.get(`/users/${id}`);
+  }
+};
