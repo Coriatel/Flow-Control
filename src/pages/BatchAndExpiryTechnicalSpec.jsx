@@ -425,10 +425,10 @@ interface TabState {
 {`async function getBatchAndExpiryData() {
   // Parallel data fetching for optimal performance
   const [batchesData, expiredLogsData, reagentData, supplierData] = await Promise.all([
-    base44.entities.ReagentBatch.list(),
-    base44.entities.ExpiredProductLog.list(),
-    base44.entities.Reagent.list(),
-    base44.entities.Supplier.filter({ is_active: true })
+    ReagentBatch.list(),
+    ExpiredProductLog.list(),
+    Reagent.list(),
+    Supplier.filter({ is_active: true })
   ]);
 
   // Data enrichment and optimization
