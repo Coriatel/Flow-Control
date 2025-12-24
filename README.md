@@ -20,6 +20,7 @@
 - **Backend**: Node.js 22, Express 5.1, TypeScript 5.9
 - **Database**: PostgreSQL 15+
 - **ORM**: Prisma 6.x
+- **SDK**: @base44/sdk with modular @/api structure
 
 ## Quick Start
 
@@ -195,14 +196,21 @@ VITE_API_URL=http://localhost:4000/api
 ## Documentation
 
 - `PROJECT_STATUS.md` - Comprehensive status report
+- `docs/API_MIGRATION_SUMMARY.md` - **NEW!** Complete API migration documentation
 - `DOCS/complete-requirements-analysis.md` - Full requirements
 - `DOCS/data-dictionary.md` - Data dictionary
 - `DOCS/backend-work-plan.md` - Backend implementation plan
 
+## Recent Updates
+
+- ✅ **API Migration Complete** - Migrated from direct @base44/sdk usage to modular @/api structure (25 files)
+- ✅ All pages now use `@/api/functions`, `@/api/entities`, and `@/api/integrations`
+- ✅ Build passing, fully tested and documented
+
 ## What's Next
 
 1. ✅ ~~Build React frontend~~ (Complete!)
-2. ⚠️ Connect frontend to backend API
+2. ✅ ~~Modular API structure~~ (Complete!)
 3. ⬜ Add authentication (JWT)
 4. ⬜ Add file upload (COA documents)
 5. ⬜ Deploy to production
