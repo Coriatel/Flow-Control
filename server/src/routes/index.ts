@@ -10,6 +10,9 @@ import deliveriesRoutes from './deliveries';
 import withdrawalsRoutes from './withdrawals';
 import shipmentsRoutes from './shipments';
 import filesRoutes from './files';
+import usersRoutes from './users';
+import alertsRoutes from './alerts';
+import activityRoutes from './activity';
 
 const router = Router();
 
@@ -21,7 +24,7 @@ router.use('/auth', authRoutes);
 // Files (protected)
 router.use('/files', filesRoutes);
 
-// Existing routes (protected)
+// Core routes (protected)
 router.use('/dashboard', dashboardRoutes);
 router.use('/reagents', reagentsRoutes);
 router.use('/inventory', inventoryRoutes);
@@ -29,10 +32,15 @@ router.use('/batches', batchesRoutes);
 router.use('/suppliers', suppliersRoutes);
 router.use('/orders', ordersRoutes);
 
-// New routes (protected)
+// Logistics routes (protected)
 router.use('/deliveries', deliveriesRoutes);
 router.use('/withdrawals', withdrawalsRoutes);
 router.use('/shipments', shipmentsRoutes);
+
+// Administration routes (protected)
+router.use('/users', usersRoutes);
+router.use('/alerts', alertsRoutes);
+router.use('/activity', activityRoutes);
 
 // Health check at API level
 router.get('/health', (_req, res) => {

@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import apiRoutes from './routes';
 import { errorHandler } from './middleware/errorHandler';
+import { simpleRequestLogger, errorLogger } from './middleware/requestLogger';
+import { logger } from './utils/logger';
 
 dotenv.config();
 
@@ -34,8 +36,12 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS Configuration
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173'];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: corsOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -46,13 +52,8 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging in development
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, _res, next) => {
-    console.log(`${req.method} ${req.path}`);
-    next();
-  });
-}
+// Request logging
+app.use(simpleRequestLogger());
 
 // Root health check
 app.get('/health', (_req, res) => {
@@ -60,6 +61,8 @@ app.get('/health', (_req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'flow-control-api',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -74,7 +77,16 @@ app.use((_req, res) => {
   });
 });
 
+// Error logging
+app.use(errorLogger());
+
 // Error handler
 app.use(errorHandler);
+
+// Log application startup info
+logger.info({
+  environment: process.env.NODE_ENV || 'development',
+  corsOrigins
+}, 'Application configured');
 
 export default app;
