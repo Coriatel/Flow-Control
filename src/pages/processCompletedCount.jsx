@@ -436,3 +436,6 @@ export async function retryProcessCompletedCount(payload) {
     };
   }
 }
+
+// Default export for backwards compatibility
+export default { processCompletedCount, retryProcessCompletedCount };
