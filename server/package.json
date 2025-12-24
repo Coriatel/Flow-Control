@@ -8,7 +8,14 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:reset": "prisma migrate reset",
+    "db:setup": "prisma generate && prisma migrate dev && npm run prisma:seed",
     "test": "echo \"No automated tests yet\""
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
