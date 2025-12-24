@@ -22,7 +22,7 @@ import { ExpiredProductLog } from '@/api/entities';
 import { CompletedInventoryCount } from '@/api/entities';
 import { InventoryCountDraft } from '@/api/entities';
 
-import { cleanupOperations } from ".@/api/functions/cleanupOperations";
+import { cleanupOperations } from '@/api/functions';
 
 export default function CleanupData() {
   const { toast } = useToast();

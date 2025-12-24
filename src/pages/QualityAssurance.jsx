@@ -16,7 +16,7 @@ import {
     ExpiredProductLog,
     InventoryTransaction
 } from '@/api/entities';
-import { base44 } from '@/api/base44Client'; // Keep for integrations.Core.UploadFile
+import { UploadFile } from '@/api/integrations';
 import { createPageUrl } from '@/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatQuantity } from '../components/utils/formatters';
@@ -295,7 +295,7 @@ export default function QualityAssurancePage() {
       setUploadingCOA(true);
       
       // העלאת הקובץ
-      const uploadResult = await base44.integrations.Core.UploadFile({ file: coaFile });
+      const uploadResult = await UploadFile({ file: coaFile });
       
       if (uploadResult?.file_url) {
         // עדכון האצווה עם ה-COA

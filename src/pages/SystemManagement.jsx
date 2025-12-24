@@ -8,9 +8,7 @@ import { Loader2, Database, AlertTriangle, CheckCircle, ShieldAlert, PlayCircle,
 import { useToast } from "@/components/ui/use-toast";
 import { Reagent } from "@/api/entities";
 import { runSummaryUpdates } from "@/api/functions";
-import { exportAllCoas } from '@/api/functions';
-import { createAnnualReminders } from ".@/api/functions/createAnnualReminders";
-import { archiveOldData } from ".@/api/functions/archiveOldData"; // New import
+import { exportAllCoas, createAnnualReminders, archiveOldData } from '@/api/functions';
 import { Link } from 'react-router-dom'; // Assuming react-router-dom for Link
 
 export default function SystemManagement() {
