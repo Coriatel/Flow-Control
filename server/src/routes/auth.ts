@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
 
@@ -59,9 +59,7 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
       role: user.role
     },
     jwtSecret,
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-    }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
   );
 
   // Return user (without password) and token
@@ -134,9 +132,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
       role: user.role
     },
     jwtSecret,
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-    }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
   );
 
   // Return user (without password) and token

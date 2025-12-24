@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
 
@@ -13,7 +13,7 @@ router.use(authenticate);
  * GET /api/deliveries
  * Get all deliveries
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const deliveries = await prisma.delivery.findMany({
     where: { isDeleted: false },
     include: {
@@ -38,7 +38,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET /api/deliveries/:id
  * Get delivery by ID
  */
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const delivery = await prisma.delivery.findUnique({
@@ -68,7 +68,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
  * POST /api/deliveries
  * Create new delivery
  */
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const data = req.body;
 
   const delivery = await prisma.delivery.create({
@@ -95,7 +95,7 @@ router.post('/', asyncHandler(async (req, res) => {
  * PUT /api/deliveries/:id
  * Update delivery
  */
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const data = req.body;
 
@@ -119,7 +119,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * DELETE /api/deliveries/:id
  * Soft delete delivery
  */
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   await prisma.delivery.update({

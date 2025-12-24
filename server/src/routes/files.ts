@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -51,7 +51,7 @@ router.use(authenticate);
  * POST /api/files/upload
  * Upload a file
  */
-router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
+router.post('/upload', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) {
     throw new AppError('No file uploaded', 400);
   }
@@ -76,7 +76,7 @@ router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
  * POST /api/files/upload-private
  * Upload a private file
  */
-router.post('/upload-private', upload.single('file'), asyncHandler(async (req, res) => {
+router.post('/upload-private', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) {
     throw new AppError('No file uploaded', 400);
   }
@@ -102,7 +102,7 @@ router.post('/upload-private', upload.single('file'), asyncHandler(async (req, r
  * POST /api/files/signed-url
  * Create a signed URL for a file
  */
-router.post('/signed-url', asyncHandler(async (req, res) => {
+router.post('/signed-url', asyncHandler(async (req: Request, res: Response) => {
   const { filename, expiresIn } = req.body;
 
   if (!filename) {
@@ -130,7 +130,7 @@ router.post('/signed-url', asyncHandler(async (req, res) => {
  * GET /api/files/download/:filename
  * Download a file
  */
-router.get('/download/:filename', asyncHandler(async (req, res) => {
+router.get('/download/:filename', asyncHandler(async (req: Request, res: Response) => {
   const { filename } = req.params;
   const filePath = path.join(uploadDir, filename);
 
@@ -145,7 +145,7 @@ router.get('/download/:filename', asyncHandler(async (req, res) => {
  * POST /api/files/extract-data
  * Extract data from an uploaded file (placeholder)
  */
-router.post('/extract-data', asyncHandler(async (req, res) => {
+router.post('/extract-data', asyncHandler(async (req: Request, res: Response) => {
   const { filename, fileType } = req.body;
 
   // Placeholder implementation

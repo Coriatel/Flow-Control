@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
 
@@ -13,7 +13,7 @@ router.use(authenticate);
  * GET /api/withdrawals
  * Get all withdrawal requests
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const withdrawals = await prisma.withdrawalRequest.findMany({
     where: { isDeleted: false },
     include: {
@@ -37,7 +37,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET /api/withdrawals/:id
  * Get withdrawal by ID
  */
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const withdrawal = await prisma.withdrawalRequest.findUnique({
@@ -66,7 +66,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
  * POST /api/withdrawals
  * Create new withdrawal request
  */
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const data = req.body;
 
   const withdrawal = await prisma.withdrawalRequest.create({
@@ -92,7 +92,7 @@ router.post('/', asyncHandler(async (req, res) => {
  * PUT /api/withdrawals/:id
  * Update withdrawal request
  */
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const data = req.body;
 
@@ -115,7 +115,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * DELETE /api/withdrawals/:id
  * Soft delete withdrawal request
  */
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   await prisma.withdrawalRequest.update({
@@ -133,7 +133,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
  * POST /api/withdrawals/:id/approve
  * Approve withdrawal request
  */
-router.post('/:id/approve', asyncHandler(async (req, res) => {
+router.post('/:id/approve', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const withdrawal = await prisma.withdrawalRequest.update({
