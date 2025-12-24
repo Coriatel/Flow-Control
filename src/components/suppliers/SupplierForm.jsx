@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
-import { Supplier } from '@/api/entities';
+import { Supplier } from '@/api';
 import { Loader2 } from 'lucide-react';
 
 export default function SupplierForm({ supplier, onSuccess, onCancel }) {
