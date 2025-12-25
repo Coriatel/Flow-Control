@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { createShipmentSchema, updateShipmentSchema, addShipmentItemSchema } from '../validation/schemas';
 import { ApiResponse, ShipmentStatus } from '../types';
 
 const router = Router();
@@ -124,16 +126,8 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/shipments
  * Create new shipment
  */
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', validateBody(createShipmentSchema), asyncHandler(async (req: Request, res: Response) => {
   const { destinationHospital, destinationDepartment, shipmentDate, items, notes } = req.body;
-
-  if (!destinationHospital) {
-    throw new AppError('destinationHospital is required', 400);
-  }
-
-  if (!shipmentDate) {
-    throw new AppError('shipmentDate is required', 400);
-  }
 
   // Generate shipment number
   const count = await prisma.shipment.count();
@@ -176,7 +170,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/shipments/:id
  * Update shipment
  */
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', validateBody(updateShipmentSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { destinationHospital, destinationDepartment, shipmentDate, notes, documentUrl } = req.body;
 
@@ -459,13 +453,9 @@ router.post('/:id/cancel', authorize('ADMIN', 'MANAGER'), asyncHandler(async (re
  * POST /api/shipments/:id/items
  * Add item to shipment
  */
-router.post('/:id/items', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/items', validateBody(addShipmentItemSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { reagentId, batchId, quantity } = req.body;
-
-  if (!reagentId || !quantity || quantity <= 0) {
-    throw new AppError('reagentId and positive quantity are required', 400);
-  }
 
   const existing = await prisma.shipment.findUnique({
     where: { id }

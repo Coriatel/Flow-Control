@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { createAlertRuleSchema, updateAlertRuleSchema } from '../validation/schemas';
 import { ApiResponse, AlertSeverity, AlertStatus, AlertRuleType } from '../types';
 
 const router = Router();
@@ -359,17 +361,8 @@ router.get('/rules/:id', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req:
  * POST /api/alerts/rules
  * Create new alert rule
  */
-router.post('/rules', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/rules', authorize('ADMIN'), validateBody(createAlertRuleSchema), asyncHandler(async (req: Request, res: Response) => {
   const { ruleType, name, description, thresholdDays, thresholdQuantity, thresholdMonths, appliesToCategories } = req.body;
-
-  if (!ruleType || !name) {
-    throw new AppError('ruleType and name are required', 400);
-  }
-
-  const validRuleTypes = ['EXPIRY_WARNING', 'LOW_STOCK', 'PENDING_SUPPLY', 'COUNT_REQUIRED', 'COA_MISSING', 'CUSTOM'];
-  if (!validRuleTypes.includes(ruleType)) {
-    throw new AppError('Invalid ruleType', 400);
-  }
 
   const rule = await prisma.alertRule.create({
     data: {
@@ -395,7 +388,7 @@ router.post('/rules', authorize('ADMIN'), asyncHandler(async (req: Request, res:
  * PUT /api/alerts/rules/:id
  * Update alert rule
  */
-router.put('/rules/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/rules/:id', authorize('ADMIN'), validateBody(updateAlertRuleSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, thresholdDays, thresholdQuantity, thresholdMonths, appliesToCategories, isActive } = req.body;
 

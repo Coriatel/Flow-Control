@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { createUserSchema, updateUserSchema, resetPasswordSchema } from '../validation/schemas';
 import { ApiResponse, UserRole } from '../types';
 
 const router = Router();
@@ -93,16 +95,8 @@ router.get('/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res: Re
  * POST /api/users
  * Create new user (Admin only)
  */
-router.post('/', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/', authorize('ADMIN'), validateBody(createUserSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, name, password, role } = req.body;
-
-  if (!email || !name || !password) {
-    throw new AppError('email, name, and password are required', 400);
-  }
-
-  if (password.length < 8) {
-    throw new AppError('Password must be at least 8 characters', 400);
-  }
 
   // Check if email already exists
   const existing = await prisma.user.findUnique({
@@ -156,7 +150,7 @@ router.post('/', authorize('ADMIN'), asyncHandler(async (req: Request, res: Resp
  * PUT /api/users/:id
  * Update user (Admin only)
  */
-router.put('/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', authorize('ADMIN'), validateBody(updateUserSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { email, name, role, isActive } = req.body;
 
@@ -309,17 +303,9 @@ router.post('/:id/activate', authorize('ADMIN'), asyncHandler(async (req: Reques
  * POST /api/users/:id/reset-password
  * Reset user password (Admin only)
  */
-router.post('/:id/reset-password', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/reset-password', authorize('ADMIN'), validateBody(resetPasswordSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { newPassword } = req.body;
-
-  if (!newPassword) {
-    throw new AppError('newPassword is required', 400);
-  }
-
-  if (newPassword.length < 8) {
-    throw new AppError('Password must be at least 8 characters', 400);
-  }
 
   const existing = await prisma.user.findUnique({
     where: { id }
