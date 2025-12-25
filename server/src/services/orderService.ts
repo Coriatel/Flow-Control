@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma';
-import { OrderStatus } from '../../generated/prisma';
+import { OrderStatus } from '../types';
 
 export interface OrderFilters {
   supplierId?: string;
@@ -364,7 +364,7 @@ export const orderService = {
 
     let newStatus: OrderStatus = order.status;
     if (allReceived) {
-      newStatus = 'RECEIVED';
+      newStatus = 'FULLY_RECEIVED';
     } else if (someReceived) {
       newStatus = 'PARTIALLY_RECEIVED';
     }
@@ -405,7 +405,7 @@ export const orderService = {
   async getPendingBySupplier() {
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: ['PENDING_APPROVAL', 'APPROVED', 'ORDERED', 'PARTIALLY_RECEIVED'] },
+        status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED', 'PARTIALLY_RECEIVED'] },
       },
     });
 

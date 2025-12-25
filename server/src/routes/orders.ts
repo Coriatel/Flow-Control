@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { orderService } from '../services';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import { validateBody } from '../middleware/validate';
+import { createOrderSchema, receiveOrderSchema, updateOrderItemSchema, addOrderItemSchema } from '../validation/schemas';
 import { ApiResponse, OrderStatus } from '../types';
 
 const router = Router();
@@ -92,29 +94,9 @@ router.get(
  */
 router.post(
   '/',
+  validateBody(createOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { supplierId, items, notes, createdBy } = req.body;
-
-    if (!supplierId || !items || !Array.isArray(items) || items.length === 0) {
-      throw new AppError('supplierId and at least one item are required', 400);
-    }
-
-    // Validate items
-    for (const item of items) {
-      if (!item.reagentId || !item.requestedQuantity || item.requestedQuantity <= 0) {
-        throw new AppError(
-          'Each item must have reagentId and positive requestedQuantity',
-          400
-        );
-      }
-    }
-
-    const data = await orderService.create({
-      supplierId,
-      items,
-      notes,
-      createdBy,
-    });
+    const data = await orderService.create(req.body);
 
     const response: ApiResponse = {
       success: true,
@@ -204,35 +186,12 @@ router.post(
  */
 router.post(
   '/:id/receive',
+  validateBody(receiveOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { items, receivedBy } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      throw new AppError('At least one item to receive is required', 400);
-    }
-
-    // Validate items
-    for (const item of items) {
-      if (
-        !item.orderItemId ||
-        !item.receivedQuantity ||
-        !item.batchNumber ||
-        !item.expiryDate
-      ) {
-        throw new AppError(
-          'Each item must have orderItemId, receivedQuantity, batchNumber, and expiryDate',
-          400
-        );
-      }
-    }
-
-    const processedItems = items.map((item: any) => ({
-      ...item,
-      expiryDate: new Date(item.expiryDate),
-    }));
-
-    const data = await orderService.receiveItems(id, processedItems, receivedBy);
+    const data = await orderService.receiveItems(id, items, receivedBy);
 
     const response: ApiResponse = {
       success: true,
@@ -270,19 +229,11 @@ router.post(
  */
 router.post(
   '/:id/items',
+  validateBody(addOrderItemSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { reagentId, requestedQuantity, notes } = req.body;
 
-    if (!reagentId || !requestedQuantity || requestedQuantity <= 0) {
-      throw new AppError('reagentId and positive requestedQuantity are required', 400);
-    }
-
-    const data = await orderService.addItem(id, {
-      reagentId,
-      requestedQuantity,
-      notes,
-    });
+    const data = await orderService.addItem(id, req.body);
 
     const response: ApiResponse = {
       success: true,
@@ -299,13 +250,10 @@ router.post(
  */
 router.put(
   '/:id/items/:itemId',
+  validateBody(updateOrderItemSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { itemId } = req.params;
     const { requestedQuantity, notes } = req.body;
-
-    if (!requestedQuantity || requestedQuantity <= 0) {
-      throw new AppError('Positive requestedQuantity is required', 400);
-    }
 
     const data = await orderService.updateItem(itemId, requestedQuantity, notes);
 

@@ -1,28 +1,22 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { authLimiter } from '../middleware/security';
+import { loginSchema, registerSchema, changePasswordSchema } from '../validation/schemas';
+import { ApiResponse } from '../types';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * POST /api/auth/register
  * Register a new user
  */
-router.post('/register', asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, name, role } = req.body;
-
-  // Validation
-  if (!email || !password || !name) {
-    throw new AppError('Email, password and name are required', 400);
-  }
-
-  if (password.length < 8) {
-    throw new AppError('Password must be at least 8 characters', 400);
-  }
+router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { email, password, name } = req.body;
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
@@ -42,7 +36,7 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       name,
-      role: role || 'USER'
+      role: 'USER'
     }
   });
 
@@ -62,8 +56,7 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
   );
 
-  // Return user (without password) and token
-  res.status(201).json({
+  const response: ApiResponse = {
     success: true,
     message: 'User registered successfully',
     data: {
@@ -77,20 +70,16 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
       },
       token
     }
-  });
+  };
+  res.status(201).json(response);
 }));
 
 /**
  * POST /api/auth/login
  * Login with email and password
  */
-router.post('/login', asyncHandler(async (req: Request, res: Response) => {
+router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-
-  // Validation
-  if (!email || !password) {
-    throw new AppError('Email and password are required', 400);
-  }
 
   // Find user
   const user = await prisma.user.findUnique({
@@ -135,8 +124,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
   );
 
-  // Return user (without password) and token
-  res.json({
+  const response: ApiResponse = {
     success: true,
     message: 'Login successful',
     data: {
@@ -151,20 +139,20 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
       },
       token
     }
-  });
+  };
+  res.json(response);
 }));
 
 /**
  * POST /api/auth/logout
  * Logout (client-side token removal)
  */
-router.post('/logout', authenticate, asyncHandler(async (req: Request, res: Response) => {
-  // In a stateless JWT system, logout is handled client-side
-  // If using refresh tokens or session storage, handle here
-  res.json({
+router.post('/logout', authenticate, asyncHandler(async (_req: Request, res: Response) => {
+  const response: ApiResponse = {
     success: true,
     message: 'Logout successful'
-  });
+  };
+  res.json(response);
 }));
 
 /**
@@ -176,7 +164,6 @@ router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response)
     throw new AppError('Not authenticated', 401);
   }
 
-  // Get fresh user data
   const user = await prisma.user.findUnique({
     where: { id: req.user.id }
   });
@@ -185,8 +172,7 @@ router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response)
     throw new AppError('User not found', 404);
   }
 
-  // Return user (without password)
-  res.json({
+  const response: ApiResponse = {
     success: true,
     data: {
       id: user.id,
@@ -198,29 +184,21 @@ router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response)
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     }
-  });
+  };
+  res.json(response);
 }));
 
 /**
  * PUT /api/auth/change-password
  * Change user password
  */
-router.put('/change-password', authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.put('/change-password', authenticate, validateBody(changePasswordSchema), asyncHandler(async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    throw new AppError('Current password and new password are required', 400);
-  }
-
-  if (newPassword.length < 8) {
-    throw new AppError('New password must be at least 8 characters', 400);
-  }
 
   if (!req.user) {
     throw new AppError('Not authenticated', 401);
   }
 
-  // Get user with password
   const user = await prisma.user.findUnique({
     where: { id: req.user.id }
   });
@@ -245,10 +223,11 @@ router.put('/change-password', authenticate, asyncHandler(async (req: Request, r
     data: { password: hashedPassword }
   });
 
-  res.json({
+  const response: ApiResponse = {
     success: true,
     message: 'Password changed successfully'
-  });
+  };
+  res.json(response);
 }));
 
 export default router;

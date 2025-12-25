@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'crypto';
 import { logger, createChildLogger } from '../utils/logger';
 
 // Extend Express Request to include requestId and logger
