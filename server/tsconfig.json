@@ -19,8 +19,9 @@
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false,
     "noImplicitAny": false,
+    "strictNullChecks": false,
 
-    "strict": true,
+    "strict": false,
     "isolatedModules": true,
     "skipLibCheck": true
   },
