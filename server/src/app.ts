@@ -1,52 +1,25 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import apiRoutes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { simpleRequestLogger, errorLogger } from './middleware/requestLogger';
+import { helmetConfig, generalLimiter, corsOptions, devCorsOptions } from './middleware/security';
 import { logger } from './utils/logger';
 
 dotenv.config();
 
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    }
-  }
-}));
+// Security Middleware - Helmet for HTTP headers
+app.use(helmetConfig);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use('/api/', limiter);
+// Rate limiting for all API routes
+app.use('/api/', generalLimiter);
 
 // CORS Configuration
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:5173'];
-
-const corsOptions = {
-  origin: corsOrigins,
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
+app.use(cors(isProduction ? corsOptions : devCorsOptions));
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -55,7 +28,12 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging
 app.use(simpleRequestLogger());
 
-// Root health check
+// Trust proxy for rate limiting behind reverse proxy (Nginx)
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
+
+// Root health check (no rate limiting)
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
@@ -86,7 +64,8 @@ app.use(errorHandler);
 // Log application startup info
 logger.info({
   environment: process.env.NODE_ENV || 'development',
-  corsOrigins
-}, 'Application configured');
+  securityEnabled: true,
+  rateLimitingEnabled: true
+}, 'Application configured with security middleware');
 
 export default app;

@@ -5,6 +5,7 @@ import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
+import { authLimiter } from '../middleware/security';
 import { loginSchema, registerSchema, changePasswordSchema } from '../validation/schemas';
 import { ApiResponse } from '../types';
 
@@ -14,7 +15,7 @@ const router = Router();
  * POST /api/auth/register
  * Register a new user
  */
-router.post('/register', validateBody(registerSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
 
   // Check if user already exists
@@ -77,7 +78,7 @@ router.post('/register', validateBody(registerSchema), asyncHandler(async (req: 
  * POST /api/auth/login
  * Login with email and password
  */
-router.post('/login', validateBody(loginSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   // Find user
