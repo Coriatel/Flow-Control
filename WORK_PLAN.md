@@ -8,11 +8,16 @@
 
 ## 📌 קישורים מהירים
 
+### מסמכים מרכזיים:
 - [README.md](./README.md) - תיעוד הפרויקט
 - [PROJECT_STATUS.md](./PROJECT_STATUS.md) - מצב הפרויקט
 - [PRODUCTION_READINESS_REPORT.md](./docs/PRODUCTION_READINESS_REPORT.md) - דוח מוכנות לפרודקשן
 - [API_MIGRATION_SUMMARY.md](./docs/API_MIGRATION_SUMMARY.md) - סיכום מיגרציית API
 - [HOSTINGER_DEPLOYMENT.md](./HOSTINGER_DEPLOYMENT.md) - מדריך פריסה
+
+### 🎯 פרומפטים להמשך עבודה:
+- **[PROMPT_FOR_SONNET.md](./PROMPT_FOR_SONNET.md)** - הוראות עבודה לסונט בענן (Claude Code)
+- **[PROMPT_FOR_CURSOR.md](./PROMPT_FOR_CURSOR.md)** - הוראות עבודה ל-Cursor IDE
 
 ---
 
