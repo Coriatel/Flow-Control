@@ -18,7 +18,7 @@ export const validate = (schema: ZodSchema, source: 'body' | 'query' | 'params' 
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const messages = error.errors.map(err => {
+        const messages = error.issues.map(err => {
           const path = err.path.join('.');
           return path ? `${path}: ${err.message}` : err.message;
         });
@@ -63,12 +63,12 @@ export const validateRequest = (options: {
         req.query = options.query.parse(req.query) as any;
       }
       if (options.params) {
-        req.params = options.params.parse(req.params);
+        req.params = options.params.parse(req.params) as any;
       }
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const messages = error.errors.map(err => {
+        const messages = error.issues.map(err => {
           const path = err.path.join('.');
           return path ? `${path}: ${err.message}` : err.message;
         });
@@ -90,7 +90,7 @@ export const safeParse = <T>(schema: ZodSchema<T>, data: unknown): { success: tr
     return { success: true, data: parsed };
   } catch (error) {
     if (error instanceof ZodError) {
-      const messages = error.errors.map(err => {
+      const messages = error.issues.map(err => {
         const path = err.path.join('.');
         return path ? `${path}: ${err.message}` : err.message;
       });

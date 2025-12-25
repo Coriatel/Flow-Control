@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { supplierService } from '../services';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import { validateBody } from '../middleware/validate';
+import { createSupplierSchema, updateSupplierSchema, createSupplierContactSchema, updateSupplierContactSchema } from '../validation/schemas';
 import { ApiResponse } from '../types';
 
 const router = Router();
@@ -112,18 +114,9 @@ router.get(
  */
 router.post(
   '/',
+  validateBody(createSupplierSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { name, shortCode, isActive } = req.body;
-
-    if (!name) {
-      throw new AppError('Name is required', 400);
-    }
-
-    const data = await supplierService.create({
-      name,
-      shortCode,
-      isActive,
-    });
+    const data = await supplierService.create(req.body);
 
     const response: ApiResponse = {
       success: true,
@@ -140,15 +133,10 @@ router.post(
  */
 router.put(
   '/:id',
+  validateBody(updateSupplierSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, shortCode, isActive } = req.body;
-
-    const data = await supplierService.update(id, {
-      name,
-      shortCode,
-      isActive,
-    });
+    const data = await supplierService.update(id, req.body);
 
     const response: ApiResponse = {
       success: true,
@@ -183,21 +171,12 @@ router.delete(
  */
 router.post(
   '/:id/contacts',
+  validateBody(createSupplierContactSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, phone, email, role, isPrimary } = req.body;
-
-    if (!name) {
-      throw new AppError('Contact name is required', 400);
-    }
-
     const data = await supplierService.addContact({
       supplierId: id,
-      name,
-      phone,
-      email,
-      role,
-      isPrimary,
+      ...req.body,
     });
 
     const response: ApiResponse = {
@@ -215,17 +194,10 @@ router.post(
  */
 router.put(
   '/:id/contacts/:contactId',
+  validateBody(updateSupplierContactSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { contactId } = req.params;
-    const { name, phone, email, role, isPrimary } = req.body;
-
-    const data = await supplierService.updateContact(contactId, {
-      name,
-      phone,
-      email,
-      role,
-      isPrimary,
-    });
+    const data = await supplierService.updateContact(contactId, req.body);
 
     const response: ApiResponse = {
       success: true,

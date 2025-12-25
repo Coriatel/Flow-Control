@@ -69,6 +69,18 @@ export const createSupplierSchema = z.object({
 
 export const updateSupplierSchema = createSupplierSchema.partial();
 
+export const createSupplierContactSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  role: z.string().optional(),
+  phone: z.string().optional(),
+  mobile: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  notes: z.string().optional(),
+  isPrimary: z.boolean().optional().default(false)
+});
+
+export const updateSupplierContactSchema = createSupplierContactSchema.partial();
+
 // ==================== Reagent Schemas ====================
 
 export const createReagentSchema = z.object({
@@ -112,6 +124,8 @@ const orderItemSchema = z.object({
   notes: z.string().optional()
 });
 
+export const addOrderItemSchema = orderItemSchema;
+
 export const createOrderSchema = z.object({
   supplierId: z.string().cuid('Invalid supplier ID'),
   orderType: z.enum(['IMMEDIATE', 'FRAMEWORK']).optional().default('IMMEDIATE'),
@@ -148,6 +162,8 @@ const deliveryItemSchema = z.object({
   quantity: z.coerce.number().positive('Quantity must be positive'),
   expiryDate: z.coerce.date()
 });
+
+export const addDeliveryItemSchema = deliveryItemSchema;
 
 export const createDeliverySchema = z.object({
   supplierId: z.string().cuid('Invalid supplier ID'),
@@ -187,6 +203,8 @@ const withdrawalItemSchema = z.object({
   unitPrice: z.coerce.number().nonnegative().optional()
 });
 
+export const addWithdrawalItemSchema = withdrawalItemSchema;
+
 export const createWithdrawalSchema = z.object({
   supplierId: z.string().cuid('Invalid supplier ID'),
   frameworkOrderId: z.string().cuid().optional(),
@@ -215,6 +233,8 @@ const shipmentItemSchema = z.object({
   batchId: z.string().cuid().optional(),
   quantity: z.coerce.number().positive('Quantity must be positive')
 });
+
+export const addShipmentItemSchema = shipmentItemSchema;
 
 export const createShipmentSchema = z.object({
   destinationHospital: z.string().min(2, 'Destination hospital is required'),

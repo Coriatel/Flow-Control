@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { createDeliverySchema, updateDeliverySchema, receiveDeliverySchema, addDeliveryItemSchema } from '../validation/schemas';
 import { ApiResponse, DeliveryStatus } from '../types';
 
 const router = Router();
@@ -115,16 +117,8 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/deliveries
  * Create new delivery
  */
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', validateBody(createDeliverySchema), asyncHandler(async (req: Request, res: Response) => {
   const { supplierId, orderId, withdrawalRequestId, deliveryDate, items, notes, isRecurringSupply } = req.body;
-
-  if (!supplierId) {
-    throw new AppError('supplierId is required', 400);
-  }
-
-  if (!deliveryDate) {
-    throw new AppError('deliveryDate is required', 400);
-  }
 
   // Get supplier for snapshot
   const supplier = await prisma.supplier.findUnique({
@@ -181,7 +175,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/deliveries/:id
  * Update delivery
  */
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', validateBody(updateDeliverySchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { deliveryDate, notes, documentUrl, isRecurringSupply } = req.body;
 
@@ -264,13 +258,9 @@ router.post('/:id/process', asyncHandler(async (req: Request, res: Response) => 
  * POST /api/deliveries/:id/receive
  * Receive delivery - creates batches and updates inventory
  */
-router.post('/:id/receive', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/receive', authorize('ADMIN', 'MANAGER'), validateBody(receiveDeliverySchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { items, receivedBy } = req.body;
-
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    throw new AppError('At least one item is required to receive', 400);
-  }
 
   const existing = await prisma.delivery.findUnique({
     where: { id },
@@ -421,13 +411,9 @@ router.post('/:id/cancel', authorize('ADMIN', 'MANAGER'), asyncHandler(async (re
  * POST /api/deliveries/:id/items
  * Add item to delivery
  */
-router.post('/:id/items', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/items', validateBody(addDeliveryItemSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { reagentId, batchNumber, quantity, expiryDate } = req.body;
-
-  if (!reagentId || !batchNumber || !quantity || !expiryDate) {
-    throw new AppError('reagentId, batchNumber, quantity, and expiryDate are required', 400);
-  }
 
   const existing = await prisma.delivery.findUnique({
     where: { id }

@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { reagentService } from '../services';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import { validateBody } from '../middleware/validate';
+import { createReagentSchema, updateReagentSchema } from '../validation/schemas';
 import { ApiResponse, Category, StockStatus } from '../types';
 
 const router = Router();
@@ -74,32 +76,9 @@ router.get(
  */
 router.post(
   '/',
+  validateBody(createReagentSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      name,
-      catalogNumber,
-      category,
-      supplierId,
-      isConsumable,
-      requiresBatches,
-      notes,
-      manualMonthlyUsage,
-    } = req.body;
-
-    if (!name || !supplierId) {
-      throw new AppError('Name and supplierId are required', 400);
-    }
-
-    const data = await reagentService.create({
-      name,
-      catalogNumber,
-      category,
-      supplierId,
-      isConsumable,
-      requiresBatches,
-      notes,
-      manualMonthlyUsage,
-    });
+    const data = await reagentService.create(req.body);
 
     const response: ApiResponse = {
       success: true,
@@ -116,11 +95,10 @@ router.post(
  */
 router.put(
   '/:id',
+  validateBody(updateReagentSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const updateData = req.body;
-
-    const data = await reagentService.update(id, updateData);
+    const data = await reagentService.update(id, req.body);
 
     const response: ApiResponse = {
       success: true,

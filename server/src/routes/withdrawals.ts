@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { createWithdrawalSchema, updateWithdrawalSchema, approveWithdrawalSchema, addWithdrawalItemSchema } from '../validation/schemas';
 import { ApiResponse, WithdrawalStatus } from '../types';
 
 const router = Router();
@@ -154,16 +156,8 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/withdrawals
  * Create new withdrawal request
  */
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: Request, res: Response) => {
   const { supplierId, frameworkOrderId, items, requesterNotes } = req.body;
-
-  if (!supplierId) {
-    throw new AppError('supplierId is required', 400);
-  }
-
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    throw new AppError('At least one item is required', 400);
-  }
 
   // Get supplier for snapshot
   const supplier = await prisma.supplier.findUnique({
@@ -242,7 +236,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
  * PUT /api/withdrawals/:id
  * Update withdrawal request
  */
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', validateBody(updateWithdrawalSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { requesterNotes } = req.body;
 
@@ -333,7 +327,7 @@ router.post('/:id/submit', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/withdrawals/:id/approve
  * Approve withdrawal request
  */
-router.post('/:id/approve', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/approve', authorize('ADMIN', 'MANAGER'), validateBody(approveWithdrawalSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { approverNotes, approvedItems } = req.body;
 
@@ -597,13 +591,9 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/withdrawals/:id/items
  * Add item to withdrawal request
  */
-router.post('/:id/items', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/items', validateBody(addWithdrawalItemSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { reagentId, requestedQuantity, unitPrice } = req.body;
-
-  if (!reagentId || !requestedQuantity || requestedQuantity <= 0) {
-    throw new AppError('reagentId and positive requestedQuantity are required', 400);
-  }
 
   const existing = await prisma.withdrawalRequest.findUnique({
     where: { id }
