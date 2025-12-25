@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { User as UserEntity } from "@/api/entities";
 import { SystemSettings } from "@/api/entities";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   FileText, Home, ListChecks, Package, Truck, Shield, Database, Settings, FileCode, AlertTriangle, User, ChevronDown, Menu, X, Calculator, ClipboardCheck, Trash2, Zap, BarChart3, Beaker, ShoppingCart, Server, Wrench, ClipboardList, Activity, Users, PackageCheck, ArrowDownToLine, FileUp, FileStack, Bell, SlidersHorizontal, Building2, ArrowLeft, Upload, Clipboard, FlaskConical, TestTube, BadgeCheck, FileSearch, Archive, Target, TrendingUp, BookOpen, PhoneCall, UserPlus, ArrowRight, History } from
 "lucide-react";
@@ -31,9 +32,9 @@ export default function Layout({ children, currentPageName }) {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
-  
+  const { user, logout } = useAuth();
+
   // All useState hooks first
-  const [user, setUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -81,33 +82,13 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [userResult, settingsResult] = await Promise.allSettled([
-        UserEntity.me(),
-        SystemSettings.list()]
-        );
+        const settingsResult = await SystemSettings.list();
 
-        if (userResult.status === 'fulfilled') {
-          setUser(userResult.value);
-        } else {
-          console.warn("Could not fetch user data:", userResult.reason);
-        }
-
-        if (settingsResult.status === 'fulfilled') {
-          const settingsData = settingsResult.value;
-          if (settingsData && settingsData.length > 0) {
-            setSystemDisplay({
-              mainHeaderName: settingsData[0].mainHeaderName || 'מערכת ניהול ריאגנטים',
-              sidebarHeaderName: settingsData[0].sidebarHeaderName || 'ניהול מלאי ריאגנטים',
-              logoUrl: settingsData[0].logoUrl || 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/17ba664fd_image.png'
-            });
-          }
-        } else {
-          console.warn("Could not fetch system settings:", settingsResult.reason);
-          toast({
-            title: "שגיאה בטעינת הגדרות",
-            description: "נעשה שימוש בערכי ברירת מחדל.",
-            variant: "destructive",
-            duration: 4000
+        if (settingsResult && settingsResult.length > 0) {
+          setSystemDisplay({
+            mainHeaderName: settingsResult[0].mainHeaderName || 'מערכת ניהול ריאגנטים',
+            sidebarHeaderName: settingsResult[0].sidebarHeaderName || 'ניהול מלאי ריאגנטים',
+            logoUrl: settingsResult[0].logoUrl || 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/17ba664fd_image.png'
           });
         }
       } catch (error) {
