@@ -188,16 +188,16 @@ export const orderService = {
 
     const lastOrder = await prisma.order.findFirst({
       where: {
-        orderNumber: {
+        tempNumber: {
           startsWith: prefix,
         },
       },
-      orderBy: { orderNumber: 'desc' },
+      orderBy: { tempNumber: 'desc' },
     });
 
     let sequence = 1;
-    if (lastOrder && lastOrder.orderNumber) {
-      const lastSeq = parseInt(lastOrder.orderNumber.replace(prefix, ''));
+    if (lastOrder && lastOrder.tempNumber) {
+      const lastSeq = parseInt(lastOrder.tempNumber.replace(prefix, ''));
       if (!isNaN(lastSeq)) {
         sequence = lastSeq + 1;
       }
@@ -209,13 +209,11 @@ export const orderService = {
   /**
    * Approve order (simplified for basic pg client)
    */
-  async approve(id: string, approvedBy?: string) {
+  async approve(id: string, _approvedBy?: string) {
     const order = await prisma.order.update({
       where: { id },
       data: {
-        status: 'APPROVED',
-        approvedDate: new Date(),
-        approvedBy,
+        status: OrderStatus.APPROVED,
       },
     });
 
@@ -328,7 +326,7 @@ export const orderService = {
           currentQuantity: item.receivedQuantity,
           receivedDate: new Date(),
           status: 'ACTIVE',
-          notes: item.notes,
+          generalNotes: item.notes,
         },
       });
 
