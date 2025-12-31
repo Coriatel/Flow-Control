@@ -1,21 +1,24 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
 
+type LogLevel = 'query' | 'error' | 'warn' | 'info';
+type LogDefinition = { emit: 'event' | 'stdout'; level: LogLevel };
+
 // Singleton pattern for Prisma client
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 // Configure logging based on environment
-const getLogConfig = () => {
+const getLogConfig = (): LogDefinition[] => {
   if (process.env.NODE_ENV === 'development') {
     return [
       { emit: 'event', level: 'query' },
       { emit: 'event', level: 'error' },
       { emit: 'event', level: 'warn' }
-    ] as const;
+    ];
   }
-  return [{ emit: 'event', level: 'error' }] as const;
+  return [{ emit: 'event', level: 'error' }];
 };
 
 // Create Prisma client with configuration

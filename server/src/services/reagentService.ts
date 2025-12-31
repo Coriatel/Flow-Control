@@ -132,8 +132,13 @@ class ReagentService {
 
     return {
       ...reagent,
+      totalQuantity: reagent.totalQuantity ? Number(reagent.totalQuantity) : null,
+      monthsOfStock: reagent.monthsOfStock ? Number(reagent.monthsOfStock) : null,
       supplier,
-      batches,
+      batches: batches.map((b: any) => ({
+        ...b,
+        currentQuantity: Number(b.currentQuantity),
+      })),
     } as ReagentWithBatches;
   }
 
@@ -163,7 +168,7 @@ class ReagentService {
       throw new AppError('Reagent with this name already exists for this supplier', 400);
     }
 
-    return prisma.reagent.create({
+    const result = await prisma.reagent.create({
       data: {
         name: data.name,
         catalogNumber: data.catalogNumber,
@@ -175,6 +180,11 @@ class ReagentService {
         manualMonthlyUsage: data.manualMonthlyUsage,
       },
     });
+    return {
+      ...result,
+      totalQuantity: result.totalQuantity ? Number(result.totalQuantity) : null,
+      monthsOfStock: result.monthsOfStock ? Number(result.monthsOfStock) : null,
+    } as Reagent;
   }
 
   /**
@@ -187,10 +197,15 @@ class ReagentService {
       throw new AppError('Reagent not found', 404);
     }
 
-    return prisma.reagent.update({
+    const result = await prisma.reagent.update({
       where: { id },
       data,
     });
+    return {
+      ...result,
+      totalQuantity: result.totalQuantity ? Number(result.totalQuantity) : null,
+      monthsOfStock: result.monthsOfStock ? Number(result.monthsOfStock) : null,
+    } as Reagent;
   }
 
   /**
@@ -203,10 +218,15 @@ class ReagentService {
       throw new AppError('Reagent not found', 404);
     }
 
-    return prisma.reagent.update({
+    const result = await prisma.reagent.update({
       where: { id },
       data: { isDeleted: true },
     });
+    return {
+      ...result,
+      totalQuantity: result.totalQuantity ? Number(result.totalQuantity) : null,
+      monthsOfStock: result.monthsOfStock ? Number(result.monthsOfStock) : null,
+    } as Reagent;
   }
 
   /**

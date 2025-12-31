@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { OrderStatus } from '../../generated/prisma';
 
 export interface CreateSupplierInput {
   name: string;
@@ -267,7 +268,7 @@ export const supplierService = {
       const pendingOrders = await prisma.order.findMany({
         where: {
           supplierId: supplier.id,
-          status: { in: ['PENDING_APPROVAL', 'APPROVED', 'ORDERED', 'PARTIALLY_RECEIVED'] },
+          status: { in: [OrderStatus.DRAFT, OrderStatus.PENDING_SAP, OrderStatus.APPROVED, OrderStatus.PARTIALLY_RECEIVED] },
         },
       });
 

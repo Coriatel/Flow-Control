@@ -1,5 +1,6 @@
 import prisma from '../utils/prisma';
-import { BatchStatus, TransactionType } from '../types';
+import { BatchStatus } from '../types';
+import { TransactionType } from '../../generated/prisma';
 
 export interface BatchFilters {
   reagentId?: string;
@@ -99,7 +100,7 @@ export const batchService = {
 
     const transactions = await prisma.inventoryTransaction.findMany({
       where: { batchId: id },
-      orderBy: { transactionDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 50,
     });
 
@@ -123,7 +124,7 @@ export const batchService = {
         currentQuantity: data.initialQuantity,
         receivedDate: data.receivedDate || new Date(),
         status: 'ACTIVE',
-        notes: data.notes,
+        generalNotes: data.notes,
       },
     });
 
@@ -132,8 +133,8 @@ export const batchService = {
       data: {
         reagentId: data.reagentId,
         batchId: batch.id,
-        transactionType: 'RECEIVE',
-        quantity: data.initialQuantity,
+        transactionType: TransactionType.RECEIPT,
+        quantityDelta: data.initialQuantity,
         notes: `קבלת אצווה ${data.batchNumber}`,
       },
     });
@@ -208,9 +209,9 @@ export const batchService = {
       data: {
         reagentId: batch.reagentId,
         batchId: batch.id,
-        transactionType: 'WITHDRAW',
-        quantity: -input.quantity,
-        performedBy: input.performedBy,
+        transactionType: TransactionType.WITHDRAWAL,
+        quantityDelta: -input.quantity,
+        performedById: input.performedBy,
         notes: input.notes,
       },
     });
@@ -268,8 +269,8 @@ export const batchService = {
       data: {
         reagentId: batch.reagentId,
         batchId: batch.id,
-        transactionType: 'DISPOSE',
-        quantity: -qtyToDestroy,
+        transactionType: TransactionType.DESTRUCTION,
+        quantityDelta: -qtyToDestroy,
         notes: notes || 'השמדת אצווה',
       },
     });

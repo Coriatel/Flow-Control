@@ -1,9 +1,10 @@
 import prisma from '../utils/prisma';
-import { OrderStatus } from '../types';
+import { OrderStatus as LocalOrderStatus } from '../types';
+import { OrderStatus, TransactionType } from '../../generated/prisma';
 
 export interface OrderFilters {
   supplierId?: string;
-  status?: OrderStatus;
+  status?: LocalOrderStatus;
   fromDate?: Date;
   toDate?: Date;
 }
@@ -138,11 +139,11 @@ export const orderService = {
     // Create order first
     const order = await prisma.order.create({
       data: {
-        orderNumber,
+        tempNumber: orderNumber,
         supplierId: data.supplierId,
-        status: 'PENDING_APPROVAL',
-        notes: data.notes,
-        createdBy: data.createdBy,
+        supplierSnapshot: data.supplierId, // Will be updated with supplier name
+        status: OrderStatus.DRAFT,
+        internalNotes: data.notes,
       },
     });
 
@@ -231,12 +232,11 @@ export const orderService = {
   /**
    * Mark order as sent/ordered
    */
-  async markOrdered(id: string, orderedDate?: Date) {
+  async markOrdered(id: string, _orderedDate?: Date) {
     const order = await prisma.order.update({
       where: { id },
       data: {
-        status: 'ORDERED',
-        orderedDate: orderedDate || new Date(),
+        status: OrderStatus.APPROVED,
       },
     });
 
@@ -337,10 +337,10 @@ export const orderService = {
         data: {
           reagentId: orderItem.reagentId,
           batchId: batch.id,
-          transactionType: 'RECEIVE',
-          quantity: item.receivedQuantity,
-          performedBy: receivedBy,
-          notes: `קבלה מהזמנה ${order.orderNumber}`,
+          transactionType: TransactionType.RECEIPT,
+          quantityDelta: item.receivedQuantity,
+          performedById: receivedBy,
+          notes: `קבלה מהזמנה ${order.tempNumber}`,
         },
       });
 
@@ -364,9 +364,9 @@ export const orderService = {
 
     let newStatus: OrderStatus = order.status;
     if (allReceived) {
-      newStatus = 'FULLY_RECEIVED';
+      newStatus = OrderStatus.FULLY_RECEIVED;
     } else if (someReceived) {
-      newStatus = 'PARTIALLY_RECEIVED';
+      newStatus = OrderStatus.PARTIALLY_RECEIVED;
     }
 
     if (newStatus !== order.status) {
@@ -374,7 +374,7 @@ export const orderService = {
         where: { id: orderId },
         data: {
           status: newStatus,
-          receivedDate: allReceived ? new Date() : undefined,
+          closedDate: allReceived ? new Date() : undefined,
         },
       });
     }
@@ -386,13 +386,14 @@ export const orderService = {
    * Cancel order
    */
   async cancel(id: string, reason?: string) {
+    const existingOrder = await prisma.order.findUnique({ where: { id } });
     const order = await prisma.order.update({
       where: { id },
       data: {
-        status: 'CANCELLED',
-        notes: reason
-          ? `${reason}\n(קודם: ${(await prisma.order.findUnique({ where: { id } }))?.notes || ''})`
-          : undefined,
+        status: OrderStatus.CANCELLED,
+        internalNotes: reason
+          ? `${reason}\n(קודם: ${existingOrder?.internalNotes || ''})`
+          : existingOrder?.internalNotes,
       },
     });
 
@@ -405,7 +406,7 @@ export const orderService = {
   async getPendingBySupplier() {
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED', 'PARTIALLY_RECEIVED'] },
+        status: { in: [OrderStatus.DRAFT, OrderStatus.PENDING_SAP, OrderStatus.APPROVED, OrderStatus.PARTIALLY_RECEIVED] },
       },
     });
 
@@ -426,7 +427,7 @@ export const orderService = {
    */
   async getOrdersNeedingAttention() {
     const pendingApprovalOrders = await prisma.order.findMany({
-      where: { status: 'PENDING_APPROVAL' },
+      where: { status: OrderStatus.PENDING_SAP },
       orderBy: { orderDate: 'asc' },
     });
 
@@ -446,16 +447,16 @@ export const orderService = {
       });
     }
 
-    // Orders that have been "ordered" but not received for more than 14 days
+    // Orders that have been "approved" but not received for more than 14 days
     const overdueDate = new Date();
     overdueDate.setDate(overdueDate.getDate() - 14);
 
     const overdueOrders = await prisma.order.findMany({
       where: {
-        status: 'ORDERED',
-        orderedDate: { lt: overdueDate },
+        status: OrderStatus.APPROVED,
+        orderDate: { lt: overdueDate },
       },
-      orderBy: { orderedDate: 'asc' },
+      orderBy: { orderDate: 'asc' },
     });
 
     const overdue = [];
