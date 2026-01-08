@@ -6,21 +6,120 @@ import { Request, Response, NextFunction } from 'express';
 // Manual type definitions for when Prisma client is not generated
 // These match the enums in prisma/schema.prisma
 
-export type Category = 'REAGENT' | 'CELLS' | 'CONSUMABLE';
-export type StockStatus = 'NORMAL' | 'LOW' | 'CRITICAL' | 'OUT_OF_STOCK';
-export type BatchStatus = 'INCOMING' | 'ACTIVE' | 'EXPIRED' | 'CONSUMED' | 'ON_HOLD' | 'DESTROYED';
-export type QCStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REQUIRES_REVIEW';
-export type OrderType = 'IMMEDIATE' | 'FRAMEWORK';
-export type OrderStatus = 'DRAFT' | 'PENDING_SAP' | 'APPROVED' | 'PARTIALLY_RECEIVED' | 'FULLY_RECEIVED' | 'CLOSED' | 'CANCELLED';
-export type DeliveryStatus = 'NEW' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
-export type WithdrawalStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'SHIPPING' | 'CLOSED' | 'CANCELLED';
-export type ShipmentStatus = 'DRAFT' | 'SENT' | 'RECEIVED' | 'CANCELLED';
-export type UserRole = 'ADMIN' | 'MANAGER' | 'USER' | 'READONLY';
-export type TransactionType = 'RECEIPT' | 'CONSUMPTION' | 'ADJUSTMENT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'RETURN' | 'DESTRUCTION';
-export type AlertRuleType = 'EXPIRY_WARNING' | 'LOW_STOCK' | 'PENDING_SUPPLY' | 'COUNT_REQUIRED' | 'COA_MISSING' | 'CUSTOM';
-export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type AlertStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
-export type NoteType = 'GENERAL' | 'URGENT' | 'REMINDER' | 'SYSTEM';
+export enum Category {
+  REAGENT = 'REAGENT',
+  CELLS = 'CELLS',
+  CONSUMABLE = 'CONSUMABLE'
+}
+
+export enum StockStatus {
+  NORMAL = 'NORMAL',
+  LOW = 'LOW',
+  CRITICAL = 'CRITICAL',
+  OUT_OF_STOCK = 'OUT_OF_STOCK'
+}
+
+export enum BatchStatus {
+  INCOMING = 'INCOMING',
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  CONSUMED = 'CONSUMED',
+  ON_HOLD = 'ON_HOLD',
+  DESTROYED = 'DESTROYED'
+}
+
+export enum QCStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  REQUIRES_REVIEW = 'REQUIRES_REVIEW'
+}
+
+export enum OrderType {
+  IMMEDIATE = 'IMMEDIATE',
+  FRAMEWORK = 'FRAMEWORK'
+}
+
+export enum OrderStatus {
+  DRAFT = 'DRAFT',
+  PENDING_SAP = 'PENDING_SAP',
+  APPROVED = 'APPROVED',
+  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
+  FULLY_RECEIVED = 'FULLY_RECEIVED',
+  CLOSED = 'CLOSED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum DeliveryStatus {
+  NEW = 'NEW',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum WithdrawalStatus {
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  APPROVED = 'APPROVED',
+  PARTIAL = 'PARTIAL',
+  SHIPPING = 'SHIPPING',
+  CLOSED = 'CLOSED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum ShipmentStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  USER = 'USER',
+  READONLY = 'READONLY'
+}
+
+export enum TransactionType {
+  RECEIPT = 'RECEIPT',
+  CONSUMPTION = 'CONSUMPTION',
+  WITHDRAWAL = 'WITHDRAWAL',
+  ADJUSTMENT = 'ADJUSTMENT',
+  DESTRUCTION = 'DESTRUCTION',
+  TRANSFER_IN = 'TRANSFER_IN',
+  TRANSFER_OUT = 'TRANSFER_OUT'
+}
+
+export enum AlertRuleType {
+  EXPIRY_WARNING = 'EXPIRY_WARNING',
+  LOW_STOCK = 'LOW_STOCK',
+  PENDING_SUPPLY = 'PENDING_SUPPLY',
+  COUNT_REQUIRED = 'COUNT_REQUIRED',
+  COA_MISSING = 'COA_MISSING',
+  CUSTOM = 'CUSTOM'
+}
+
+export enum AlertSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL'
+}
+
+export enum AlertStatus {
+  NEW = 'NEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  DISMISSED = 'DISMISSED'
+}
+
+export enum NoteType {
+  GENERAL = 'GENERAL',
+  URGENT = 'URGENT',
+  REMINDER = 'REMINDER',
+  SYSTEM = 'SYSTEM'
+}
 
 // Placeholder interfaces for Prisma models (for type checking when Prisma is not generated)
 export interface Reagent {

@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma';
-import { OrderStatus } from '../../generated/prisma';
+import { OrderStatus } from '../types';
 
 export interface CreateSupplierInput {
   name: string;

@@ -1,10 +1,9 @@
 import prisma from '../utils/prisma';
-import { OrderStatus as LocalOrderStatus } from '../types';
-import { OrderStatus, TransactionType } from '../../generated/prisma';
+import { OrderStatus, TransactionType } from '../types';
 
 export interface OrderFilters {
   supplierId?: string;
-  status?: LocalOrderStatus;
+  status?: OrderStatus;
   fromDate?: Date;
   toDate?: Date;
 }
