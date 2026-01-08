@@ -249,7 +249,7 @@ class ReagentService {
     const nearestExpiryDate = batches[0]?.expiryDate || null;
 
     // Determine stock status
-    let currentStockStatus: StockStatus = 'NORMAL';
+    let currentStockStatus: StockStatus = StockStatus.NORMAL;
     const reagent = await prisma.reagent.findUnique({ where: { id: reagentId } });
 
     if (reagent) {
@@ -260,14 +260,14 @@ class ReagentService {
       if (monthlyUsage > 0) {
         const monthsOfStock = totalQuantity / monthlyUsage;
         if (monthsOfStock < 1) {
-          currentStockStatus = 'CRITICAL';
+          currentStockStatus = StockStatus.CRITICAL;
         } else if (monthsOfStock < 2) {
-          currentStockStatus = 'LOW';
+          currentStockStatus = StockStatus.LOW;
         }
       }
 
       if (totalQuantity === 0) {
-        currentStockStatus = 'OUT_OF_STOCK';
+        currentStockStatus = StockStatus.OUT_OF_STOCK;
       }
     }
 
