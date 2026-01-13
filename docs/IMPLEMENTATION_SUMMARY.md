@@ -428,7 +428,7 @@ SMTP_PASS="your-password"
 
 ### 1. Frontend Now Requires Backend
 - הפרונטנד כבר לא משתמש ב-`@base44/sdk`
-- כל הבקשות הולכות לשרת המקומי (`http://localhost:4000`)
+- כל הבקשות הולכות לשרת המקומי (``)
 - **חובה** להפעיל את Backend לפני שהפרונטנד יעבוד
 
 ### 2. Authentication Required

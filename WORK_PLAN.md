@@ -387,8 +387,8 @@ npm run dev # Frontend
 cd server && npm run dev # Backend
 
 # Test endpoints
-curl http://localhost:4000/health
-curl http://localhost:4000/api/health
+curl /health
+curl /api/health
 ```
 
 #### 3. Authentication Flow Testing (3 שעות)

@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   postgres:
@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: flow_control
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +15,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flow-control-frontend
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+

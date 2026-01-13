@@ -206,7 +206,7 @@ PORT=4000
 NODE_ENV=development
 
 # Frontend (.env)
-VITE_API_URL=http://localhost:4000/api
+VITE_API_URL=/api
 ```
 
 ## Documentation

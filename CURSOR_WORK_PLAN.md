@@ -117,8 +117,8 @@ Local: http://localhost:5173/
 
 ```bash
 # Health check
-curl http://localhost:4000/health
-curl http://localhost:4000/api/health
+curl /health
+curl /api/health
 
 # Expected: {"status":"ok"} or similar
 ```
@@ -130,7 +130,7 @@ curl http://localhost:4000/api/health
 ### Step 3.1: Register Test User
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST /api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@flowcontrol.local",
@@ -142,7 +142,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 ### Step 3.2: Login
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST /api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@flowcontrol.local",
@@ -156,7 +156,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 
 ```bash
 TOKEN="your-token-here"
-curl http://localhost:4000/api/auth/me \
+curl /api/auth/me \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -171,7 +171,7 @@ curl http://localhost:4000/api/auth/me \
 3. Enter test credentials
 4. Should redirect to dashboard
 5. Check browser console (no errors)
-6. Check Network tab (API calls to localhost:4000)
+6. Check Network tab (API calls to )
 
 ### Step 4.2: Test Each Major Page
 
@@ -236,7 +236,7 @@ npm run build
 npm install -g autocannon
 
 # Test endpoint
-autocannon -d 10 -c 10 http://localhost:4000/api/health
+autocannon -d 10 -c 10 /api/health
 ```
 
 **Target:**

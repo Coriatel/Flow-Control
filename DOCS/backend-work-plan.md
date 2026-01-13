@@ -36,7 +36,7 @@
 4. הגדרת קובץ `.env` עם מחרוזת חיבור ל־PostgreSQL (משתמש, סיסמה, שם DB flow_control).  
 5. קביעת סקריפט `npm run dev:server` שמריץ `ts-node-dev src/app.ts`.
 
-**תוצר:** פרויקט Node/TS רץ מקומית ב־`http://localhost:4000`.
+**תוצר:** פרויקט Node/TS רץ מקומית ב־``.
 
 **סטטוס 13.11.2025:** התקנתי את כל התלויות, יצרתי `server/` עם `tsconfig`, `prisma init`, סקריפטים (`npm run dev`, `npm run build`, `npm run start`) וקבצי `src/app.ts`, `src/server.ts`, וכן `.env.example`. `npm run build` עובר בהצלחה ומכין את `dist/`.
 

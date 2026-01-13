@@ -105,7 +105,7 @@ npx prisma studio  # Opens browser
 # Terminal 1: Backend
 cd server
 npm run dev
-# Should start on http://localhost:4000
+# Should start on 
 
 # Terminal 2: Frontend
 npm run dev
@@ -116,16 +116,16 @@ npm run dev
 
 ```bash
 # בדוק health endpoints
-curl http://localhost:4000/health
-curl http://localhost:4000/api/health
+curl /health
+curl /api/health
 
 # בדוק authentication
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST /api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","password":"Test123!","name":"Test User"}'
 
 # Login
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST /api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","password":"Test123!"}'
 ```
@@ -217,7 +217,7 @@ npm run dev
 **Testing Script:**
 ```bash
 # 1. Register
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST /api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email":"admin@test.com",
@@ -227,17 +227,17 @@ curl -X POST http://localhost:4000/api/auth/register \
   }'
 
 # 2. Login (save token)
-TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
+TOKEN=$(curl -X POST /api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@test.com","password":"Admin123!"}' \
   | jq -r '.token')
 
 # 3. Test protected route
-curl http://localhost:4000/api/auth/me \
+curl /api/auth/me \
   -H "Authorization: Bearer $TOKEN"
 
 # 4. Test without token (should fail)
-curl http://localhost:4000/api/reagents
+curl /api/reagents
 ```
 
 #### Day 4-5: Frontend Integration Testing
@@ -250,7 +250,7 @@ curl http://localhost:4000/api/reagents
 - [ ] Token stored in localStorage
 - [ ] Dashboard loads after login
 - [ ] All 51 pages accessible
-- [ ] API calls go to localhost:4000
+- [ ] API calls go to 
 - [ ] Error handling works
 - [ ] Loading states work
 ```
@@ -262,7 +262,7 @@ curl http://localhost:4000/api/reagents
 4. Should redirect to /dashboard
 5. Navigate through all major pages
 6. Check browser console (no errors)
-7. Check Network tab (all requests to localhost:4000)
+7. Check Network tab (all requests to )
 
 #### Day 6-7: API Endpoints Testing
 **זמן משוער:** 8-10 שעות
@@ -365,7 +365,7 @@ npm run build
 # Should be < 500KB gzipped
 
 # Backend response time
-ab -n 1000 -c 10 http://localhost:4000/api/health
+ab -n 1000 -c 10 /api/health
 # Should be < 50ms average
 
 # Database query time
@@ -876,7 +876,7 @@ npm run dev &
 cd server && npm run dev &
 
 # Test
-curl http://localhost:4000/health
+curl /health
 open http://localhost:5173
 ```
 

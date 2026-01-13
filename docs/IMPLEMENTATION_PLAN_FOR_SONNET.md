@@ -135,7 +135,7 @@ touch server/uploads/.gitkeep
  * מחליף את base44 SDK בקריאות ישירות לבקנד המקומי
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiError extends Error {
   constructor(message, status, data) {
@@ -655,7 +655,7 @@ export const base44 = null;
 
 ```bash
 # API Configuration
-VITE_API_URL=http://localhost:4000/api
+VITE_API_URL=/api
 
 # App Configuration
 VITE_APP_NAME=Flow-Control
@@ -666,7 +666,7 @@ VITE_APP_VERSION=1.0.0
 
 ```bash
 # API Configuration
-VITE_API_URL=http://localhost:4000/api
+VITE_API_URL=/api
 
 # App Configuration
 VITE_APP_NAME=Flow-Control

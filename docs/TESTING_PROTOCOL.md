@@ -739,7 +739,7 @@ npm run dev
 cd /home/user/Flow-Control
 
 # 1. Create .env file (optional)
-echo "VITE_API_URL=http://localhost:4000/api" > .env
+echo "VITE_API_URL=/api" > .env
 
 # 2. Start frontend
 npm run dev
@@ -754,10 +754,10 @@ npm run dev
 
 **1. Health Check**
 ```bash
-curl http://localhost:4000/health
+curl /health
 # Expected: {"status":"ok","timestamp":"...","service":"flow-control-api"}
 
-curl http://localhost:4000/api/health
+curl /api/health
 # Expected: {"status":"ok","timestamp":"...","version":"1.0.0"}
 ```
 
@@ -765,7 +765,7 @@ curl http://localhost:4000/api/health
 
 **Register:**
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST /api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -777,7 +777,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 
 **Login:**
 ```bash
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST /api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@flow-control.com",
@@ -789,7 +789,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 **Get Current User:**
 ```bash
 TOKEN="<token from login>"
-curl http://localhost:4000/api/auth/me \
+curl /api/auth/me \
   -H "Authorization: Bearer $TOKEN"
 # Expected: { "success": true, "data": { ... } }
 ```
@@ -798,13 +798,13 @@ curl http://localhost:4000/api/auth/me \
 
 **Without Token (should fail):**
 ```bash
-curl http://localhost:4000/api/deliveries
+curl /api/deliveries
 # Expected: 401 Unauthorized
 ```
 
 **With Token (should succeed):**
 ```bash
-curl http://localhost:4000/api/deliveries \
+curl /api/deliveries \
   -H "Authorization: Bearer $TOKEN"
 # Expected: { "success": true, "data": [] }
 ```
@@ -812,7 +812,7 @@ curl http://localhost:4000/api/deliveries \
 **4. File Upload**
 
 ```bash
-curl -X POST http://localhost:4000/api/files/upload \
+curl -X POST /api/files/upload \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@/path/to/test.pdf" \
   -F 'metadata={"type":"coa","batchId":"123"}'
@@ -824,7 +824,7 @@ curl -X POST http://localhost:4000/api/files/upload \
 ```bash
 # Run 101 requests quickly
 for i in {1..101}; do
-  curl http://localhost:4000/api/health &
+  curl /api/health &
 done
 # Expected: After 100 requests, should get "Too many requests from this IP"
 ```
@@ -832,7 +832,7 @@ done
 **6. Security Headers**
 
 ```bash
-curl -I http://localhost:4000/health
+curl -I /health
 # Expected headers:
 # - X-Content-Type-Options: nosniff
 # - X-Frame-Options: SAMEORIGIN

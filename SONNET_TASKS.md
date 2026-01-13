@@ -57,7 +57,7 @@ mkdir -p e2e
 ```typescript
 import { test, expect } from '@playwright/test';
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = '/api';
 
 test.describe('API Health', () => {
   test('health check returns ok', async ({ request }) => {
