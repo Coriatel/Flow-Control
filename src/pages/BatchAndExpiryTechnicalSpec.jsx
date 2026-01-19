@@ -204,11 +204,11 @@ export default function BatchAndExpiryTechnicalSpec() {
 - Framer Motion (Animations)
 
 Backend:
-- Deno Runtime
-- Base44 SDK
+- Node.js + Express 5
+- TypeScript
 - PostgreSQL Database
+- Prisma ORM
 - RESTful APIs
-- File Storage (Supabase)
 
 State Management:
 - React Hooks (useState, useEffect, useCallback, useMemo)

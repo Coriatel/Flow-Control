@@ -36,7 +36,7 @@
 - **Backend**: Node.js 22, Express 5.1, TypeScript 5.9
 - **Database**: PostgreSQL 15+
 - **ORM**: Prisma 6.x
-- **SDK**: @base44/sdk with modular @/api structure
+- **API**: Local Express backend with modular @/api structure
 
 ## Quick Start
 
