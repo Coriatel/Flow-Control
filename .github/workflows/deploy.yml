@@ -1,0 +1,23 @@
+name: Deploy Flow Control
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.DEPLOY_HOST }} << 'EOF'
+            set -e
+            cd /opt/flow-control/app
+            git pull
+            docker compose up -d --build
+          EOF
