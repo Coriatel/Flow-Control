@@ -63,10 +63,80 @@ router.get('/health', (_req, res) => {
 // Legacy/Frontend Compatibility Routes
 import { inventoryService } from '../services';
 import { asyncHandler } from '../middleware/errorHandler';
+import prisma from '../utils/prisma';
 
 router.get('/inventorycountdrafts', asyncHandler(async (_req, res) => {
   const data = await inventoryService.getCurrentDraft();
   res.json({ success: true, data });
+}));
+
+// Dashboard Notes routes
+router.get('/dashboardnotes', asyncHandler(async (req, res) => {
+  const notes = await prisma.dashboardNote.findMany({
+    where: { dismissedAt: null },
+    orderBy: [
+      { isPinned: 'desc' },
+      { createdAt: 'desc' }
+    ],
+  });
+  res.json({ success: true, data: notes });
+}));
+
+router.post('/dashboardnotes', asyncHandler(async (req, res) => {
+  const note = await prisma.dashboardNote.create({
+    data: req.body,
+  });
+  res.status(201).json({ success: true, data: note });
+}));
+
+router.put('/dashboardnotes/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const note = await prisma.dashboardNote.update({
+    where: { id },
+    data: req.body,
+  });
+  res.json({ success: true, data: note });
+}));
+
+router.delete('/dashboardnotes/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.dashboardNote.update({
+    where: { id },
+    data: { dismissedAt: new Date() },
+  });
+  res.json({ success: true, message: 'Note dismissed' });
+}));
+
+// Feature Documentation routes (maps to DocumentationNote model)
+router.get('/featuredocumentations', asyncHandler(async (_req, res) => {
+  const docs = await prisma.documentationNote.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json({ success: true, data: docs });
+}));
+
+router.post('/featuredocumentations', asyncHandler(async (req, res) => {
+  const doc = await prisma.documentationNote.create({
+    data: req.body,
+  });
+  res.status(201).json({ success: true, data: doc });
+}));
+
+router.put('/featuredocumentations/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const doc = await prisma.documentationNote.update({
+    where: { id },
+    data: req.body,
+  });
+  res.json({ success: true, data: doc });
+}));
+
+router.delete('/featuredocumentations/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.documentationNote.delete({
+    where: { id },
+  });
+  res.json({ success: true, message: 'Documentation deleted' });
 }));
 
 export default router;
