@@ -6,6 +6,26 @@ import prisma from '../utils/prisma';
 
 const router = Router();
 
+const mapOrderStatus = (status?: string | null) => {
+    if (!status) return null;
+    const normalized = status.toUpperCase();
+    if (normalized === 'DRAFT' || normalized === 'PENDING_SAP') return 'pending_sap_details';
+    if (normalized === 'APPROVED') return 'approved';
+    if (normalized === 'PARTIALLY_RECEIVED') return 'partially_received';
+    if (normalized === 'FULLY_RECEIVED') return 'fully_received';
+    if (normalized === 'CLOSED') return 'closed';
+    if (normalized === 'CANCELLED') return 'cancelled';
+    return status.toLowerCase();
+};
+
+const mapOrderType = (orderType?: string | null) => {
+    if (!orderType) return null;
+    const normalized = orderType.toUpperCase();
+    if (normalized === 'IMMEDIATE' || normalized === 'IMMEDIATE_DELIVERY') return 'immediate_delivery';
+    if (normalized === 'FRAMEWORK') return 'framework';
+    return orderType.toLowerCase();
+};
+
 /**
  * POST /api/functions/:functionName
  * Generic function handler - maps function names to services
@@ -48,10 +68,72 @@ router.post(
                                 reagent: true,
                             },
                         },
+                        deliveries: true,
+                        frameworkOrder: {
+                            include: {
+                                withdrawalRequests: true,
+                            },
+                        },
                     },
                     orderBy: { orderDate: 'desc' },
                 });
-                result = { success: true, data: { orders } };
+                const mappedOrders = orders.map((order: any) => {
+                    const items = Array.isArray(order.items) ? order.items : [];
+                    const totalItems = items.length;
+                    const totalQuantityOrdered = items.reduce((sum: number, item: any) => {
+                        return sum + (Number(item.requestedQuantity) || 0);
+                    }, 0);
+                    const totalQuantityReceived = items.reduce((sum: number, item: any) => {
+                        return sum + (Number(item.receivedQuantity) || 0);
+                    }, 0);
+                    const totalQuantityRemaining = items.reduce((sum: number, item: any) => {
+                        if (item.remainingQuantity != null) {
+                            return sum + (Number(item.remainingQuantity) || 0);
+                        }
+                        const requested = Number(item.requestedQuantity) || 0;
+                        const received = Number(item.receivedQuantity) || 0;
+                        return sum + Math.max(0, requested - received);
+                    }, 0);
+
+                    const linkedDeliveries = Array.isArray(order.deliveries) ? order.deliveries : [];
+                    const linkedDeliveryNumbers = linkedDeliveries.map((delivery: any) => delivery.deliveryNumber);
+                    const linkedDeliveryIds = linkedDeliveries.map((delivery: any) => delivery.id);
+
+                    const linkedWithdrawals = order.frameworkOrder?.withdrawalRequests || [];
+                    const mappedWithdrawals = linkedWithdrawals.map((withdrawal: any) => ({
+                        id: withdrawal.id,
+                        withdrawal_number: withdrawal.withdrawalNumber,
+                    }));
+                    const linkedWithdrawalIds = mappedWithdrawals.map((withdrawal: any) => withdrawal.id);
+
+                    return {
+                        id: order.id,
+                        order_number_temp: order.tempNumber,
+                        order_number_permanent: order.permanentNumber || null,
+                        purchase_order_number_sap: order.sapPurchaseOrder || null,
+                        supplier_name_snapshot: order.supplierSnapshot || order.supplier?.name || null,
+                        supplier: order.supplier?.name || order.supplierSnapshot || null,
+                        supplier_id: order.supplierId,
+                        order_date: order.orderDate?.toISOString() || null,
+                        created_date: order.createdAt?.toISOString() || null,
+                        updated_date: order.updatedAt?.toISOString() || null,
+                        status: mapOrderStatus(order.status),
+                        order_type: mapOrderType(order.orderType),
+                        expected_delivery_start_date: order.expectedDeliveryStart?.toISOString() || null,
+                        expected_delivery_end_date: order.expectedDeliveryEnd?.toISOString() || null,
+                        notes: order.internalNotes || order.supplierNotes || '',
+                        total_items: totalItems,
+                        total_quantity_ordered: totalQuantityOrdered,
+                        total_quantity_received: totalQuantityReceived,
+                        total_quantity_remaining: totalQuantityRemaining,
+                        linked_delivery_numbers: linkedDeliveryNumbers,
+                        linked_delivery_ids: linkedDeliveryIds,
+                        linked_withdrawals: mappedWithdrawals,
+                        linked_withdrawal_request_ids: linkedWithdrawalIds,
+                    };
+                });
+
+                result = { success: true, data: { orders: mappedOrders } };
                 break;
             }
 
@@ -580,6 +662,272 @@ router.post(
                 break;
             }
 
+            case 'getEditReagentBatchData': {
+                const batchId = params.batch_id || params.batchId;
+                if (!batchId) {
+                    result = { success: false, error: 'batch_id is required' };
+                    break;
+                }
+
+                const batch = await prisma.reagentBatch.findUnique({
+                    where: { id: batchId },
+                    include: {
+                        reagent: {
+                            include: {
+                                supplier: true,
+                            },
+                        },
+                        delivery: {
+                            include: {
+                                supplier: true,
+                                order: true,
+                            },
+                        },
+                    },
+                });
+
+                if (!batch) {
+                    result = { success: false, error: 'Batch not found' };
+                    break;
+                }
+
+                const relatedTransactions = await prisma.inventoryTransaction.findMany({
+                    where: { batchId },
+                    orderBy: { createdAt: 'desc' },
+                });
+
+                const deliveryItems = await prisma.deliveryItem.findMany({
+                    where: {
+                        reagentId: batch.reagentId,
+                        batchNumber: batch.batchNumber,
+                    },
+                    include: {
+                        delivery: {
+                            include: {
+                                supplier: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                });
+
+                const shipmentItems = await prisma.shipmentItem.findMany({
+                    where: { batchId },
+                    include: {
+                        shipment: true,
+                    },
+                    orderBy: { createdAt: 'desc' },
+                });
+
+                const mapBatchStatus = (status?: string | null) => {
+                    if (!status) return null;
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'INCOMING') return 'incoming';
+                    if (normalized === 'ACTIVE') return 'active';
+                    if (normalized === 'EXPIRED') return 'expired';
+                    if (normalized === 'CONSUMED') return 'consumed';
+                    if (normalized === 'ON_HOLD') return 'quarantine';
+                    if (normalized === 'DESTROYED') return 'disposed';
+                    return status.toLowerCase();
+                };
+
+                const mapQcStatus = (status?: string | null) => {
+                    if (!status) return 'not_required';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'PENDING') return 'pending';
+                    if (normalized === 'APPROVED') return 'passed';
+                    if (normalized === 'REJECTED') return 'failed';
+                    if (normalized === 'REQUIRES_REVIEW') return 'in_progress';
+                    return status.toLowerCase();
+                };
+
+                const orderReference = batch.delivery?.order
+                    ? (batch.delivery.order.permanentNumber || batch.delivery.order.tempNumber || null)
+                    : null;
+
+                const mappedBatch = {
+                    id: batch.id,
+                    reagent_id: batch.reagentId,
+                    batch_number: batch.batchNumber,
+                    expiry_date: batch.expiryDate?.toISOString() || null,
+                    manufacture_date: batch.manufactureDate?.toISOString() || null,
+                    initial_quantity: batch.initialQuantity,
+                    current_quantity: batch.currentQuantity,
+                    reserved_quantity: batch.reservedQuantity,
+                    received_date: batch.receivedDate?.toISOString() || null,
+                    storage_location: batch.storageLocation || null,
+                    storage_conditions: batch.storageConditions || null,
+                    status: mapBatchStatus(batch.status),
+                    qc_status: mapQcStatus(batch.qcStatus),
+                    qc_notes: batch.qcNotes || null,
+                    notes: batch.generalNotes || null,
+                    received_by: null,
+                    delivery_reference: batch.delivery?.deliveryNumber || null,
+                    order_reference: orderReference,
+                    qc_date: null,
+                    qc_performed_by: null,
+                    coa_document_url: batch.coaDocumentUrl || null,
+                    coa_upload_date: null,
+                    coa_uploaded_by: null,
+                    created_date: batch.createdAt?.toISOString() || null,
+                    updated_date: batch.updatedAt?.toISOString() || null,
+                };
+
+                const mappedReagentData = batch.reagent ? {
+                    id: batch.reagent.id,
+                    name: batch.reagent.name,
+                    supplier: batch.reagent.supplier?.name || null,
+                    supplier_id: batch.reagent.supplierId,
+                    unit_of_measure: null,
+                } : null;
+
+                const mappedTransactions = relatedTransactions.map((tx: any) => ({
+                    id: tx.id,
+                    transaction_type: tx.transactionType,
+                    quantity: tx.quantityDelta,
+                    notes: tx.notes || null,
+                    created_date: tx.createdAt.toISOString(),
+                }));
+
+                const mappedDeliveryItems = deliveryItems.map((item: any) => ({
+                    id: item.id,
+                    delivery_id: item.deliveryId,
+                    delivery_number: item.delivery?.deliveryNumber || null,
+                    delivery_date: item.delivery?.deliveryDate?.toISOString() || null,
+                    quantity_received: Number(item.acceptedQuantity ?? item.quantity) || 0,
+                }));
+
+                const mappedShipmentItems = shipmentItems.map((item: any) => ({
+                    id: item.id,
+                    shipment_id: item.shipmentId,
+                    shipment_number: item.shipment?.shipmentNumber || null,
+                    shipment_date: item.shipment?.shipmentDate?.toISOString() || null,
+                    quantity_sent: Number(item.quantity) || 0,
+                }));
+
+                const linkedDelivery = batch.delivery ? {
+                    id: batch.delivery.id,
+                    delivery_number: batch.delivery.deliveryNumber,
+                    delivery_date: batch.delivery.deliveryDate?.toISOString() || null,
+                    supplier: batch.delivery.supplier?.name || batch.delivery.supplierSnapshot || null,
+                } : null;
+
+                result = {
+                    success: true,
+                    data: {
+                        batch: mappedBatch,
+                        reagentData: mappedReagentData,
+                        relatedTransactions: mappedTransactions,
+                        deliveryItems: mappedDeliveryItems,
+                        shipmentItems: mappedShipmentItems,
+                        linkedDelivery,
+                    },
+                };
+                break;
+            }
+
+            case 'getEditDeliveryData': {
+                const deliveryId = params.delivery_id || params.deliveryId;
+                if (!deliveryId) {
+                    result = { success: false, error: 'delivery_id is required' };
+                    break;
+                }
+
+                const delivery = await prisma.delivery.findUnique({
+                    where: { id: deliveryId },
+                    include: {
+                        supplier: true,
+                        order: true,
+                        withdrawalRequest: true,
+                        items: {
+                            include: {
+                                reagent: true,
+                            },
+                        },
+                    },
+                });
+
+                if (!delivery) {
+                    result = { success: false, error: 'Delivery not found' };
+                    break;
+                }
+
+                const mapDeliveryStatus = (status?: string | null) => {
+                    if (!status) return 'open';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'NEW') return 'open';
+                    if (normalized === 'PROCESSING') return 'processing';
+                    if (normalized === 'COMPLETED') return 'processed';
+                    if (normalized === 'CANCELLED') return 'closed';
+                    return status.toLowerCase();
+                };
+
+                const items = Array.isArray(delivery.items) ? delivery.items : [];
+                const totalItemsReceived = items.reduce((sum: number, item: any) => {
+                    return sum + (Number(item.acceptedQuantity ?? item.quantity) || 0);
+                }, 0);
+                const completionType = items.length > 0
+                    ? (items.every((item: any) => (Number(item.acceptedQuantity ?? item.quantity) || 0) >= (Number(item.quantity) || 0)) ? 'full' : 'partial')
+                    : null;
+
+                const mappedDelivery = {
+                    id: delivery.id,
+                    delivery_number: delivery.deliveryNumber,
+                    supplier: delivery.supplier?.name || delivery.supplierSnapshot || null,
+                    supplier_id: delivery.supplierId,
+                    delivery_date: delivery.deliveryDate?.toISOString() || null,
+                    status: mapDeliveryStatus(delivery.status),
+                    delivery_type: delivery.orderId ? 'with_order' : 'other',
+                    completion_type: completionType,
+                    total_items_received: totalItemsReceived,
+                    notes: delivery.notes || null,
+                    completion_notes: null,
+                    delivery_reason_text: null,
+                    created_date: delivery.createdAt?.toISOString() || null,
+                    updated_date: delivery.updatedAt?.toISOString() || null,
+                    created_by: null,
+                };
+
+                const mappedDeliveryItems = items.map((item: any) => ({
+                    id: item.id,
+                    reagent_id: item.reagentId,
+                    reagent_current_name: item.reagent?.name || null,
+                    reagent_name_snapshot: item.reagent?.name || null,
+                    reagent_catalog_number: item.reagent?.catalogNumber || null,
+                    batch_number: item.batchNumber,
+                    expiry_date: item.expiryDate?.toISOString() || null,
+                    quantity_received: Number(item.acceptedQuantity ?? item.quantity) || 0,
+                    is_replacement: false,
+                }));
+
+                const linkedOrder = delivery.order ? {
+                    id: delivery.order.id,
+                    order_number_temp: delivery.order.tempNumber,
+                    order_number_permanent: delivery.order.permanentNumber || null,
+                    purchase_order_number_sap: delivery.order.sapPurchaseOrder || null,
+                    order_date: delivery.order.orderDate?.toISOString() || null,
+                    status: mapOrderStatus(delivery.order.status),
+                } : null;
+
+                const linkedWithdrawals = delivery.withdrawalRequest ? [{
+                    id: delivery.withdrawalRequest.id,
+                    withdrawal_number: delivery.withdrawalRequest.withdrawalNumber,
+                    request_date: delivery.withdrawalRequest.requestDate?.toISOString() || null,
+                    status: delivery.withdrawalRequest.status?.toLowerCase() || delivery.withdrawalRequest.status,
+                }] : [];
+
+                result = {
+                    success: true,
+                    data: {
+                        delivery: mappedDelivery,
+                        deliveryItems: mappedDeliveryItems,
+                        linkedOrder,
+                        linkedWithdrawals,
+                    },
+                };
+                break;
+            }
+
             // Other placeholder functions
             case 'getProcessingProgress':
             case 'cleanupOperations':
@@ -1011,8 +1359,6 @@ router.post(
             case 'getEditWithdrawalData':
             case 'fixDataIntegrity':
             case 'deleteWithdrawal':
-            case 'getEditReagentBatchData':
-            case 'getEditDeliveryData':
             case 'getEditShipmentData':
             case 'getInventoryCountsHistoryData':
             case 'getSingleInventoryCountDetails':
