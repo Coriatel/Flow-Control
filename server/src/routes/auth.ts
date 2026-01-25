@@ -182,7 +182,46 @@ router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response)
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
+      device_fingerprint: (user as any).deviceFingerprint
+    }
+  };
+  res.json(response);
+}));
+
+/**
+ * PUT /api/auth/me
+ * Update current user data (device fingerprint, etc.)
+ */
+router.put('/me', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Not authenticated', 401);
+  }
+
+  const { device_fingerprint, name } = req.body;
+
+  const updateData: any = {};
+  if (device_fingerprint !== undefined) {
+    updateData.deviceFingerprint = device_fingerprint;
+  }
+  if (name !== undefined) {
+    updateData.name = name;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: updateData
+  });
+
+  const response: ApiResponse = {
+    success: true,
+    data: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      device_fingerprint: (user as any).deviceFingerprint
     }
   };
   res.json(response);

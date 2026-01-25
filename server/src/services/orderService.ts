@@ -359,7 +359,7 @@ export const orderService = {
       (i: any) => Number(i.receivedQuantity) > 0
     );
 
-    let newStatus: OrderStatus = order.status;
+    let newStatus: OrderStatus = order.status as OrderStatus;
     if (allReceived) {
       newStatus = OrderStatus.FULLY_RECEIVED;
     } else if (someReceived) {

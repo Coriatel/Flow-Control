@@ -13,10 +13,19 @@ import filesRoutes from './files';
 import usersRoutes from './users';
 import alertsRoutes from './alerts';
 import activityRoutes from './activity';
+import functionsRoutes from './functions';
+import systemSettingsRoutes from './systemsettings';
 
 const router = Router();
 
+
 // Mount routes
+
+// Functions (for frontend function-based API compatibility)
+router.use('/functions', functionsRoutes);
+
+// System settings
+router.use('/systemsettings', systemSettingsRoutes);
 
 // Authentication (public)
 router.use('/auth', authRoutes);
@@ -52,3 +61,4 @@ router.get('/health', (_req, res) => {
 });
 
 export default router;
+

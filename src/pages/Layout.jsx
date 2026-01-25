@@ -65,7 +65,7 @@ export default function Layout({ children, currentPageName }) {
   const [systemDisplay, setSystemDisplay] = useState({
     mainHeaderName: 'מערכת ניהול ריאגנטים',
     sidebarHeaderName: 'ניהול מלאי ריאגנטים',
-    logoUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/17ba664fd_image.png'
+    logoUrl: '/favicon.svg'
   });
 
   // Navigation history - improved implementation
@@ -88,7 +88,7 @@ export default function Layout({ children, currentPageName }) {
           setSystemDisplay({
             mainHeaderName: settingsResult[0].mainHeaderName || 'מערכת ניהול ריאגנטים',
             sidebarHeaderName: settingsResult[0].sidebarHeaderName || 'ניהול מלאי ריאגנטים',
-            logoUrl: settingsResult[0].logoUrl || 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/17ba664fd_image.png'
+            logoUrl: settingsResult[0].logoUrl || '/favicon.svg'
           });
         }
       } catch (error) {
@@ -709,7 +709,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex items-center gap-4">
                  <span className="text-lg font-semibold text-slate-700 hidden lg:block">Flow Control</span>
                  <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/17ba664fd_image.png"
+                  src="/favicon.svg"
                   alt="לוגו"
                   className="h-9 w-9 rounded-md object-contain hidden lg:block"
                   loading="lazy"

@@ -70,7 +70,7 @@ export const ExpiredProductLog = createEntity('expiredproductlog');
 export const Supplier = createEntity('supplier');
 export const SupplierContact = createEntity('suppliercontact');
 export const DashboardNote = createEntity('dashboardnote');
-export const SystemSettings = createEntity('systemsettings');
+export const SystemSettings = createEntity('systemsetting');
 export const ArchivedReport = createEntity('archivedreport');
 export const ArchivedData = createEntity('archiveddata');
 export const AlertRule = createEntity('alertrule');
@@ -86,18 +86,27 @@ export const User = {
     return apiClient.get('/auth/me');
   },
 
+  async updateMyUserData(data) {
+    // Update current user's data (device fingerprint, etc.)
+    return apiClient.put('/auth/me', data);
+  },
+
   async login(email, password) {
     const response = await apiClient.post('/auth/login', { email, password });
-    if (response.token) {
-      apiClient.setToken(response.token);
+    // Token is in response.data.token (API returns { success, data: { user, token } })
+    const token = response.data?.token || response.token;
+    if (token) {
+      apiClient.setToken(token);
     }
     return response;
   },
 
   async register(data) {
     const response = await apiClient.post('/auth/register', data);
-    if (response.token) {
-      apiClient.setToken(response.token);
+    // Token is in response.data.token (API returns { success, data: { user, token } })
+    const token = response.data?.token || response.token;
+    if (token) {
+      apiClient.setToken(token);
     }
     return response;
   },
@@ -121,3 +130,4 @@ export const User = {
     return apiClient.get(`/users/${id}`);
   }
 };
+

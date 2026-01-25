@@ -200,10 +200,10 @@ class InventoryService {
           action: 'inventory_count',
           entityType: 'inventory_count',
           entityId: completed.id,
-          details: {
+          details: JSON.stringify({
             reagentsCount: entriesByReagent.size,
             batchesCount: entries.length,
-          },
+          }),
         },
       });
 

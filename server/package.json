@@ -10,12 +10,15 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:qa": "ts-node prisma/seed-qa.ts",
     "prisma:reset": "prisma migrate reset",
     "db:setup": "prisma generate && prisma migrate dev && npm run prisma:seed",
+    "db:setup:qa": "prisma generate && prisma migrate dev && npm run prisma:seed:qa",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --forceExit"
+    "test:ci": "jest --ci --coverage --forceExit",
+    "test:integration": "jest --testPathPattern=integration --forceExit"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
