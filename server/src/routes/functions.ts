@@ -254,6 +254,146 @@ router.post(
                 break;
             }
 
+            case 'alertsManager': {
+                const action = params.action;
+                const data = params.data || {};
+
+                const mapPriority = (severity: string | null | undefined) => {
+                    if (!severity) return 'medium';
+                    const normalized = severity.toUpperCase();
+                    if (normalized === 'LOW') return 'low';
+                    if (normalized === 'HIGH') return 'high';
+                    if (normalized === 'CRITICAL') return 'critical';
+                    return 'medium';
+                };
+
+                const mapStatus = (status: string | null | undefined) => {
+                    if (!status) return 'active';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'NEW') return 'active';
+                    if (normalized === 'IN_PROGRESS') return 'acknowledged';
+                    if (normalized === 'RESOLVED') return 'resolved';
+                    if (normalized === 'DISMISSED') return 'snoozed';
+                    return status.toLowerCase();
+                };
+
+                const mapStatusToDb = (status: string | null | undefined) => {
+                    if (!status || status === 'all') return undefined;
+                    if (status === 'active') return 'NEW';
+                    if (status === 'acknowledged') return 'IN_PROGRESS';
+                    if (status === 'resolved') return 'RESOLVED';
+                    if (status === 'snoozed') return 'DISMISSED';
+                    return status.toUpperCase();
+                };
+
+                const mapPriorityToDb = (priority: string | null | undefined) => {
+                    if (!priority || priority === 'all') return undefined;
+                    if (priority === 'low') return 'LOW';
+                    if (priority === 'medium') return 'MEDIUM';
+                    if (priority === 'high') return 'HIGH';
+                    if (priority === 'critical') return 'CRITICAL';
+                    return priority.toUpperCase();
+                };
+
+                if (action === 'get_active_alerts') {
+                    const filters = data.filters || {};
+                    const where: any = {};
+
+                    const statusFilter = mapStatusToDb(filters.status);
+                    if (statusFilter) where.status = statusFilter;
+
+                    const priorityFilter = mapPriorityToDb(filters.priority);
+                    if (priorityFilter) where.severity = priorityFilter;
+
+                    if (filters.type && filters.type !== 'all') {
+                        where.alertRule = { ruleType: filters.type.toUpperCase() };
+                    }
+
+                    const alerts = await prisma.activeAlert.findMany({
+                        where,
+                        include: { alertRule: true },
+                        orderBy: { createdAt: 'desc' },
+                    });
+
+                    result = alerts.map((alert: any) => ({
+                        id: alert.id,
+                        alert_type: alert.alertRule?.ruleType?.toLowerCase() || alert.entityType?.toLowerCase() || 'custom',
+                        title: alert.alertRule?.name || 'התראה',
+                        message: alert.message,
+                        status: mapStatus(alert.status),
+                        priority: mapPriority(alert.severity),
+                        created_date: alert.createdAt?.toISOString(),
+                        entity_type: alert.entityType,
+                        entity_id: alert.entityId,
+                    }));
+                    break;
+                }
+
+                if (action === 'acknowledge_alert') {
+                    const alertId = data.alertId || data.alert_id;
+                    if (!alertId) {
+                        result = { success: false, error: 'alertId is required' };
+                        break;
+                    }
+                    await prisma.activeAlert.update({
+                        where: { id: alertId },
+                        data: { status: 'IN_PROGRESS' },
+                    });
+                    result = { success: true };
+                    break;
+                }
+
+                if (action === 'resolve_alert') {
+                    const alertId = data.alertId || data.alert_id;
+                    if (!alertId) {
+                        result = { success: false, error: 'alertId is required' };
+                        break;
+                    }
+                    const resolution = data.resolution || {};
+                    const notes = resolution.notes || resolution.action_taken || null;
+                    await prisma.activeAlert.update({
+                        where: { id: alertId },
+                        data: {
+                            status: 'RESOLVED',
+                            resolvedAt: new Date(),
+                            resolutionNotes: notes,
+                        },
+                    });
+                    result = { success: true };
+                    break;
+                }
+
+                if (action === 'create_rule') {
+                    const ruleName = data.rule_name || data.name;
+                    const ruleType = data.rule_type || data.type;
+                    if (!ruleName || !ruleType) {
+                        result = { success: false, error: 'rule_name and rule_type are required' };
+                        break;
+                    }
+                    const conditions = data.conditions || {};
+                    const targetFilters = data.target_filters || {};
+                    const categories = targetFilters.categories;
+                    const appliesToCategories = Array.isArray(categories) ? categories.join(',') : '';
+                    const created = await prisma.alertRule.create({
+                        data: {
+                            name: ruleName,
+                            ruleType: ruleType.toUpperCase(),
+                            description: data.notes || data.description || null,
+                            thresholdDays: conditions.threshold_days ?? conditions.thresholdDays ?? null,
+                            thresholdQuantity: conditions.threshold_quantity ?? conditions.thresholdQuantity ?? null,
+                            thresholdMonths: conditions.threshold_months ?? conditions.thresholdMonths ?? null,
+                            appliesToCategories,
+                            isActive: true,
+                        },
+                    });
+                    result = { success: true, ruleId: created.id };
+                    break;
+                }
+
+                result = { success: false, error: `Unsupported alertsManager action: ${action}` };
+                break;
+            }
+
             case 'getEditReagentData': {
                 const reagentId = params.reagent_id || params.reagentId;
                 if (!reagentId) {
@@ -403,7 +543,6 @@ router.post(
             case 'createAnnualReminders':
             case 'archiveOldData':
             case 'alertsEngine':
-            case 'alertsManager':
             case 'getBatchAndExpiryData': {
                 // Get all batches with reagent info
                 const allBatches = await prisma.reagentBatch.findMany({
