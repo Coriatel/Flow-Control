@@ -139,5 +139,194 @@ router.delete('/featuredocumentations/:id', asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Documentation deleted' });
 }));
 
-export default router;
+const mapOrderItem = (item: any, reagent: any) => {
+  const quantityOrdered = Number(item.requestedQuantity) || 0;
+  const quantityReceived = Number(item.receivedQuantity) || 0;
+  const quantityRemaining = item.remainingQuantity != null
+    ? Number(item.remainingQuantity)
+    : Math.max(0, quantityOrdered - quantityReceived);
+  let lineStatus = 'open';
+  if (quantityReceived > 0 && quantityRemaining > 0) lineStatus = 'partially_received';
+  if (quantityRemaining <= 0) lineStatus = 'fully_received';
+  return {
+    id: item.id,
+    order_id: item.orderId,
+    reagent_id: item.reagentId,
+    reagent_name_snapshot: reagent?.name || null,
+    reagent_catalog_number_snapshot: reagent?.catalogNumber || null,
+    quantity_ordered: quantityOrdered,
+    quantity_received: quantityReceived,
+    quantity_remaining: quantityRemaining,
+    line_status: lineStatus,
+    notes: item.notes || null,
+  };
+};
 
+router.get('/orderitems', asyncHandler(async (req, res) => {
+  const { order_id, reagent_id, line_status } = req.query;
+  const where: any = {};
+  if (order_id) where.orderId = order_id as string;
+  if (reagent_id) where.reagentId = reagent_id as string;
+
+  const items = await prisma.orderItem.findMany({
+    where,
+    include: { reagent: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  let mapped = items.map((item: any) => mapOrderItem(item, item.reagent));
+  if (line_status) {
+    mapped = mapped.filter((item: any) => item.line_status === line_status);
+  }
+  res.json({ success: true, data: mapped, meta: { total: mapped.length } });
+}));
+
+router.get('/orderitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const item = await prisma.orderItem.findUnique({
+    where: { id },
+    include: { reagent: true },
+  });
+  if (!item) return res.status(404).json({ success: false, error: 'Order item not found' });
+  res.json({ success: true, data: mapOrderItem(item, item.reagent) });
+}));
+
+router.post('/orderitems', asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  const orderId = body.order_id || body.orderId;
+  const reagentId = body.reagent_id || body.reagentId;
+  const requestedQuantity = Number(body.quantity_ordered ?? body.requestedQuantity ?? 0);
+  const created = await prisma.orderItem.create({
+    data: {
+      orderId,
+      reagentId,
+      requestedQuantity,
+      receivedQuantity: Number(body.quantity_received ?? body.receivedQuantity ?? 0),
+      remainingQuantity: body.quantity_remaining != null ? Number(body.quantity_remaining) : null,
+      notes: body.notes || null,
+    },
+    include: { reagent: true },
+  });
+  res.status(201).json({ success: true, data: mapOrderItem(created, created.reagent) });
+}));
+
+router.put('/orderitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const body = req.body || {};
+  const data: any = {};
+  if (body.order_id || body.orderId) data.orderId = body.order_id || body.orderId;
+  if (body.reagent_id || body.reagentId) data.reagentId = body.reagent_id || body.reagentId;
+  if (body.quantity_ordered !== undefined || body.requestedQuantity !== undefined) {
+    data.requestedQuantity = Number(body.quantity_ordered ?? body.requestedQuantity);
+  }
+  if (body.quantity_received !== undefined || body.receivedQuantity !== undefined) {
+    data.receivedQuantity = Number(body.quantity_received ?? body.receivedQuantity);
+  }
+  if (body.quantity_remaining !== undefined || body.remainingQuantity !== undefined) {
+    data.remainingQuantity = Number(body.quantity_remaining ?? body.remainingQuantity);
+  }
+  if (body.notes !== undefined) data.notes = body.notes;
+
+  const updated = await prisma.orderItem.update({
+    where: { id },
+    data,
+    include: { reagent: true },
+  });
+  res.json({ success: true, data: mapOrderItem(updated, updated.reagent) });
+}));
+
+router.delete('/orderitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.orderItem.delete({ where: { id } });
+  res.json({ success: true, message: 'Order item deleted' });
+}));
+
+const mapWithdrawalItem = (item: any, reagent: any) => {
+  const quantityRequested = Number(item.approvedQuantity ?? item.requestedQuantity) || 0;
+  const quantityReceived = Number(item.fulfilledQuantity) || 0;
+  let lineStatus = 'open';
+  if (quantityReceived > 0 && quantityReceived < quantityRequested) lineStatus = 'partially_delivered';
+  if (quantityRequested > 0 && quantityReceived >= quantityRequested) lineStatus = 'delivered';
+  return {
+    id: item.id,
+    withdrawal_request_id: item.withdrawalRequestId,
+    reagent_id: item.reagentId,
+    reagent_name_snapshot: reagent?.name || null,
+    quantity_requested: quantityRequested,
+    quantity_received: quantityReceived,
+    line_status: lineStatus,
+  };
+};
+
+router.get('/withdrawalitems', asyncHandler(async (req, res) => {
+  const { withdrawal_request_id, reagent_id } = req.query;
+  const where: any = {};
+  if (withdrawal_request_id) where.withdrawalRequestId = withdrawal_request_id as string;
+  if (reagent_id) where.reagentId = reagent_id as string;
+
+  const items = await prisma.withdrawalItem.findMany({
+    where,
+    include: { reagent: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  const mapped = items.map((item: any) => mapWithdrawalItem(item, item.reagent));
+  res.json({ success: true, data: mapped, meta: { total: mapped.length } });
+}));
+
+router.get('/withdrawalitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const item = await prisma.withdrawalItem.findUnique({
+    where: { id },
+    include: { reagent: true },
+  });
+  if (!item) return res.status(404).json({ success: false, error: 'Withdrawal item not found' });
+  res.json({ success: true, data: mapWithdrawalItem(item, item.reagent) });
+}));
+
+router.post('/withdrawalitems', asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  const withdrawalRequestId = body.withdrawal_request_id || body.withdrawalRequestId;
+  const reagentId = body.reagent_id || body.reagentId;
+  const created = await prisma.withdrawalItem.create({
+    data: {
+      withdrawalRequestId,
+      reagentId,
+      requestedQuantity: Number(body.quantity_requested ?? body.requestedQuantity ?? 0),
+      approvedQuantity: body.approved_quantity != null ? Number(body.approved_quantity) : null,
+      fulfilledQuantity: Number(body.quantity_received ?? body.fulfilledQuantity ?? 0),
+      unitPrice: body.unit_price != null ? Number(body.unit_price) : null,
+    },
+    include: { reagent: true },
+  });
+  res.status(201).json({ success: true, data: mapWithdrawalItem(created, created.reagent) });
+}));
+
+router.put('/withdrawalitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const body = req.body || {};
+  const data: any = {};
+  if (body.withdrawal_request_id || body.withdrawalRequestId) data.withdrawalRequestId = body.withdrawal_request_id || body.withdrawalRequestId;
+  if (body.reagent_id || body.reagentId) data.reagentId = body.reagent_id || body.reagentId;
+  if (body.quantity_requested !== undefined || body.requestedQuantity !== undefined) {
+    data.requestedQuantity = Number(body.quantity_requested ?? body.requestedQuantity);
+  }
+  if (body.approved_quantity !== undefined || body.approvedQuantity !== undefined) {
+    data.approvedQuantity = Number(body.approved_quantity ?? body.approvedQuantity);
+  }
+  if (body.quantity_received !== undefined || body.fulfilledQuantity !== undefined) {
+    data.fulfilledQuantity = Number(body.quantity_received ?? body.fulfilledQuantity);
+  }
+  const updated = await prisma.withdrawalItem.update({
+    where: { id },
+    data,
+    include: { reagent: true },
+  });
+  res.json({ success: true, data: mapWithdrawalItem(updated, updated.reagent) });
+}));
+
+router.delete('/withdrawalitems/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.withdrawalItem.delete({ where: { id } });
+  res.json({ success: true, message: 'Withdrawal item deleted' });
+}));
+
+export default router;

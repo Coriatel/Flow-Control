@@ -59,6 +59,8 @@ router.post(
                 const deliveries = await prisma.delivery.findMany({
                     include: {
                         supplier: true,
+                        order: true,
+                        withdrawalRequest: true,
                         items: {
                             include: {
                                 reagent: true,
@@ -67,15 +69,44 @@ router.post(
                     },
                     orderBy: { deliveryDate: 'desc' },
                 });
+                const mappedDeliveries = deliveries.map((d: any) => {
+                    const totalItemsReceived = (d.items || []).reduce((sum: number, item: any) => {
+                        return sum + (Number(item.quantity) || 0);
+                    }, 0);
+                    const completionType = d.items && d.items.length > 0
+                        ? (d.items.every((item: any) => (Number(item.acceptedQuantity ?? item.quantity) || 0) >= (Number(item.quantity) || 0)) ? 'full' : 'partial')
+                        : null;
+                    const linkedWithdrawalNumbers = d.withdrawalRequest ? [d.withdrawalRequest.withdrawalNumber] : [];
+                    const linkedWithdrawalIds = d.withdrawalRequest ? [d.withdrawalRequest.id] : [];
+                    const deliveryType = d.withdrawalRequestId ? 'with_order' : 'with_order';
+                    return {
+                        id: d.id,
+                        delivery_number: d.deliveryNumber,
+                        delivery_date: d.deliveryDate?.toISOString(),
+                        status: d.status?.toLowerCase() || 'open',
+                        supplier: d.supplier?.name || d.supplierSnapshot || null,
+                        supplier_id: d.supplierId,
+                        linked_order_id: d.orderId || null,
+                        order_number_temp: d.order?.tempNumber || null,
+                        order_number_permanent: d.order?.permanentNumber || null,
+                        purchase_order_number_sap: d.order?.sapPurchaseOrder || null,
+                        linked_withdrawal_numbers: linkedWithdrawalNumbers,
+                        linked_withdrawal_request_ids: linkedWithdrawalIds,
+                        delivery_type: deliveryType,
+                        total_items_received: totalItemsReceived,
+                        completion_type: completionType,
+                        notes: d.notes || null,
+                    };
+                });
                 // Calculate summary
                 const summary = {
-                    total: deliveries.length,
-                    byStatus: deliveries.reduce((acc: Record<string, number>, d: any) => {
+                    total: mappedDeliveries.length,
+                    byStatus: mappedDeliveries.reduce((acc: Record<string, number>, d: any) => {
                         acc[d.status] = (acc[d.status] || 0) + 1;
                         return acc;
                     }, {}),
                 };
-                result = { success: true, data: { deliveries, summary } };
+                result = { success: true, data: { deliveries: mappedDeliveries, summary } };
                 break;
             }
 
@@ -702,6 +733,73 @@ router.post(
                 break;
             }
 
+            case 'createAutomaticOrder': {
+                const supplierParam = params.supplier;
+                const supplierIdParam = params.supplierId || params.supplier_id;
+                let supplierId = supplierIdParam || null;
+                let supplierName = null;
+
+                if (!supplierId && supplierParam) {
+                    if (typeof supplierParam === 'string') {
+                        supplierName = supplierParam;
+                    } else if (typeof supplierParam === 'object') {
+                        supplierId = supplierParam.id || supplierParam.supplier_id || null;
+                        supplierName = supplierParam.name || supplierParam.supplier_name || null;
+                    }
+                }
+
+                if (!supplierId) {
+                    const supplier = await prisma.supplier.findFirst({
+                        where: supplierName ? { name: supplierName } : undefined,
+                    });
+                    supplierId = supplier?.id || null;
+                    supplierName = supplier?.name || supplierName;
+                } else {
+                    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
+                    supplierName = supplier?.name || supplierName;
+                }
+
+                if (!supplierId) {
+                    result = { success: false, error: 'Supplier not found' };
+                    break;
+                }
+
+                const orderTypeParam = params.orderType || params.order_type;
+                const orderType = orderTypeParam === 'framework' ? 'FRAMEWORK' : 'IMMEDIATE';
+
+                const orderNumber = await orderService.generateOrderNumber();
+                const order = await prisma.order.create({
+                    data: {
+                        tempNumber: orderNumber,
+                        supplierId,
+                        supplierSnapshot: supplierName || supplierId,
+                        orderType,
+                        status: 'DRAFT',
+                        internalNotes: 'נוצר אוטומטית מהשלמות',
+                    },
+                });
+
+                const items = Array.isArray(params.items) ? params.items : [];
+                for (const item of items) {
+                    if (!item?.reagent_id) continue;
+                    await prisma.orderItem.create({
+                        data: {
+                            orderId: order.id,
+                            reagentId: item.reagent_id,
+                            requestedQuantity: Number(item.quantity) || 0,
+                            notes: item.notes || null,
+                        },
+                    });
+                }
+
+                result = {
+                    success: true,
+                    orderId: order.id,
+                    orderNumber: order.tempNumber,
+                };
+                break;
+            }
+
             case 'calculateAverageUsage':
             case 'testCOAAccess':
             case 'migrateLegacySuppliers':
@@ -709,7 +807,6 @@ router.post(
             case 'changeReagentSupplier':
             case 'deleteReagent':
             case 'calculateReplenishment':
-            case 'createAutomaticOrder':
             case 'createAutomaticWithdrawal':
             case 'checkPendingWithdrawals':
             case 'getAdvancedAnalytics':
