@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Order, OrderItem, User } from '@/api/entities';
+import { Order, OrderItem, User as UserEntity } from '@/api/entities';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
     Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2,
-    FileText, Package, Calendar, AlertCircle, ExternalLink, Truck, ShoppingCart
+    FileText, Package, Calendar, AlertCircle, ExternalLink, Truck, ShoppingCart, User as UserIcon
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -115,7 +115,7 @@ export default function EditOrderPage() {
             await Order.update(orderId, {
                 is_deleted: true,
                 deleted_date: new Date().toISOString(),
-                deleted_by: (await User.me()).email,
+                deleted_by: (await UserEntity.me()).email,
                 deleted_reason: 'נמחק על ידי המשתמש'
             });
 
@@ -464,7 +464,7 @@ export default function EditOrderPage() {
                         {/* Created By / Date */}
                         <div className="pt-4 border-t">
                             <div className="flex items-center text-xs text-gray-500 mb-2">
-                                <User className="h-3 w-3 ml-1" />
+                                <UserIcon className="h-3 w-3 ml-1" />
                                 נוצר על ידי: {order.created_by || 'לא ידוע'}
                             </div>
                             <div className="flex items-center text-xs text-gray-500">
