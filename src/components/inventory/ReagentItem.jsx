@@ -62,9 +62,12 @@ export default function ReagentItem({ reagent, batches, onBatchesChange, showNew
               {reagent.catalog_number && (
                 <span>מק"ט: {reagent.catalog_number}</span>
               )}
-              {reagent.supplier?.name && (
-                <span>ספק: {reagent.supplier.name}</span>
-              )}
+              {(() => {
+                const supplierName = typeof reagent.supplier === 'string'
+                  ? reagent.supplier
+                  : reagent.supplier?.name;
+                return supplierName ? <span>ספק: {supplierName}</span> : null;
+              })()}
             </div>
             
             {/* Last Count Info */}

@@ -103,9 +103,15 @@ function buildSimpleQueryParams(params) {
   return simpleParams;
 }
 
+const BASE_PATH_OVERRIDES = {
+  reagentbatch: '/batches',
+  withdrawalrequest: '/withdrawals',
+};
+
 // Helper function to create entity CRUD operations
 function createEntity(entityName) {
-  const basePath = `/${entityName.toLowerCase()}s`; // e.g., /reagents, /suppliers
+  const entityKey = entityName.toLowerCase();
+  const basePath = BASE_PATH_OVERRIDES[entityKey] || `/${entityKey}s`; // e.g., /reagents, /suppliers
 
   return {
     // List all items
@@ -298,4 +304,3 @@ export const User = {
     return apiClient.get(`/users/${id}`);
   }
 };
-

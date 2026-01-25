@@ -204,6 +204,8 @@ router.post(
                 const lastCount = await prisma.completedInventoryCount.findFirst({
                     orderBy: { countDate: 'desc' },
                 });
+                const totalActiveBatches = reagents.reduce((sum, r) => sum + r.batches.length, 0);
+                const reagentsWithNewBatches = 0;
                 result = {
                     success: true,
                     data: {
@@ -213,7 +215,136 @@ router.post(
                         summary: {
                             totalReagents: reagents.length,
                             withBatches: reagents.filter(r => r.batches.length > 0).length,
+                            totalActiveBatches,
+                            reagentsWithNewBatches,
                         },
+                    },
+                };
+                break;
+            }
+
+            case 'getEditReagentData': {
+                const reagentId = params.reagent_id || params.reagentId;
+                if (!reagentId) {
+                    result = { success: false, error: 'reagent_id is required' };
+                    break;
+                }
+
+                const reagent = await prisma.reagent.findUnique({
+                    where: { id: reagentId },
+                    include: { supplier: true },
+                });
+
+                if (!reagent) {
+                    result = { success: false, error: 'Reagent not found' };
+                    break;
+                }
+
+                const activeBatches = await prisma.reagentBatch.findMany({
+                    where: { reagentId, status: 'ACTIVE' },
+                    orderBy: { expiryDate: 'asc' },
+                });
+
+                const recentTransactions = await prisma.inventoryTransaction.findMany({
+                    where: { reagentId },
+                    include: { batch: true },
+                    orderBy: { createdAt: 'desc' },
+                    take: 20,
+                });
+
+                const relatedOrderItems = await prisma.orderItem.findMany({
+                    where: { reagentId },
+                    include: { order: true },
+                    orderBy: { createdAt: 'desc' },
+                    take: 10,
+                });
+
+                const mapStockStatus = (status: string | null | undefined) => {
+                    if (!status) return null;
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'NORMAL') return 'in_stock';
+                    if (normalized === 'LOW') return 'low_stock';
+                    if (normalized === 'CRITICAL') return 'low_stock';
+                    if (normalized === 'OUT_OF_STOCK') return 'out_of_stock';
+                    if (normalized === 'OVERSTOCKED') return 'overstocked';
+                    return status.toLowerCase();
+                };
+
+                const mappedReagent = {
+                    id: reagent.id,
+                    name: reagent.name,
+                    catalog_number: reagent.catalogNumber || null,
+                    category: reagent.category?.toLowerCase() || reagent.category,
+                    supplier: reagent.supplier?.name || null,
+                    supplier_id: reagent.supplierId,
+                    total_quantity_all_batches: reagent.totalQuantity,
+                    active_batches_count: reagent.activeBatchesCount,
+                    nearest_expiry_date: reagent.nearestExpiryDate?.toISOString() || null,
+                    current_stock_status: mapStockStatus(reagent.currentStockStatus),
+                    months_of_stock: reagent.monthsOfStock,
+                    requires_batches: reagent.requiresBatches,
+                    is_consumable: reagent.isConsumable,
+                    notes: reagent.notes || '',
+                    created_date: reagent.createdAt.toISOString(),
+                    updated_date: reagent.updatedAt.toISOString(),
+                };
+
+                const mappedSupplier = reagent.supplier ? {
+                    id: reagent.supplier.id,
+                    name: reagent.supplier.name,
+                    display_name: reagent.supplier.name,
+                    short_code: reagent.supplier.shortCode || null,
+                    address: reagent.supplier.address || null,
+                    phone: reagent.supplier.phone || null,
+                    email: reagent.supplier.email || null,
+                    website: reagent.supplier.website || null,
+                    default_currency: reagent.supplier.defaultCurrency,
+                    payment_terms: reagent.supplier.paymentTerms || null,
+                    lead_time_days: reagent.supplier.leadTimeDays || null,
+                    is_preferred: reagent.supplier.isPreferred,
+                    is_active: reagent.supplier.isActive,
+                    created_at: reagent.supplier.createdAt.toISOString(),
+                    updated_at: reagent.supplier.updatedAt.toISOString(),
+                } : null;
+
+                const mappedBatches = activeBatches.map(batch => ({
+                    id: batch.id,
+                    reagent_id: batch.reagentId,
+                    batch_number: batch.batchNumber,
+                    expiry_date: batch.expiryDate?.toISOString() || null,
+                    current_quantity: batch.currentQuantity,
+                    status: batch.status,
+                }));
+
+                const mappedTransactions = recentTransactions.map(tx => ({
+                    id: tx.id,
+                    reagent_id: tx.reagentId,
+                    batch_id: tx.batchId,
+                    batch_number: tx.batch?.batchNumber || null,
+                    transaction_type: tx.transactionType,
+                    quantity: tx.quantityDelta,
+                    created_date: tx.createdAt.toISOString(),
+                    notes: tx.notes || null,
+                }));
+
+                const mappedRelatedOrders = relatedOrderItems.map(item => ({
+                    id: item.id,
+                    order_id: item.orderId,
+                    order_number_temp: item.order?.tempNumber || null,
+                    order_date: item.order?.orderDate ? item.order.orderDate.toISOString() : null,
+                    order_status: item.order?.status?.toLowerCase() || item.order?.status || null,
+                    quantity_ordered: item.requestedQuantity,
+                    quantity_received: item.receivedQuantity,
+                }));
+
+                result = {
+                    success: true,
+                    data: {
+                        reagent: mappedReagent,
+                        activeBatches: mappedBatches,
+                        recentTransactions: mappedTransactions,
+                        relatedOrders: mappedRelatedOrders,
+                        supplierData: mappedSupplier,
                     },
                 };
                 break;
@@ -439,7 +570,6 @@ router.post(
             case 'getQualityAssuranceData':
             case 'fixDataIntegrity':
             case 'deleteWithdrawal':
-            case 'getEditReagentData':
             case 'getEditReagentBatchData':
             case 'getEditDeliveryData':
             case 'getEditShipmentData':
