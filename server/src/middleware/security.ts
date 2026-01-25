@@ -33,7 +33,7 @@ export const generalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: 100, // 100 attempts per window (Relaxed for debugging)
   message: {
     success: false,
     error: 'Too many login attempts, please try again in 15 minutes'

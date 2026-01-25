@@ -99,7 +99,7 @@ export default function InventoryCountPage() {
     has_next: false,
     has_prev: false
   });
-  
+
   const [historySearchTerm, setHistorySearchTerm] = useState('');
   const [historyDateFrom, setHistoryDateFrom] = useState('');
   const [historyDateTo, setHistoryDateTo] = useState('');
@@ -121,23 +121,23 @@ export default function InventoryCountPage() {
     setLoading(true);
     try {
       console.log('[InventoryCount] Fetching smart inventory data...');
-      
+
       const response = await getInventoryCountDraftData();
-      
+
       if (response.data.success) {
         const { reagents: smartReagents, lastCompletedCount, summary } = response.data.data;
-        
+
         console.log('[InventoryCount] ✅ Smart data loaded:', summary);
-        
+
         setReagents(smartReagents || []);
         setSmartDataSummary(summary);
-        
+
         if (lastCompletedCount) {
           toast.info('נתונים נטענו מספירה אחרונה', {
             description: `${lastCompletedCount.count_number} - ${format(parseISO(lastCompletedCount.count_date), 'dd/MM/yyyy', { locale: he })}`
           });
         }
-        
+
         const draftsData = await InventoryCountDraft.list('-last_update', 1);
         if (draftsData && draftsData.length > 0 && !draftsData[0].completed) {
           setCurrentDraft(draftsData[0]);
@@ -264,7 +264,7 @@ export default function InventoryCountPage() {
 
     try {
       let draftToProcess = currentDraft;
-      
+
       if (!draftToProcess) {
         await saveDraft();
         const drafts = await InventoryCountDraft.list('-last_update', 1);
@@ -283,7 +283,7 @@ export default function InventoryCountPage() {
         toast.success('ספירת המלאי נשלחה לעיבוד!', {
           description: `מספר ספירה: ${response.data.data.count_number}`
         });
-        
+
         setCurrentDraft(null);
         setLastUpdate(null);
         await fetchSmartInventoryData();
@@ -392,15 +392,17 @@ export default function InventoryCountPage() {
   };
 
   // 🆕 Get unique suppliers and categories
+  const safeReagents = useMemo(() => Array.isArray(reagents) ? reagents : [], [reagents]);
+
   const uniqueSuppliers = useMemo(() => {
-    const suppliers = [...new Set(reagents.map(r => r.supplier).filter(Boolean))];
+    const suppliers = [...new Set(safeReagents.map(r => r.supplier).filter(Boolean))];
     return suppliers.sort();
-  }, [reagents]);
+  }, [safeReagents]);
 
   const uniqueCategories = useMemo(() => {
-    const categories = [...new Set(reagents.map(r => r.category).filter(Boolean))];
+    const categories = [...new Set(safeReagents.map(r => r.category).filter(Boolean))];
     return categories.sort();
-  }, [reagents]);
+  }, [safeReagents]);
 
   // 🆕 Category names mapping
   const categoryNames = {
@@ -413,7 +415,7 @@ export default function InventoryCountPage() {
 
   // 🆕 Enhanced filtering logic
   const filteredReagents = useMemo(() => {
-    let filtered = reagents;
+    let filtered = safeReagents;
 
     // Search filter
     if (searchTerm.trim()) {
@@ -434,11 +436,11 @@ export default function InventoryCountPage() {
     }
 
     return filtered;
-  }, [reagents, searchTerm, supplierFilter, categoryFilter]);
+  }, [safeReagents, searchTerm, supplierFilter, categoryFilter]);
 
   const totalBatchesEntered = useMemo(() => {
-    return reagents.reduce((sum, r) => sum + (r.batches?.length || 0), 0);
-  }, [reagents]);
+    return safeReagents.reduce((sum, r) => sum + (r.batches?.length || 0), 0);
+  }, [safeReagents]);
 
   // Active filters count
   const activeFiltersCount = useMemo(() => {
@@ -471,7 +473,7 @@ export default function InventoryCountPage() {
               <span className="sm:hidden">ספירה</span>
               <span className="hidden sm:inline">ספירת מלאי</span>
             </h1>
-            
+
             {smartDataSummary && smartDataSummary.totalReagents > 0 && (
               <div className="flex items-center gap-1 mt-0.5">
                 <Sparkles className="h-3 w-3 text-amber-500 flex-shrink-0" />
@@ -488,7 +490,7 @@ export default function InventoryCountPage() {
                 </p>
               </div>
             )}
-            
+
             {lastUpdate && (
               <p className="text-xs text-gray-500 mt-0.5">
                 עדכון: {format(parseISO(lastUpdate), 'HH:mm dd/MM', { locale: he })}
@@ -496,7 +498,7 @@ export default function InventoryCountPage() {
             )}
           </div>
         </div>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -538,7 +540,7 @@ export default function InventoryCountPage() {
                   סנן לפי ספק או קטגוריה
                 </SheetDescription>
               </SheetHeader>
-              
+
               <div className="space-y-4 mt-6">
                 <div>
                   <Label className="text-white text-sm mb-2 block">ספק</Label>
@@ -575,16 +577,16 @@ export default function InventoryCountPage() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button 
-                    onClick={clearCurrentCountFilters} 
-                    variant="outline" 
+                  <Button
+                    onClick={clearCurrentCountFilters}
+                    variant="outline"
                     className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                   >
                     <X className="h-4 w-4 ml-1" />
                     נקה
                   </Button>
-                  <Button 
-                    onClick={applyCurrentCountFilters} 
+                  <Button
+                    onClick={applyCurrentCountFilters}
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                   >
                     <SlidersHorizontal className="h-4 w-4 ml-1" />
@@ -689,10 +691,10 @@ export default function InventoryCountPage() {
                 </div>
 
                 <div className="flex items-end">
-                  <Button 
-                    onClick={clearCurrentCountFilters} 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    onClick={clearCurrentCountFilters}
+                    variant="outline"
+                    size="sm"
                     className="w-full h-9"
                     disabled={activeFiltersCount === 0}
                   >
@@ -811,12 +813,12 @@ export default function InventoryCountPage() {
                     </>
                   )}
                 </Button>
-                
+
                 <ExcelExport reagents={reagents} size="sm" className="h-10">
                   <FileDown className="h-4 w-4 ml-1" />
                   <span className="text-xs">ייצא</span>
                 </ExcelExport>
-                
+
                 <Button
                   onClick={clearDraft}
                   variant="outline"
@@ -826,7 +828,7 @@ export default function InventoryCountPage() {
                   <Trash2 className="h-4 w-4 ml-1" />
                   <span className="text-xs">נקה</span>
                 </Button>
-                
+
                 <Button
                   onClick={() => setShowSubmitDialog(true)}
                   disabled={submitting || totalBatchesEntered === 0}
@@ -854,12 +856,12 @@ export default function InventoryCountPage() {
                   {savingDraft ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Save className="h-4 w-4 ml-2" />}
                   שמור טיוטה
                 </Button>
-                
+
                 <ExcelExport reagents={reagents} className="flex-1">
                   <FileDown className="h-4 w-4 ml-2" />
                   ייצא ל-Excel
                 </ExcelExport>
-                
+
                 <Button
                   onClick={clearDraft}
                   variant="outline"
@@ -868,7 +870,7 @@ export default function InventoryCountPage() {
                   <Trash2 className="h-4 w-4 ml-2" />
                   נקה טיוטה
                 </Button>
-                
+
                 <Button
                   onClick={() => setShowSubmitDialog(true)}
                   disabled={submitting || totalBatchesEntered === 0}
@@ -879,7 +881,7 @@ export default function InventoryCountPage() {
                 </Button>
               </div>
             </div>
-            
+
             {totalBatchesEntered === 0 && (
               <p className="text-xs text-center text-gray-500 mt-2">
                 הוסף לפחות אצווה אחת כדי לשלוח את הספירה
@@ -906,7 +908,7 @@ export default function InventoryCountPage() {
                   סנן את היסטוריית הספירות
                 </SheetDescription>
               </SheetHeader>
-              
+
               <div className="space-y-4 mt-6">
                 <div>
                   <Label className="text-white">חיפוש</Label>
@@ -949,16 +951,16 @@ export default function InventoryCountPage() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button 
-                    onClick={clearHistoryFilters} 
-                    variant="outline" 
+                  <Button
+                    onClick={clearHistoryFilters}
+                    variant="outline"
                     className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                   >
                     <X className="h-4 w-4 ml-1" />
                     נקה
                   </Button>
-                  <Button 
-                    onClick={applyHistoryFilters} 
+                  <Button
+                    onClick={applyHistoryFilters}
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                   >
                     <Filter className="h-4 w-4 ml-1" />
@@ -1068,7 +1070,7 @@ export default function InventoryCountPage() {
                           <div className="space-y-1 text-sm">
                             <div className="flex items-center text-gray-600">
                               <Calendar className="h-3 w-3 ml-1 flex-shrink-0" />
-                              {isValid(parseISO(count.count_date)) 
+                              {isValid(parseISO(count.count_date))
                                 ? format(parseISO(count.count_date), 'dd/MM/yyyy', { locale: he })
                                 : 'תאריך לא זמין'}
                             </div>
@@ -1085,10 +1087,10 @@ export default function InventoryCountPage() {
                           {count.reagent_updates_completed ? 'הושלם' : 'בעיבוד'}
                         </Badge>
                       </div>
-                      
+
                       <div className="flex gap-2 mt-4">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleViewCountDetails(count.id)}
                           className="flex-1"
@@ -1096,8 +1098,8 @@ export default function InventoryCountPage() {
                           <Eye className="h-4 w-4 ml-1" />
                           צפה
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handlePrintCount(count)}
                         >
@@ -1107,7 +1109,7 @@ export default function InventoryCountPage() {
                     </CardContent>
                   </Card>
                 ))}
-                
+
                 {historyCounts.length === 0 && (
                   <Card className="p-8 text-center">
                     <History className="h-12 w-12 text-gray-300 mx-auto mb-3" />
@@ -1130,7 +1132,7 @@ export default function InventoryCountPage() {
                       <table className="w-full text-sm">
                         <thead className="bg-gray-100 sticky top-0 z-10">
                           <tr>
-                            <th 
+                            <th
                               className="px-4 py-3 text-right cursor-pointer hover:bg-gray-200"
                               onClick={() => handleSort('count_number')}
                             >
@@ -1141,7 +1143,7 @@ export default function InventoryCountPage() {
                                 )}
                               </div>
                             </th>
-                            <th 
+                            <th
                               className="px-4 py-3 text-right cursor-pointer hover:bg-gray-200"
                               onClick={() => handleSort('count_date')}
                             >
@@ -1170,7 +1172,7 @@ export default function InventoryCountPage() {
                                 </button>
                               </td>
                               <td className="px-4 py-3">
-                                {isValid(parseISO(count.count_date)) 
+                                {isValid(parseISO(count.count_date))
                                   ? format(parseISO(count.count_date), 'dd/MM/yyyy', { locale: he })
                                   : '-'}
                               </td>
@@ -1187,15 +1189,15 @@ export default function InventoryCountPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex gap-2 justify-center">
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={() => handleViewCountDetails(count.id)}
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={() => handlePrintCount(count)}
                                   >

@@ -96,7 +96,7 @@ export default function UsageDataManagement() {
     setSaving(true);
     try {
       const updates = [];
-      
+
       for (const key in editedUsages) {
         if (key.endsWith('_manual')) {
           const reagentId = key.replace('_manual', '');
@@ -116,11 +116,11 @@ export default function UsageDataManagement() {
       }
 
       await Promise.all(updates);
-      
+
       toast.success('נתוני צריכה עודכנו בהצלחה', {
         description: `${updates.length} ריאגנטים עודכנו`
       });
-      
+
       setEditedUsages({});
       await fetchReagents();
     } catch (error) {
@@ -158,13 +158,13 @@ export default function UsageDataManagement() {
 
   // Filter logic
   const filteredReagents = useMemo(() => {
-    return reagents.filter(reagent => {
-      const matchesSearch = !searchTerm || 
+    return (Array.isArray(reagents) ? reagents : []).filter(reagent => {
+      const matchesSearch = !searchTerm ||
         reagent.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         reagent.catalog_number?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesCategory = categoryFilter === 'all' || reagent.category === categoryFilter;
-      
+
       const matchesUsageStatus = (() => {
         if (usageStatusFilter === 'all') return true;
         if (usageStatusFilter === 'manual') return reagent.use_manual_usage === true;
@@ -197,11 +197,12 @@ export default function UsageDataManagement() {
   };
 
   const stats = useMemo(() => {
+    const list = Array.isArray(reagents) ? reagents : [];
     return {
-      total: reagents.length,
-      manual: reagents.filter(r => r.use_manual_usage).length,
-      automatic: reagents.filter(r => !r.use_manual_usage).length,
-      noData: reagents.filter(r => !r.average_monthly_usage && !r.manual_monthly_usage).length
+      total: list.length,
+      manual: list.filter(r => r.use_manual_usage).length,
+      automatic: list.filter(r => !r.use_manual_usage).length,
+      noData: list.filter(r => !r.average_monthly_usage && !r.manual_monthly_usage).length
     };
   }, [reagents]);
 
@@ -245,7 +246,7 @@ export default function UsageDataManagement() {
             <Info className="h-5 w-5 text-blue-600" />
           </Button>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             onClick={handleCalculateAllUsage}
@@ -322,7 +323,7 @@ export default function UsageDataManagement() {
                 className="pr-10"
               />
             </div>
-            
+
             {/* Mobile Filter Button */}
             <Button
               variant="outline"
@@ -456,7 +457,7 @@ export default function UsageDataManagement() {
               בחר פילטרים להצגת הנתונים
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="space-y-4 mt-6">
             <div>
               <Label className="text-white mb-2 block">קטגוריה</Label>
@@ -518,14 +519,14 @@ export default function UsageDataManagement() {
               מידע על ניהול נתוני צריכה
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 text-sm">
             <Alert>
               <TrendingUp className="h-4 w-4" />
               <AlertDescription>
                 <strong>מהי צריכה חודשית ממוצעת?</strong>
                 <br />
-                הצריכה החודשית הממוצעת היא כמות הריאגנט הנצרכת במהלך חודש ממוצע, 
+                הצריכה החודשית הממוצעת היא כמות הריאגנט הנצרכת במהלך חודש ממוצע,
                 ומשמשת לחישוב תחזיות מלאי והשלמות.
               </AlertDescription>
             </Alert>
@@ -534,11 +535,11 @@ export default function UsageDataManagement() {
               <h4 className="font-semibold mb-2">שני מצבי צריכה:</h4>
               <ul className="list-disc pr-5 space-y-1 text-gray-700">
                 <li>
-                  <strong>צריכה אוטומטית:</strong> המערכת מחשבת את הצריכה על בסיס 
+                  <strong>צריכה אוטומטית:</strong> המערכת מחשבת את הצריכה על בסיס
                   היסטוריית משיכות ומשלוחים יוצאים (6 חודשים אחרונים).
                 </li>
                 <li>
-                  <strong>צריכה ידנית:</strong> ניתן להזין ידנית ערך מותאם אישית, 
+                  <strong>צריכה ידנית:</strong> ניתן להזין ידנית ערך מותאם אישית,
                   שידרוס את החישוב האוטומטי.
                 </li>
               </ul>
@@ -554,7 +555,7 @@ export default function UsageDataManagement() {
                   <strong>החלפה לידני/אוטומטי:</strong> השתמש במתג בעמודה "פעיל" כדי לבחור בין חישוב אוטומטי לערך ידני.
                 </li>
                 <li>
-                  <strong>חישוב אוטומטי לכולם:</strong> לחץ על "חישוב אוטומטי" כדי לחשב מחדש 
+                  <strong>חישוב אוטומטי לכולם:</strong> לחץ על "חישוב אוטומטי" כדי לחשב מחדש
                   את הצריכה לכל הריאגנטים על בסיס נתוני המערכת.
                 </li>
               </ul>
@@ -563,7 +564,7 @@ export default function UsageDataManagement() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>שימו לב:</strong> שינויים בנתוני צריכה ישפיעו על חישובי מלאי 
+                <strong>שימו לב:</strong> שינויים בנתוני צריכה ישפיעו על חישובי מלאי
                 והמלצות השלמה. וודאו שהערכים מדויקים ועדכניים.
               </AlertDescription>
             </Alert>
@@ -582,10 +583,10 @@ export default function UsageDataManagement() {
 
 // Desktop Table Row Component
 function UsageTableRow({ reagent, editedUsages, onUsageChange, onToggleManual }) {
-  const currentManualUsage = editedUsages[reagent.id] !== undefined 
-    ? editedUsages[reagent.id] 
+  const currentManualUsage = editedUsages[reagent.id] !== undefined
+    ? editedUsages[reagent.id]
     : reagent.manual_monthly_usage || '';
-  
+
   const isManualMode = editedUsages[`${reagent.id}_manual`] !== undefined
     ? editedUsages[`${reagent.id}_manual`]
     : reagent.use_manual_usage;
@@ -623,14 +624,12 @@ function UsageTableRow({ reagent, editedUsages, onUsageChange, onToggleManual })
       <td className="px-4 py-3 text-center">
         <button
           onClick={() => onToggleManual(reagent.id, isManualMode)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            isManualMode ? 'bg-blue-600' : 'bg-gray-300'
-          }`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isManualMode ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              isManualMode ? 'translate-x-1' : 'translate-x-6'
-            }`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isManualMode ? 'translate-x-1' : 'translate-x-6'
+              }`}
           />
         </button>
       </td>
@@ -640,10 +639,10 @@ function UsageTableRow({ reagent, editedUsages, onUsageChange, onToggleManual })
 
 // Mobile Card Component
 function UsageCard({ reagent, editedUsages, onUsageChange, onToggleManual }) {
-  const currentManualUsage = editedUsages[reagent.id] !== undefined 
-    ? editedUsages[reagent.id] 
+  const currentManualUsage = editedUsages[reagent.id] !== undefined
+    ? editedUsages[reagent.id]
     : reagent.manual_monthly_usage || '';
-  
+
   const isManualMode = editedUsages[`${reagent.id}_manual`] !== undefined
     ? editedUsages[`${reagent.id}_manual`]
     : reagent.use_manual_usage;
@@ -707,14 +706,12 @@ function UsageCard({ reagent, editedUsages, onUsageChange, onToggleManual }) {
             </Label>
             <button
               onClick={() => onToggleManual(reagent.id, isManualMode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                isManualMode ? 'bg-blue-600' : 'bg-gray-300'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isManualMode ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isManualMode ? 'translate-x-1' : 'translate-x-6'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isManualMode ? 'translate-x-1' : 'translate-x-6'
+                  }`}
               />
             </button>
           </div>

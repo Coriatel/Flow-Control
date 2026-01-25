@@ -60,5 +60,14 @@ router.get('/health', (_req, res) => {
   });
 });
 
+// Legacy/Frontend Compatibility Routes
+import { inventoryService } from '../services';
+import { asyncHandler } from '../middleware/errorHandler';
+
+router.get('/inventorycountdrafts', asyncHandler(async (_req, res) => {
+  const data = await inventoryService.getCurrentDraft();
+  res.json({ success: true, data });
+}));
+
 export default router;
 
