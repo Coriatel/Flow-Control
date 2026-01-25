@@ -79,7 +79,7 @@ export default function ReagentCard({ reagent }) {
             </div>
             <div>
               <span className="text-gray-500">ספק:</span>
-              <span className="mr-1 font-medium">{reagent.supplier || <span className="text-amber-500">לא צוין</span>}</span>
+              <span className="mr-1 font-medium">{reagent.supplier?.name || <span className="text-amber-500">לא צוין</span>}</span>
             </div>
           </div>
 

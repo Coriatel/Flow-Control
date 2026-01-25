@@ -143,7 +143,9 @@ export default function ManageReagentsPage() {
   }, [fetchReagents]);
 
   const uniqueSuppliers = useMemo(() => {
-    const suppliers = new Set(reagents.map(r => r.supplier).filter(Boolean));
+    const suppliers = new Set(
+      reagents.map(r => r.supplier?.name).filter(Boolean)
+    );
     return Array.from(suppliers).sort();
   }, [reagents]);
 
@@ -155,7 +157,7 @@ export default function ManageReagentsPage() {
       filtered = filtered.filter(reagent =>
         reagent.name?.toLowerCase().includes(term) ||
         reagent.catalog_number?.toLowerCase().includes(term) ||
-        reagent.supplier?.toLowerCase().includes(term)
+        reagent.supplier?.name?.toLowerCase().includes(term)
       );
     }
 
@@ -164,7 +166,7 @@ export default function ManageReagentsPage() {
     }
 
     if (supplierFilter !== 'all') {
-      filtered = filtered.filter(reagent => reagent.supplier === supplierFilter);
+      filtered = filtered.filter(reagent => reagent.supplier?.name === supplierFilter);
     }
 
     if (stockStatusFilter !== 'all') {
@@ -254,7 +256,7 @@ export default function ManageReagentsPage() {
           </Link>
         );
       case 'supplier':
-        return reagent.supplier || <span className="text-amber-500">לא צוין</span>;
+        return reagent.supplier?.name || <span className="text-amber-500">לא צוין</span>;
       case 'category':
         return categoryLabels[reagent.category] || reagent.category;
       case 'total_quantity_all_batches':
