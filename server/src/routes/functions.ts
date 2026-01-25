@@ -254,6 +254,65 @@ router.post(
                 break;
             }
 
+            case 'getQualityAssuranceData': {
+                const batches = await prisma.reagentBatch.findMany({
+                    include: {
+                        reagent: {
+                            include: { supplier: true },
+                        },
+                        delivery: {
+                            include: { order: true, supplier: true },
+                        },
+                    },
+                    orderBy: { expiryDate: 'asc' },
+                });
+
+                const mapStatus = (status: string | null | undefined) => {
+                    if (!status) return 'active';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'ACTIVE') return 'active';
+                    if (normalized === 'EXPIRED') return 'expired';
+                    if (normalized === 'CONSUMED') return 'consumed';
+                    if (normalized === 'ON_HOLD') return 'quarantine';
+                    if (normalized === 'DESTROYED') return 'disposed';
+                    if (normalized === 'INCOMING') return 'active';
+                    return status.toLowerCase();
+                };
+
+                result = batches.map((batch: any) => {
+                    const delivery = batch.delivery;
+                    const order = delivery?.order;
+                    const orderNumber = order?.permanentNumber || order?.tempNumber || null;
+                    const supplierName = batch.reagent?.supplier?.name || delivery?.supplier?.name || null;
+                    const coaDocuments = batch.coaDocumentUrl
+                        ? [{ coa_document_url: batch.coaDocumentUrl }]
+                        : [];
+
+                    return {
+                        id: batch.id,
+                        reagent_batch_id: batch.id,
+                        reagent_id: batch.reagentId,
+                        reagent_name: batch.reagent?.name || null,
+                        batch_number: batch.batchNumber,
+                        expiry_date: batch.expiryDate?.toISOString() || null,
+                        receipt_quantity: Number(batch.initialQuantity) || 0,
+                        status_quantity: Number(batch.currentQuantity) || 0,
+                        current_quantity: Number(batch.currentQuantity) || 0,
+                        receipt_date: batch.receivedDate?.toISOString() || null,
+                        delivery_number: delivery?.deliveryNumber || null,
+                        delivery_id: delivery?.id || null,
+                        order_number: orderNumber,
+                        supplier: supplierName,
+                        status: mapStatus(batch.status),
+                        first_use_date: batch.firstOpenedDate?.toISOString() || null,
+                        received_by: null,
+                        coa_documents: coaDocuments,
+                        action_taken: false,
+                    };
+                });
+                break;
+            }
+
             case 'alertsManager': {
                 const action = params.action;
                 const data = params.data || {};
@@ -950,7 +1009,6 @@ router.post(
             case 'checkPendingWithdrawals':
             case 'getAdvancedAnalytics':
             case 'getEditWithdrawalData':
-            case 'getQualityAssuranceData':
             case 'fixDataIntegrity':
             case 'deleteWithdrawal':
             case 'getEditReagentBatchData':
