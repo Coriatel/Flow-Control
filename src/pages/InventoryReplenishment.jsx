@@ -255,7 +255,7 @@ export default function InventoryReplenishmentPage() {
             result = result.filter(r =>
                 (r.name && r.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (r.catalog_number && r.catalog_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (r.supplier && r.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
+                (r.supplier?.name && r.supplier.name.toLowerCase().includes(searchTerm.toLowerCase()))
             );
         }
 
@@ -264,7 +264,7 @@ export default function InventoryReplenishmentPage() {
         else if (filter === 'out_of_stock') result = result.filter(r => r.current_stock_status === 'out_of_stock');
 
         if (categoryFilter !== 'all') result = result.filter(r => r.category === categoryFilter);
-        if (supplierFilter !== 'all') result = result.filter(r => r.supplier === supplierFilter);
+        if (supplierFilter !== 'all') result = result.filter(r => r.supplier?.name === supplierFilter);
         
         if (availableFrameworkFilter === 'with_framework') {
             result = result.filter(r => {
@@ -657,7 +657,7 @@ export default function InventoryReplenishmentPage() {
     };
 
     const availableCategories = useMemo(() => [...new Set((processedReagents || []).map(r => r.category).filter(Boolean))].sort(), [processedReagents]);
-    const availableSuppliers = useMemo(() => [...new Set((processedReagents || []).map(r => r.supplier).filter(Boolean))].sort(), [processedReagents]);
+    const availableSuppliers = useMemo(() => [...new Set((processedReagents || []).map(r => r.supplier?.name).filter(Boolean))].sort(), [processedReagents]);
     
     const clearAllFilters = () => { 
         setSearchTerm(''); 
@@ -841,8 +841,8 @@ export default function InventoryReplenishmentPage() {
                                                 <SmartTooltip content={reagent.name} className="font-bold text-base text-slate-800 block" isMobile={true}>
                                                     <div className="font-bold text-base text-slate-800">{reagent.name}</div>
                                                 </SmartTooltip>
-                                                <SmartTooltip content={`${reagent.catalog_number} | ${reagent.supplier}`} className="text-xs text-slate-500 block" isMobile={true}>
-                                                    <div className="text-xs text-slate-500">{reagent.catalog_number} | {reagent.supplier}</div>
+                                                <SmartTooltip content={`${reagent.catalog_number} | ${reagent.supplier?.name || ''}`} className="text-xs text-slate-500 block" isMobile={true}>
+                                                    <div className="text-xs text-slate-500">{reagent.catalog_number} | {reagent.supplier?.name || ''}</div>
                                                 </SmartTooltip>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-center text-xs">
@@ -983,8 +983,8 @@ export default function InventoryReplenishmentPage() {
                                                                         </SmartTooltip>
                                                                     </div>
                                                                     <div className="text-xs text-slate-500 font-normal">
-                                                                        <SmartTooltip content={`${row.catalog_number} | ${row.supplier}`}>
-                                                                            {row.catalog_number} | {row.supplier}
+                                                                        <SmartTooltip content={`${row.catalog_number} | ${row.supplier?.name || ''}`}>
+                                                                            {row.catalog_number} | {row.supplier?.name || ''}
                                                                         </SmartTooltip>
                                                                     </div>
                                                                 </div>

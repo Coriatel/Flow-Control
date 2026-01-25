@@ -395,7 +395,7 @@ export default function InventoryCountPage() {
   const safeReagents = useMemo(() => Array.isArray(reagents) ? reagents : [], [reagents]);
 
   const uniqueSuppliers = useMemo(() => {
-    const suppliers = [...new Set(safeReagents.map(r => r.supplier).filter(Boolean))];
+    const suppliers = [...new Set(safeReagents.map(r => r.supplier?.name).filter(Boolean))];
     return suppliers.sort();
   }, [safeReagents]);
 
@@ -427,7 +427,7 @@ export default function InventoryCountPage() {
 
     // Supplier filter
     if (supplierFilter !== 'all') {
-      filtered = filtered.filter(r => r.supplier === supplierFilter);
+      filtered = filtered.filter(r => r.supplier?.name === supplierFilter);
     }
 
     // Category filter

@@ -242,16 +242,195 @@ router.post(
             case 'archiveOldData':
             case 'alertsEngine':
             case 'alertsManager':
+            case 'getBatchAndExpiryData': {
+                // Get all batches with reagent info
+                const allBatches = await prisma.reagentBatch.findMany({
+                    include: {
+                        reagent: {
+                            include: {
+                                supplier: true,
+                            },
+                        },
+                    },
+                    orderBy: { expiryDate: 'asc' },
+                });
+
+                // Get expired product logs (handled batches)
+                const handledBatches = await prisma.expiredProductLog.findMany({
+                    orderBy: { createdAt: 'desc' },
+                });
+
+                // Get all active suppliers
+                const allSuppliers = await prisma.supplier.findMany({
+                    where: { isActive: true },
+                    orderBy: { name: 'asc' },
+                });
+
+                // Build reagent info cache
+                const reagents = await prisma.reagent.findMany({
+                    where: { isDeleted: false },
+                    include: {
+                        supplier: true,
+                    },
+                });
+                const reagentInfoCache: Record<string, any> = {};
+                for (const r of reagents) {
+                    reagentInfoCache[r.id] = {
+                        id: r.id,
+                        name: r.name,
+                        catalog_number: r.catalogNumber,
+                        category: r.category,
+                        supplier: r.supplier?.name || null,
+                        supplierId: r.supplierId,
+                    };
+                }
+
+                // Transform batches to frontend expected format
+                const transformedBatches = allBatches.map((b: any) => ({
+                    id: b.id,
+                    reagent_id: b.reagentId,
+                    reagent_name: b.reagent?.name,
+                    batch_number: b.batchNumber,
+                    expiry_date: b.expiryDate?.toISOString(),
+                    current_quantity: Number(b.currentQuantity),
+                    initial_quantity: Number(b.initialQuantity),
+                    status: b.status?.toLowerCase(),
+                    storage_location: b.storageLocation,
+                    qc_status: b.qcStatus,
+                    received_date: b.receivedDate?.toISOString(),
+                    supplier: b.reagent?.supplier?.name || null,
+                }));
+
+                result = {
+                    success: true,
+                    data: {
+                        allBatches: transformedBatches,
+                        handledBatches,
+                        allSuppliers: allSuppliers.map((s: any) => ({ id: s.id, name: s.name })),
+                        reagentInfoCache,
+                    },
+                };
+                break;
+            }
+
+            case 'getReplenishmentData': {
+                // Get all reagents with batches and supplier info
+                const replenishmentReagents = await prisma.reagent.findMany({
+                    where: { isDeleted: false },
+                    include: {
+                        supplier: true,
+                        batches: {
+                            where: { status: 'ACTIVE' },
+                        },
+                    },
+                    orderBy: { name: 'asc' },
+                });
+
+                // Get framework orders and items
+                const frameworkOrders = await prisma.frameworkOrder.findMany({
+                    where: { status: 'ACTIVE' },
+                    include: {
+                        items: true,
+                    },
+                });
+
+                // Get pending withdrawal requests
+                const pendingWithdrawals = await prisma.withdrawalRequest.findMany({
+                    where: { status: { in: ['PENDING', 'APPROVED'] } },
+                    include: {
+                        items: true,
+                    },
+                });
+
+                // Transform to frontend expected format
+                const transformedReagents = replenishmentReagents.map((r: any) => ({
+                    id: r.id,
+                    name: r.name,
+                    catalog_number: r.catalogNumber,
+                    category: r.category,
+                    supplier: r.supplier ? { id: r.supplier.id, name: r.supplier.name } : null,
+                    total_quantity_all_batches: Number(r.totalQuantity) || 0,
+                    active_batches_count: r.activeBatchesCount || 0,
+                    current_stock_status: r.currentStockStatus?.toLowerCase() || 'normal',
+                    nearest_expiry_date: r.nearestExpiryDate?.toISOString(),
+                    average_monthly_usage: Number(r.averageMonthlyUsage) || 0,
+                    manual_monthly_usage: Number(r.manualMonthlyUsage) || 0,
+                    use_manual_usage: r.useManualUsage || false,
+                    effective_monthly_usage: r.useManualUsage ? Number(r.manualMonthlyUsage) || 0 : Number(r.averageMonthlyUsage) || 0,
+                    months_of_stock: Number(r.monthsOfStock) || 0,
+                }));
+
+                result = {
+                    success: true,
+                    data: {
+                        reagents: transformedReagents,
+                        frameworkOrders,
+                        frameworkOrderItems: frameworkOrders.flatMap((o: any) => o.items),
+                        pendingWithdrawals,
+                    },
+                };
+                break;
+            }
+
+            case 'getNewDeliveryPageData': {
+                // Get all reagents for selection
+                const deliveryReagents = await prisma.reagent.findMany({
+                    where: { isDeleted: false },
+                    include: {
+                        supplier: true,
+                    },
+                    orderBy: { name: 'asc' },
+                });
+
+                // Get pending orders
+                const pendingOrders = await prisma.order.findMany({
+                    where: { status: { in: ['APPROVED', 'PARTIALLY_RECEIVED'] } },
+                    include: {
+                        supplier: true,
+                        items: {
+                            include: {
+                                reagent: true,
+                            },
+                        },
+                    },
+                    orderBy: { orderDate: 'desc' },
+                });
+
+                // Get pending withdrawal requests
+                const deliveryWithdrawals = await prisma.withdrawalRequest.findMany({
+                    where: { status: { in: ['PENDING', 'APPROVED'] } },
+                    include: {
+                        supplier: true,
+                        items: true,
+                    },
+                    orderBy: { requestDate: 'desc' },
+                });
+
+                result = {
+                    success: true,
+                    data: {
+                        reagents: deliveryReagents.map((r: any) => ({
+                            id: r.id,
+                            name: r.name,
+                            catalog_number: r.catalogNumber,
+                            category: r.category,
+                            supplier: r.supplier?.name || null,
+                            supplier_id: r.supplierId,
+                        })),
+                        orders: pendingOrders,
+                        withdrawalRequests: deliveryWithdrawals,
+                    },
+                };
+                break;
+            }
+
             case 'calculateAverageUsage':
             case 'testCOAAccess':
             case 'migrateLegacySuppliers':
             case 'deleteShipment':
             case 'changeReagentSupplier':
             case 'deleteReagent':
-            case 'getBatchAndExpiryData':
-            case 'getNewDeliveryPageData':
             case 'calculateReplenishment':
-            case 'getReplenishmentData':
             case 'createAutomaticOrder':
             case 'createAutomaticWithdrawal':
             case 'checkPendingWithdrawals':

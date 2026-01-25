@@ -404,7 +404,7 @@ export default function EditReagentPage() {
                   <Label className="text-sm font-medium text-slate-700">ספק נוכחי</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <Input
-                      value={reagent.supplier || 'לא צוין'}
+                      value={reagent.supplier?.name || 'לא צוין'}
                       disabled
                       className="bg-slate-50 flex-1"
                     />

@@ -62,8 +62,8 @@ export default function ReagentItem({ reagent, batches, onBatchesChange, showNew
               {reagent.catalog_number && (
                 <span>מק"ט: {reagent.catalog_number}</span>
               )}
-              {reagent.supplier && (
-                <span>ספק: {reagent.supplier}</span>
+              {reagent.supplier?.name && (
+                <span>ספק: {reagent.supplier.name}</span>
               )}
             </div>
             
