@@ -76,7 +76,6 @@ export default function AlertsManagement() {
       if (alertsResponse?.data?.success) {
         setActiveAlerts(alertsResponse.data.data || []);
       } else {
-        console.warn('No active alerts or empty response');
         setActiveAlerts([]);
       }
 
