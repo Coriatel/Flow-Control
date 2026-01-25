@@ -27,9 +27,13 @@ export default function TableHeaderTooltip({ header, description, icon }) {
             <TooltipProvider delayDuration={200}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button type="button" className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                        >
                             <IconComponent className="h-4 w-4" />
-                        </button>
+                        </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs text-right" dir="rtl">
                         <p>{description}</p>

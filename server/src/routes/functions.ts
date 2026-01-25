@@ -445,45 +445,153 @@ router.post(
             }
 
             case 'getReplenishmentData': {
-                // Get all reagents with batches and supplier info
+                const orderStatusToUi = (status: string | null | undefined) => {
+                    if (!status) return 'draft';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'APPROVED') return 'approved';
+                    if (normalized === 'PARTIALLY_RECEIVED') return 'partially_received';
+                    if (normalized === 'PENDING_SAP') return 'pending_sap_details';
+                    if (normalized === 'FULLY_RECEIVED') return 'fully_received';
+                    if (normalized === 'CANCELLED') return 'cancelled';
+                    if (normalized === 'CLOSED') return 'closed';
+                    return status.toLowerCase();
+                };
+
+                const orderTypeToUi = (orderType: string | null | undefined) => {
+                    if (!orderType) return 'regular';
+                    return orderType.toUpperCase() === 'FRAMEWORK' ? 'framework' : 'regular';
+                };
+
+                // Reagents + supplier
                 const replenishmentReagents = await prisma.reagent.findMany({
                     where: { isDeleted: false },
-                    include: {
-                        supplier: true,
-                        batches: {
-                            where: { status: 'ACTIVE' },
-                        },
-                    },
+                    include: { supplier: true },
                     orderBy: { name: 'asc' },
                 });
 
-                // Get framework orders and items
-                const frameworkOrders = await prisma.frameworkOrder.findMany({
+                // Active batches
+                const activeBatches = await prisma.reagentBatch.findMany({
                     where: { status: 'ACTIVE' },
                     include: {
-                        items: true,
+                        reagent: {
+                            include: { supplier: true },
+                        },
                     },
+                    orderBy: { expiryDate: 'asc' },
                 });
 
-                // Get pending withdrawal requests
+                // Open orders + items
+                const openOrders = await prisma.order.findMany({
+                    where: { status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED', 'PARTIALLY_RECEIVED'] } },
+                    include: {
+                        supplier: true,
+                        items: true,
+                    },
+                    orderBy: { orderDate: 'desc' },
+                });
+
+                const openOrderItems = openOrders.flatMap((order) =>
+                    (order.items || []).map((item: any) => {
+                        const quantityOrdered = Number(item.requestedQuantity) || 0;
+                        const quantityReceived = Number(item.receivedQuantity) || 0;
+                        const quantityRemaining = Math.max(0, quantityOrdered - quantityReceived);
+                        let lineStatus = 'open';
+                        if (quantityReceived > 0 && quantityRemaining > 0) lineStatus = 'partially_received';
+                        if (quantityRemaining <= 0) lineStatus = 'fully_received';
+                        return {
+                            id: item.id,
+                            order_id: item.orderId,
+                            reagent_id: item.reagentId,
+                            quantity_ordered: quantityOrdered,
+                            quantity_received: quantityReceived,
+                            quantity_remaining: quantityRemaining,
+                            line_status: lineStatus,
+                        };
+                    })
+                );
+
+                // Framework orders: filter from open orders
+                const frameworkOrders = openOrders.filter((o) => orderTypeToUi(o.orderType) === 'framework');
+                const frameworkOrderItems = openOrderItems.filter((item) =>
+                    frameworkOrders.some((o) => o.id === item.order_id)
+                );
+
+                // Pending withdrawals + items
                 const pendingWithdrawals = await prisma.withdrawalRequest.findMany({
-                    where: { status: { in: ['PENDING', 'APPROVED'] } },
+                    where: { status: { in: ['SUBMITTED', 'APPROVED', 'SHIPPING'] } },
                     include: {
                         items: true,
                     },
+                    orderBy: { requestDate: 'desc' },
                 });
 
-                // Transform to frontend expected format
+                const withdrawalItems = pendingWithdrawals.flatMap((wr) =>
+                    (wr.items || []).map((item: any) => {
+                        const requested = Number(item.approvedQuantity ?? item.requestedQuantity) || 0;
+                        const fulfilled = Number(item.fulfilledQuantity) || 0;
+                        let lineStatus = 'open';
+                        if (fulfilled > 0 && fulfilled < requested) lineStatus = 'partially_delivered';
+                        if (fulfilled >= requested) lineStatus = 'delivered';
+                        return {
+                            id: item.id,
+                            withdrawal_request_id: item.withdrawalRequestId,
+                            reagent_id: item.reagentId,
+                            quantity_requested: requested,
+                            quantity_received: fulfilled,
+                            line_status: lineStatus,
+                        };
+                    })
+                );
+
+                // Deliveries in progress
+                const inProgressDeliveries = await prisma.delivery.findMany({
+                    where: { status: { in: ['NEW', 'PROCESSING'] } },
+                    include: { items: true },
+                });
+
+                const inDeliveryByReagent: Record<string, number> = {};
+                for (const delivery of inProgressDeliveries) {
+                    for (const item of delivery.items || []) {
+                        const qty = Number(item.quantity) || 0;
+                        inDeliveryByReagent[item.reagentId] =
+                            (inDeliveryByReagent[item.reagentId] || 0) + qty;
+                    }
+                }
+
+                const pendingWithdrawalByReagent: Record<string, number> = {};
+                for (const item of withdrawalItems) {
+                    const remaining = Math.max(0, (item.quantity_requested || 0) - (item.quantity_received || 0));
+                    pendingWithdrawalByReagent[item.reagent_id] =
+                        (pendingWithdrawalByReagent[item.reagent_id] || 0) + remaining;
+                }
+
+                const quantityInTransitByReagent: Record<string, number> = {};
+                for (const item of openOrderItems) {
+                    const remaining = Math.max(0, (item.quantity_ordered || 0) - (item.quantity_received || 0));
+                    quantityInTransitByReagent[item.reagent_id] =
+                        (quantityInTransitByReagent[item.reagent_id] || 0) + remaining;
+                }
+
+                const quantityInTransitWithoutTempByReagent: Record<string, number> = {};
+                const nonTempOrders = openOrders.filter((o) => ['APPROVED', 'PARTIALLY_RECEIVED'].includes(o.status));
+                for (const order of nonTempOrders) {
+                    for (const item of order.items || []) {
+                        const remaining = Math.max(0, (Number(item.requestedQuantity) || 0) - (Number(item.receivedQuantity) || 0));
+                        quantityInTransitWithoutTempByReagent[item.reagentId] =
+                            (quantityInTransitWithoutTempByReagent[item.reagentId] || 0) + remaining;
+                    }
+                }
+
                 const transformedReagents = replenishmentReagents.map((r: any) => ({
                     id: r.id,
                     name: r.name,
-                    catalog_number: r.catalogNumber,
-                    category: r.category,
+                    catalog_number: r.catalogNumber || null,
+                    category: r.category?.toLowerCase() || r.category,
                     supplier: r.supplier ? { id: r.supplier.id, name: r.supplier.name } : null,
                     total_quantity_all_batches: Number(r.totalQuantity) || 0,
                     active_batches_count: r.activeBatchesCount || 0,
                     current_stock_status: r.currentStockStatus?.toLowerCase() || 'normal',
-                    nearest_expiry_date: r.nearestExpiryDate?.toISOString(),
+                    nearest_expiry_date: r.nearestExpiryDate?.toISOString() || null,
                     average_monthly_usage: Number(r.averageMonthlyUsage) || 0,
                     manual_monthly_usage: Number(r.manualMonthlyUsage) || 0,
                     use_manual_usage: r.useManualUsage || false,
@@ -491,14 +599,53 @@ router.post(
                     months_of_stock: Number(r.monthsOfStock) || 0,
                 }));
 
+                const transformedBatches = activeBatches.map((b: any) => ({
+                    id: b.id,
+                    reagent_id: b.reagentId,
+                    batch_number: b.batchNumber,
+                    expiry_date: b.expiryDate?.toISOString() || null,
+                    current_quantity: Number(b.currentQuantity) || 0,
+                    status: b.status?.toLowerCase() || 'active',
+                }));
+
+                const openOrdersData = openOrders
+                    .filter((o) => orderTypeToUi(o.orderType) !== 'framework')
+                    .map((o: any) => ({
+                        id: o.id,
+                        order_number_temp: o.tempNumber,
+                        order_number_permanent: o.permanentNumber || null,
+                        purchase_order_number_sap: o.sapPurchaseOrder || null,
+                        supplier_name_snapshot: o.supplierSnapshot,
+                        supplier_id: o.supplierId,
+                        order_type: orderTypeToUi(o.orderType),
+                        status: orderStatusToUi(o.status),
+                        order_date: o.orderDate?.toISOString() || null,
+                    }));
+
+                const frameworkOrdersData = frameworkOrders.map((o: any) => ({
+                    id: o.id,
+                    order_number_temp: o.tempNumber,
+                    order_number_permanent: o.permanentNumber || null,
+                    purchase_order_number_sap: o.sapPurchaseOrder || null,
+                    supplier_name_snapshot: o.supplierSnapshot,
+                    supplier_id: o.supplierId,
+                    order_type: orderTypeToUi(o.orderType),
+                    status: orderStatusToUi(o.status),
+                    order_date: o.orderDate?.toISOString() || null,
+                }));
+
                 result = {
-                    success: true,
-                    data: {
-                        reagents: transformedReagents,
-                        frameworkOrders,
-                        frameworkOrderItems: frameworkOrders.flatMap((o: any) => o.items),
-                        pendingWithdrawals,
-                    },
+                    reagentsData: transformedReagents,
+                    batchesData: transformedBatches,
+                    openOrderItemsData: openOrderItems,
+                    withdrawalRequestsData: withdrawalItems,
+                    openOrdersData,
+                    frameworkOrdersData,
+                    frameworkOrderItemsData: frameworkOrderItems,
+                    pendingWithdrawalByReagent,
+                    inDeliveryByReagent,
+                    quantityInTransitByReagent,
+                    quantityInTransitWithoutTempByReagent,
                 };
                 break;
             }
