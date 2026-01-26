@@ -560,7 +560,7 @@ export default function InventoryReplenishmentPage() {
 
                 clearSelection();
                 
-                navigate(createPageUrl('EditOrder') + `?orderId=${payload.orderId}`);
+                navigate(createPageUrl('EditOrder') + `?id=${payload.orderId}`);
                 
                 setTimeout(() => {
                     setShowPrintDialog(true);

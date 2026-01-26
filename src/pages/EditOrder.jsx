@@ -30,7 +30,7 @@ import {
 export default function EditOrderPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const orderId = searchParams.get('id');
+    const orderId = searchParams.get('id') || searchParams.get('orderId');
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(true);
@@ -76,6 +76,13 @@ export default function EditOrderPage() {
     useEffect(() => {
         if (orderId) {
             loadData();
+        } else {
+            setLoading(false);
+            toast({
+                title: "שגיאה בטעינת נתונים",
+                description: "לא נמצא מזהה הזמנה בקישור. חזור לרשימת ההזמנות ונסה שוב.",
+                variant: "destructive"
+            });
         }
     }, [orderId, loadData]);
 
