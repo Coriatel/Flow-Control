@@ -27,12 +27,12 @@ import TableHeaderTooltip from '@/components/ui/TableHeaderTooltip';
 import { COLUMN_DESCRIPTIONS } from '@/components/utils/tooltipDescriptions';
 
 const calculateSuggestionsLogic = (
-    reagentsToProcess, 
-    allBatches, 
-    allFrameworkOrderItems, 
-    allOpenOrders, 
-    params, 
-    pendingWithdrawalByReagent = {}, 
+    reagentsToProcess,
+    allBatches,
+    allFrameworkOrderItems,
+    allOpenOrders,
+    params,
+    pendingWithdrawalByReagent = {},
     inDeliveryByReagent = {},
     quantityInTransitByReagent = {},
     quantityInTransitWithoutTempByReagent = {}
@@ -46,7 +46,7 @@ const calculateSuggestionsLogic = (
     return reagentsToProcess.map(reagent => {
         const batchesForReagent = (allBatches || []).filter(b => b.reagent_id === reagent.id);
         const currentStock = batchesForReagent.reduce((sum, b) => sum + (b.current_quantity || 0), 0);
-        
+
         const nearExpiryBatchesForReagent = batchesForReagent.filter(b => b.expiry_date && isBefore(parseISO(b.expiry_date), nearExpiryLimit));
         const nearExpiryQuantity = nearExpiryBatchesForReagent.reduce((sum, b) => sum + (b.current_quantity || 0), 0);
 
@@ -55,11 +55,11 @@ const calculateSuggestionsLogic = (
             const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
             return sum + Math.max(0, remaining);
         }, 0);
-        
+
         const detailedFrameworkItems = frameworkOrderItems.map(item => ({
-          orderNumber: (allOpenOrders || []).find(o => o.id === item.order_id)?.order_number_permanent || 'N/A',
-          orderId: item.order_id,
-          remaining: Math.max(0, (item.quantity_ordered || 0) - (item.quantity_received || 0))
+            orderNumber: (allOpenOrders || []).find(o => o.id === item.order_id)?.order_number_permanent || 'N/A',
+            orderId: item.order_id,
+            remaining: Math.max(0, (item.quantity_ordered || 0) - (item.quantity_received || 0))
         })).filter(item => item.remaining > 0);
 
         const effectiveMonthlyUsage = reagent.use_manual_usage && reagent.manual_monthly_usage > 0 ? reagent.manual_monthly_usage : (reagent.average_monthly_usage || 0);
@@ -72,7 +72,7 @@ const calculateSuggestionsLogic = (
         const planningHorizonUsage = effectiveMonthlyUsage * planningHorizonMonths;
         const safetyStockUsage = (effectiveMonthlyUsage / 4.33) * 2;
         const totalRequired = planningHorizonUsage + safetyStockUsage;
-        
+
         const totalInTransit = quantityInTransitByReagent[reagent.id] || 0;
         const netStock = currentStock + totalInTransit;
         let suggestedQuantity = Math.round(totalRequired - netStock);
@@ -136,7 +136,7 @@ export default function InventoryReplenishmentPage() {
     const [inDeliveryByReagentState, setInDeliveryByReagentState] = useState({});
     const [quantityInTransitByReagentState, setQuantityInTransitByReagentState] = useState({});
     const [quantityInTransitWithoutTempByReagentState, setQuantityInTransitWithoutTempByReagentState] = useState({});
-    
+
     const [showMissingDetailsDialog, setShowMissingDetailsDialog] = useState(false);
     const [pendingWithdrawalAction, setPendingWithdrawalAction] = useState(null);
 
@@ -179,11 +179,11 @@ export default function InventoryReplenishmentPage() {
             const errorMessage = response?.error || response?.data?.error;
             if (!errorMessage) {
                 const {
-                    reagentsData = [], 
-                    batchesData = [], 
+                    reagentsData = [],
+                    batchesData = [],
                     openOrderItemsData = [],
-                    withdrawalRequestsData = [], 
-                    openOrdersData = [], 
+                    withdrawalRequestsData = [],
+                    openOrdersData = [],
                     frameworkOrdersData = [],
                     frameworkOrderItemsData = [],
                     pendingWithdrawalByReagent = {},
@@ -197,7 +197,7 @@ export default function InventoryReplenishmentPage() {
                 setAllOpenOrderItems(Array.isArray(openOrderItemsData) ? openOrderItemsData : []);
                 setAllPendingWithdrawalItems(Array.isArray(withdrawalRequestsData) ? withdrawalRequestsData : []);
                 setAllOpenOrders([
-                    ...(Array.isArray(openOrdersData) ? openOrdersData : []), 
+                    ...(Array.isArray(openOrdersData) ? openOrdersData : []),
                     ...(Array.isArray(frameworkOrdersData) ? frameworkOrdersData : [])
                 ]);
                 setAllFrameworkOrderItems(Array.isArray(frameworkOrderItemsData) ? frameworkOrderItemsData : []);
@@ -267,7 +267,7 @@ export default function InventoryReplenishmentPage() {
 
         if (categoryFilter !== 'all') result = result.filter(r => r.category === categoryFilter);
         if (supplierFilter !== 'all') result = result.filter(r => r.supplier?.name === supplierFilter);
-        
+
         if (availableFrameworkFilter === 'with_framework') {
             result = result.filter(r => {
                 const netAvailable = (r.available_framework_quantity || 0) - (r.quantity_in_pending_withdrawals || 0) - (r.quantity_in_delivery || 0);
@@ -320,8 +320,8 @@ export default function InventoryReplenishmentPage() {
 
     const handleQuantityChange = useCallback((reagentId, newQuantity) => {
         const parsedQuantity = Math.max(0, Number(newQuantity) || 0);
-        
-        setProcessedReagents(prevReagents => 
+
+        setProcessedReagents(prevReagents =>
             (prevReagents || []).map(r => r.id === reagentId ? { ...r, suggested_order_quantity: parsedQuantity } : r)
         );
 
@@ -352,7 +352,7 @@ export default function InventoryReplenishmentPage() {
         if (items.length === 0) {
             return toast({ title: 'לא נבחרו פריטים', description: 'יש לבחור לפחות פריט אחד עם כמות גדולה מ-0.', variant: 'destructive' });
         }
-        
+
         const supplierKeys = items.map(item => {
             const supplier = item.supplier;
             if (!supplier) return '';
@@ -377,10 +377,10 @@ export default function InventoryReplenishmentPage() {
             setLoading(true);
 
             if (!items || items.length === 0) {
-                toast({ 
-                    title: 'לא נבחרו פריטים', 
-                    description: 'יש לבחור לפחות פריט אחד למשיכה.', 
-                    variant: 'destructive' 
+                toast({
+                    title: 'לא נבחרו פריטים',
+                    description: 'יש לבחור לפחות פריט אחד למשיכה.',
+                    variant: 'destructive'
                 });
                 setLoading(false);
                 return;
@@ -390,10 +390,10 @@ export default function InventoryReplenishmentPage() {
                 const processedReagent = (processedReagents || []).find(r => r.id === item.id);
                 const netAvailable = (processedReagent?.available_framework_quantity || 0) - (processedReagent?.quantity_in_pending_withdrawals || 0) - (processedReagent?.quantity_in_delivery || 0);
                 if (netAvailable < item.quantity) {
-                    toast({ 
-                        title: 'יתרה לא מספקת', 
-                        description: `לפריט ${item.name} חסרות יתרות זמינות ממסגרת עבור הכמות המבוקשת.`, 
-                        variant: 'destructive' 
+                    toast({
+                        title: 'יתרה לא מספקת',
+                        description: `לפריט ${item.name} חסרות יתרות זמינות ממסגרת עבור הכמות המבוקשת.`,
+                        variant: 'destructive'
                     });
                     setLoading(false);
                     return;
@@ -415,6 +415,7 @@ export default function InventoryReplenishmentPage() {
                     (o.order_type === 'framework' || o.order_type === 'framework_order') &&
                     (matchesSupplierId || matchesSupplierName) &&
                     [
+                        'draft',
                         'approved',
                         'partially_received',
                         'pending_sap_details',
@@ -426,10 +427,10 @@ export default function InventoryReplenishmentPage() {
 
             if (relevantFrameworkOrders.length === 0) {
                 const supplierLabel = supplierName || supplierId || 'לא ידוע';
-                toast({ 
-                    title: 'לא נמצאה הזמנת מסגרת', 
-                    description: `לא קיימת הזמנת מסגרת (גם לא זמנית) עבור ספק ${supplierLabel}.`, 
-                    variant: 'destructive' 
+                toast({
+                    title: 'לא נמצאה הזמנת מסגרת',
+                    description: `לא קיימת הזמנת מסגרת (גם לא זמנית) עבור ספק ${supplierLabel}.`,
+                    variant: 'destructive'
                 });
                 setLoading(false);
                 return;
@@ -439,7 +440,7 @@ export default function InventoryReplenishmentPage() {
 
             for (const order of relevantFrameworkOrders) {
                 const canSupplyAll = items.every(itm => {
-                    const fwItem = (allFrameworkOrderItems || []).find(foi => 
+                    const fwItem = (allFrameworkOrderItems || []).find(foi =>
                         foi.order_id === order.id && foi.reagent_id === itm.id
                     );
                     if (!fwItem) return false;
@@ -455,10 +456,10 @@ export default function InventoryReplenishmentPage() {
 
             if (!selectedFrameworkOrder) {
                 const supplierLabel = supplierName || supplierId || 'לא ידוע';
-                toast({ 
-                    title: 'לא נמצאה הזמנת מסגרת מתאימה', 
-                    description: `לא נמצאה הזמנת מסגרת אחת שיכולה לספק את כל הפריטים שנבחרו מספק ${supplierLabel}.`, 
-                    variant: 'destructive' 
+                toast({
+                    title: 'לא נמצאה הזמנת מסגרת מתאימה',
+                    description: `לא נמצאה הזמנת מסגרת אחת שיכולה לספק את כל הפריטים שנבחרו מספק ${supplierLabel}.`,
+                    variant: 'destructive'
                 });
                 setLoading(false);
                 return;
@@ -468,13 +469,13 @@ export default function InventoryReplenishmentPage() {
             const hasPONumber = selectedFrameworkOrder.purchase_order_number_sap && selectedFrameworkOrder.purchase_order_number_sap.trim() !== '';
 
             if (!hasPermanentNumber && !hasPONumber) {
-                setPendingWithdrawalAction({ 
+                setPendingWithdrawalAction({
                     frameworkOrderId: selectedFrameworkOrder.id,
                     frameworkOrderNumber: selectedFrameworkOrder.order_number_temp,
-                    items: items.map(item => ({ 
-                        reagent_id: item.id, 
-                        reagent_name: item.name, 
-                        quantity: item.quantity 
+                    items: items.map(item => ({
+                        reagent_id: item.id,
+                        reagent_name: item.name,
+                        quantity: item.quantity
                     }))
                 });
                 setShowMissingDetailsDialog(true);
@@ -528,7 +529,7 @@ export default function InventoryReplenishmentPage() {
                 await handleRefresh();
 
                 navigate(createPageUrl(`EditWithdrawalRequest?id=${newWithdrawalId}`));
-                
+
                 setTimeout(() => {
                     setShowPrintDialog(true);
                     setPrintDocumentId(newWithdrawalId);
@@ -551,10 +552,10 @@ export default function InventoryReplenishmentPage() {
 
     const handleOrderCreation = async (orderType) => {
         setShowOrderTypeDialog(false);
-        
+
         try {
             setLoading(true);
-            
+
             const supplier = processingItems[0].supplier;
             const response = await createAutomaticOrder({
                 supplier,
@@ -579,9 +580,9 @@ export default function InventoryReplenishmentPage() {
                 });
 
                 clearSelection();
-                
+
                 navigate(createPageUrl('EditOrder') + `?id=${payload.orderId}`);
-                
+
                 setTimeout(() => {
                     setShowPrintDialog(true);
                     setPrintDocumentId(payload.orderId);
@@ -649,36 +650,36 @@ export default function InventoryReplenishmentPage() {
 
     const ResizableHeader = ({ column, children }) => {
         const resizerRef = useRef(null);
-        
+
         const onMouseDown = (e) => {
             e.preventDefault();
             const startX = e.clientX;
             const startWidth = columnWidths[column.id];
-            
+
             const onMouseMove = (moveEvent) => {
                 const diff = startX - moveEvent.clientX;
                 const newWidth = Math.max(startWidth + diff, 50);
-                setColumnWidths(prev => ({...prev, [column.id]: newWidth}));
+                setColumnWidths(prev => ({ ...prev, [column.id]: newWidth }));
             };
-            
+
             const onMouseUp = () => {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
             };
-            
+
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         };
-        
+
         return (
             <div className="relative p-0" style={{ width: columnWidths[column.id] }}>
                 <div className="flex items-center justify-center h-full px-3 py-3 font-medium text-slate-600 text-center">
                     {children}
                 </div>
                 {!column.disableSort && (
-                    <div 
-                        ref={resizerRef} 
-                        onMouseDown={onMouseDown} 
+                    <div
+                        ref={resizerRef}
+                        onMouseDown={onMouseDown}
                         className="absolute top-0 left-0 h-full w-2 cursor-col-resize hover:bg-blue-400/30 transition-colors"
                     />
                 )}
@@ -688,12 +689,12 @@ export default function InventoryReplenishmentPage() {
 
     const availableCategories = useMemo(() => [...new Set((processedReagents || []).map(r => r.category).filter(Boolean))].sort(), [processedReagents]);
     const availableSuppliers = useMemo(() => [...new Set((processedReagents || []).map(r => r.supplier?.name).filter(Boolean))].sort(), [processedReagents]);
-    
-    const clearAllFilters = () => { 
-        setSearchTerm(''); 
-        setFilter('all'); 
-        setCategoryFilter('all'); 
-        setSupplierFilter('all'); 
+
+    const clearAllFilters = () => {
+        setSearchTerm('');
+        setFilter('all');
+        setCategoryFilter('all');
+        setSupplierFilter('all');
         setAvailableFrameworkFilter('all');
     };
 
@@ -724,7 +725,7 @@ export default function InventoryReplenishmentPage() {
                                                 </TooltipTrigger>
                                                 <TooltipContent className="max-w-xs text-right" dir="rtl">
                                                     <p className="text-sm">
-                                                        {itemsWithTemporaryOrders} פריטים מוצגים עם כמות מוצעת המתחשבת בדרישות רכש זמניות (ללא מספר קבוע). 
+                                                        {itemsWithTemporaryOrders} פריטים מוצגים עם כמות מוצעת המתחשבת בדרישות רכש זמניות (ללא מספר קבוע).
                                                         המספר בסוגריים מציג את הכמות ללא התחשבות בדרישות אלו.
                                                     </p>
                                                 </TooltipContent>
@@ -745,7 +746,7 @@ export default function InventoryReplenishmentPage() {
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="relative flex-grow">
                                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <Input placeholder="חפש ריאגנט..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10"/>
+                                <Input placeholder="חפש ריאגנט..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10" />
                             </div>
                             <Select value={filter} onValueChange={setFilter}>
                                 <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="סנן לפי..." /></SelectTrigger>
@@ -823,8 +824,8 @@ export default function InventoryReplenishmentPage() {
                                             {isMobile && (
                                                 <div>
                                                     <Label>מיון</Label>
-                                                    <Select value={`${sortConfig.key}-${sortConfig.direction}`} onValueChange={(v) => { const [k, d] = v.split('-'); setSortConfig({ key: k, direction: d });}}>
-                                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    <Select value={`${sortConfig.key}-${sortConfig.direction}`} onValueChange={(v) => { const [k, d] = v.split('-'); setSortConfig({ key: k, direction: d }); }}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="name-asc">שם (א-ת)</SelectItem>
                                                             <SelectItem value="name-desc">שם (ת-א)</SelectItem>
@@ -850,13 +851,12 @@ export default function InventoryReplenishmentPage() {
                         {(filteredReagents || []).map(reagent => {
                             const netAvailable = (reagent.available_framework_quantity || 0) - (reagent.quantity_in_pending_withdrawals || 0) - (reagent.quantity_in_delivery || 0);
                             return (
-                                <Card 
-                                    key={reagent.id} 
-                                    className={`p-3 border-l-4 bg-white transition-all ${
-                                        reagent.current_stock_status === 'out_of_stock' ? 'border-red-500' : 
-                                        reagent.current_stock_status === 'low_stock' ? 'border-amber-500' : 
-                                        'border-slate-300'
-                                    } ${reagent.has_temporary_orders ? 'shadow-md ring-1 ring-purple-200' : ''}`}
+                                <Card
+                                    key={reagent.id}
+                                    className={`p-3 border-l-4 bg-white transition-all ${reagent.current_stock_status === 'out_of_stock' ? 'border-red-500' :
+                                            reagent.current_stock_status === 'low_stock' ? 'border-amber-500' :
+                                                'border-slate-300'
+                                        } ${reagent.has_temporary_orders ? 'shadow-md ring-1 ring-purple-200' : ''}`}
                                 >
                                     {reagent.has_temporary_orders && (
                                         <div className="bg-purple-50 border border-purple-200 rounded-md px-2 py-1 mb-2 flex items-center gap-1 text-xs text-purple-700">
@@ -922,11 +922,11 @@ export default function InventoryReplenishmentPage() {
                                                 <div className="flex-1">
                                                     <Label htmlFor={`q-${reagent.id}`} className="text-xs font-medium text-slate-600 mb-1 block">כמות להזמנה</Label>
                                                     <div className="flex items-center gap-1">
-                                                        <Input 
-                                                            id={`q-${reagent.id}`} 
-                                                            type="number" 
-                                                            value={reagent.suggested_order_quantity || 0} 
-                                                            onChange={(e) => handleQuantityChange(reagent.id, e.target.value)} 
+                                                        <Input
+                                                            id={`q-${reagent.id}`}
+                                                            type="number"
+                                                            value={reagent.suggested_order_quantity || 0}
+                                                            onChange={(e) => handleQuantityChange(reagent.id, e.target.value)}
                                                             className="w-full text-center text-sm font-bold text-slate-800 border-slate-300 focus:border-amber-500 focus:ring-amber-500 h-9"
                                                         />
                                                         {reagent.has_temporary_orders && (
@@ -962,17 +962,17 @@ export default function InventoryReplenishmentPage() {
                                     <div className="bg-slate-50 border-b flex sticky top-0 z-10">
                                         {columns.map(column => (
                                             <ResizableHeader key={column.id} column={column}>
-                                                {column.id === 'selection' ? 
-                                                    <Checkbox checked={selectedReagents.size > 0 && selectedReagents.size === filteredReagents.length && filteredReagents.length > 0} onCheckedChange={handleSelectAllFiltered}/> : 
-                                                column.disableSort ? column.header : (
-                                                    <button onClick={() => handleSort(column.id)} className="flex items-center gap-2 w-full justify-center hover:text-amber-600">
-                                                        <TableHeaderTooltip 
-                                                            header={column.header} 
-                                                            description={column.description}
-                                                        />
-                                                        {sortConfig.key === column.id && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
-                                                    </button>
-                                                )}
+                                                {column.id === 'selection' ?
+                                                    <Checkbox checked={selectedReagents.size > 0 && selectedReagents.size === filteredReagents.length && filteredReagents.length > 0} onCheckedChange={handleSelectAllFiltered} /> :
+                                                    column.disableSort ? column.header : (
+                                                        <button onClick={() => handleSort(column.id)} className="flex items-center gap-2 w-full justify-center hover:text-amber-600">
+                                                            <TableHeaderTooltip
+                                                                header={column.header}
+                                                                description={column.description}
+                                                            />
+                                                            {sortConfig.key === column.id && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                        </button>
+                                                    )}
                                             </ResizableHeader>
                                         ))}
                                     </div>
@@ -980,15 +980,14 @@ export default function InventoryReplenishmentPage() {
                                         {(filteredReagents || []).map((row) => {
                                             const netAvailable = (row.available_framework_quantity || 0) - (row.quantity_in_pending_withdrawals || 0) - (row.quantity_in_delivery || 0);
                                             return (
-                                                <div 
-                                                    key={row.id} 
-                                                    className={`flex items-center transition-colors hover:bg-slate-50 ${
-                                                        [...selectedReagents].some(item => item.id === row.id) ? 'bg-amber-50' : ''
-                                                    } ${row.has_temporary_orders ? 'bg-purple-50/30' : ''}`}
+                                                <div
+                                                    key={row.id}
+                                                    className={`flex items-center transition-colors hover:bg-slate-50 ${[...selectedReagents].some(item => item.id === row.id) ? 'bg-amber-50' : ''
+                                                        } ${row.has_temporary_orders ? 'bg-purple-50/30' : ''}`}
                                                 >
                                                     {columns.map(column => (
                                                         <div key={column.id} className="p-3 text-center flex items-center justify-center" style={{ width: columnWidths[column.id] }}>
-                                                            {column.id === 'selection' && <Checkbox checked={[...selectedReagents].some(item => item.id === row.id)} onCheckedChange={() => handleSelectReagent(row.id, row.suggested_order_quantity)}/>}
+                                                            {column.id === 'selection' && <Checkbox checked={[...selectedReagents].some(item => item.id === row.id)} onCheckedChange={() => handleSelectReagent(row.id, row.suggested_order_quantity)} />}
                                                             {column.id === 'name' && (
                                                                 <div className="font-semibold text-slate-800 text-right w-full">
                                                                     <div className="flex items-center gap-2">
@@ -1061,10 +1060,10 @@ export default function InventoryReplenishmentPage() {
                                                             )}
                                                             {column.id === 'suggested_order_quantity' && (
                                                                 <div className="flex items-center justify-center gap-1">
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        value={row.suggested_order_quantity || 0} 
-                                                                        onChange={(e) => handleQuantityChange(row.id, e.target.value)} 
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={row.suggested_order_quantity || 0}
+                                                                        onChange={(e) => handleQuantityChange(row.id, e.target.value)}
                                                                         className="w-20 text-center font-bold text-slate-800 border-slate-300 focus:border-amber-500 focus:ring-amber-500"
                                                                     />
                                                                     {row.has_temporary_orders && (
@@ -1159,7 +1158,7 @@ export default function InventoryReplenishmentPage() {
                         <AlertDialogCancel onClick={handleCancelMissingDetails} className="w-full sm:w-auto">
                             בטל
                         </AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
                             onClick={handleProceedWithMissingDetails}
                             className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600"
                         >
