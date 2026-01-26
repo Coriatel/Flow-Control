@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-    Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2, 
+    Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2, Printer,
     FileText, Package, Calendar, User, AlertCircle, ExternalLink, Truck
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,6 +19,7 @@ import { toast as sonnerToast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import WithdrawalItemRow from '@/components/withdrawal/WithdrawalItemRow';
+import PrintDialog from '@/components/ui/PrintDialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -40,6 +41,7 @@ export default function EditWithdrawalRequestPage() {
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showPrintDialog, setShowPrintDialog] = useState(false);
 
     const [withdrawalRequest, setWithdrawalRequest] = useState(null);
     const [frameworkOrder, setFrameworkOrder] = useState(null);
@@ -233,6 +235,13 @@ export default function EditWithdrawalRequestPage() {
                         <>
                             <Button
                                 variant="outline"
+                                onClick={() => setShowPrintDialog(true)}
+                            >
+                                <Printer className="h-4 w-4 mr-2" />
+                                הדפסה
+                            </Button>
+                            <Button
+                                variant="outline"
                                 onClick={() => setIsEditMode(true)}
                                 disabled={withdrawalRequest.status === 'completed' || withdrawalRequest.status === 'cancelled'}
                             >
@@ -271,6 +280,14 @@ export default function EditWithdrawalRequestPage() {
                     )}
                 </div>
             </div>
+
+            <PrintDialog
+                isOpen={showPrintDialog}
+                onClose={() => setShowPrintDialog(false)}
+                documentId={withdrawalId}
+                documentType="withdrawal"
+                title="בקשת משיכה"
+            />
 
             {/* Status & Mode Indicator */}
             <div className="flex items-center gap-3 mb-6">

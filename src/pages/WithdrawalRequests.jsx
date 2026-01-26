@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import BackButton from '@/components/ui/BackButton';
 import ResizableTable from '@/components/ui/ResizableTable';
+import PrintDialog from '@/components/ui/PrintDialog';
 
 export default function WithdrawalRequestsPage() {
   const navigate = useNavigate();
@@ -50,6 +51,8 @@ export default function WithdrawalRequestsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [withdrawalToDelete, setWithdrawalToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [printDocumentId, setPrintDocumentId] = useState(null);
 
   const allColumns = useMemo(() => [
     { key: 'withdrawal_number', label: 'מס\' משיכה', alwaysVisible: true, defaultWidth: 140, sortable: true },
@@ -185,6 +188,11 @@ export default function WithdrawalRequestsPage() {
     setDeleteDialogOpen(true);
   };
 
+  const handleRowPrint = (withdrawal) => {
+    setPrintDocumentId(withdrawal.id);
+    setShowPrintDialog(true);
+  };
+
   const handleDeleteConfirm = async () => {
     if (!withdrawalToDelete) return;
 
@@ -306,6 +314,13 @@ export default function WithdrawalRequestsPage() {
         const canDelete = withdrawal.status === 'draft' || withdrawal.status === 'submitted';
         return (
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRowPrint(withdrawal)}
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
             <Link to={createPageUrl('EditWithdrawalRequest') + `?id=${withdrawal.id}`}>
               <Button variant="ghost" size="sm">
                 <Edit className="h-4 w-4" />
@@ -467,12 +482,18 @@ export default function WithdrawalRequestsPage() {
           </div>
           
           {/* Desktop: Full Button */}
-          <Link to={createPageUrl('NewWithdrawalRequest')} className="hidden sm:block flex-shrink-0">
-            <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              בקשת משיכה חדשה
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-2" />
+              הדפסה
             </Button>
-          </Link>
+            <Link to={createPageUrl('NewWithdrawalRequest')}>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                בקשת משיכה חדשה
+              </Button>
+            </Link>
+          </div>
 
           {/* Mobile: Icon Only Button */}
           <Link to={createPageUrl('NewWithdrawalRequest')} className="sm:hidden flex-shrink-0">
@@ -617,18 +638,29 @@ export default function WithdrawalRequestsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
-                רענון
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
                 <Printer className="h-4 w-4 ml-2" />
                 הדפס
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
+                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                רענון
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
+
+      <PrintDialog
+        isOpen={showPrintDialog}
+        onClose={() => {
+          setShowPrintDialog(false);
+          setPrintDocumentId(null);
+        }}
+        documentId={printDocumentId}
+        documentType="withdrawal"
+        title="בקשת משיכה"
+      />
 
       {/* Mobile Filter Sheet with Glassmorphism */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
@@ -805,6 +837,10 @@ export default function WithdrawalRequestsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => handleRowPrint(withdrawal)}>
+                        <Printer className="h-4 w-4 ml-2" />
+                        הדפסה
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate(createPageUrl(`EditWithdrawalRequest?id=${withdrawal.id}`))}>
                         <Edit className="h-4 w-4 ml-2" />
                         עריכה
