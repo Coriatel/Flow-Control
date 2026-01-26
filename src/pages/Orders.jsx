@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getOrdersData } from '@/api/functions';
+import { Order } from '@/api/entities';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,17 @@ import BackButton from '@/components/ui/BackButton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ResizableTable from '@/components/ui/ResizableTable';
+import PrintDialog from '@/components/ui/PrintDialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function OrdersPage() {
     const navigate = useNavigate();
@@ -37,27 +49,36 @@ export default function OrdersPage() {
     const [sortField, setSortField] = useState('order_date');
     const [sortDirection, setSortDirection] = useState('desc');
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+    const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
+    const [printQueue, setPrintQueue] = useState([]);
+    const [activePrintId, setActivePrintId] = useState(null);
+    const [showPrintDialog, setShowPrintDialog] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteTargets, setDeleteTargets] = useState([]);
+    const [deleting, setDeleting] = useState(false);
 
     // Column visibility state
     const [visibleColumns, setVisibleColumns] = useState(() => {
         const saved = localStorage.getItem('ordersVisibleColumns');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                return parsed.includes('selection') ? parsed : ['selection', ...parsed];
             } catch {
                 return [
-                    'order_number_temp', 'order_date', 'supplier', 'status', 'order_type',
+                    'selection', 'order_number_temp', 'order_date', 'supplier', 'status', 'order_type',
                     'linked_withdrawals', 'linked_deliveries', 'total_items', 'actions'
                 ];
             }
         }
         return [
-            'order_number_temp', 'order_date', 'supplier', 'status', 'order_type',
+            'selection', 'order_number_temp', 'order_date', 'supplier', 'status', 'order_type',
             'linked_withdrawals', 'linked_deliveries', 'total_items', 'actions'
         ];
     });
 
     const allColumns = [
+        { key: 'selection', label: 'בחירה', alwaysVisible: true, defaultWidth: 50, sortable: false },
         { key: 'order_number_temp', label: 'מס\' הזמנה זמני', alwaysVisible: true, defaultWidth: 140, sortable: true },
         { key: 'order_number_permanent', label: 'מס\' הזמנה קבוע', defaultWidth: 140, sortable: true },
         { key: 'purchase_order_number_sap', label: 'מס\' דרישת רכש SAP', defaultWidth: 160, sortable: true },
@@ -158,6 +179,123 @@ export default function OrdersPage() {
         return filtered;
     }, [orders, searchTerm, sortField, sortDirection]);
 
+    const visibleOrderIds = useMemo(
+        () => filteredAndSortedOrders.map(order => order.id),
+        [filteredAndSortedOrders]
+    );
+
+    const isAllSelected = useMemo(
+        () => visibleOrderIds.length > 0 && visibleOrderIds.every(id => selectedOrderIds.has(id)),
+        [visibleOrderIds, selectedOrderIds]
+    );
+
+    const isSomeSelected = useMemo(
+        () => visibleOrderIds.some(id => selectedOrderIds.has(id)) && !isAllSelected,
+        [visibleOrderIds, selectedOrderIds, isAllSelected]
+    );
+
+    const selectedIdsInView = useMemo(
+        () => visibleOrderIds.filter(id => selectedOrderIds.has(id)),
+        [visibleOrderIds, selectedOrderIds]
+    );
+
+    const selectionCount = selectedOrderIds.size;
+    const selectedIds = useMemo(() => Array.from(selectedOrderIds), [selectedOrderIds]);
+
+    const toggleSelectAllVisible = (checked) => {
+        setSelectedOrderIds(prev => {
+            const next = new Set(prev);
+            if (checked) {
+                visibleOrderIds.forEach(id => next.add(id));
+            } else {
+                visibleOrderIds.forEach(id => next.delete(id));
+            }
+            return next;
+        });
+    };
+
+    const toggleSelectOrder = (orderId, checked) => {
+        setSelectedOrderIds(prev => {
+            const next = new Set(prev);
+            if (checked) {
+                next.add(orderId);
+            } else {
+                next.delete(orderId);
+            }
+            return next;
+        });
+    };
+
+    const startPrintQueue = (ids) => {
+        if (!ids || ids.length === 0) {
+            toast.error('בחר הזמנה אחת לפחות להדפסה');
+            return;
+        }
+        setPrintQueue(ids);
+        setActivePrintId(ids[0]);
+        setShowPrintDialog(true);
+    };
+
+    const handlePrintDialogClose = () => {
+        setPrintQueue(prev => {
+            const remaining = prev.slice(1);
+            setActivePrintId(remaining[0] || null);
+            setShowPrintDialog(remaining.length > 0);
+            return remaining;
+        });
+    };
+
+    const requestDelete = (ids) => {
+        if (!ids || ids.length === 0) {
+            toast.error('בחר הזמנה אחת לפחות למחיקה');
+            return;
+        }
+        setDeleteTargets(ids);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        setDeleting(true);
+        const ids = deleteTargets;
+        try {
+            const results = await Promise.allSettled(ids.map(id => Order.delete(id)));
+            const succeeded = [];
+            const failed = [];
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    succeeded.push(ids[index]);
+                } else {
+                    failed.push({ id: ids[index], error: result.reason });
+                }
+            });
+
+            if (succeeded.length > 0) {
+                setOrders(prev => prev.filter(order => !succeeded.includes(order.id)));
+                setSelectedOrderIds(prev => {
+                    const next = new Set(prev);
+                    succeeded.forEach(id => next.delete(id));
+                    return next;
+                });
+            }
+
+            if (failed.length > 0) {
+                toast.error('חלק מההזמנות לא נמחקו', {
+                    description: `נכשלו ${failed.length} מתוך ${ids.length}`
+                });
+            } else {
+                toast.success('ההזמנות נמחקו בהצלחה');
+            }
+        } catch (error) {
+            toast.error('שגיאה במחיקת הזמנות', {
+                description: error.message
+            });
+        } finally {
+            setDeleting(false);
+            setDeleteDialogOpen(false);
+            setDeleteTargets([]);
+        }
+    };
+
     const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -212,6 +350,15 @@ export default function OrdersPage() {
 
     const renderCell = useCallback((order, columnKey) => {
         switch (columnKey) {
+            case 'selection':
+                return (
+                    <div className="flex justify-center">
+                        <Checkbox
+                            checked={selectedOrderIds.has(order.id)}
+                            onCheckedChange={(checked) => toggleSelectOrder(order.id, checked === true)}
+                        />
+                    </div>
+                );
             case 'order_number_temp':
                 return (
                     <Link
@@ -291,17 +438,47 @@ export default function OrdersPage() {
             case 'actions':
                 return (
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startPrintQueue([order.id])}
+                            title="הדפס דרישה"
+                        >
+                            <Printer className="h-4 w-4" />
+                        </Button>
                         <Link to={createPageUrl('EditOrder') + `?id=${order.id}`}>
                             <Button variant="ghost" size="sm">
                                 <Edit className="h-4 w-4" />
                             </Button>
                         </Link>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => requestDelete([order.id])}
+                            title="מחיקה"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
                     </div>
                 );
             default:
                 return order[columnKey] || '';
         }
-    }, [getStatusBadge, getOrderTypeBadge, formatDate]);
+    }, [getStatusBadge, getOrderTypeBadge, formatDate, selectedOrderIds, startPrintQueue, requestDelete, toggleSelectOrder]);
+
+    const renderHeader = useCallback((column) => {
+        if (column.key !== 'selection') return null;
+        const checkedState = isAllSelected ? true : isSomeSelected ? 'indeterminate' : false;
+        return (
+            <div className="flex justify-center">
+                <Checkbox
+                    checked={checkedState}
+                    onCheckedChange={(checked) => toggleSelectAllVisible(checked === true)}
+                />
+            </div>
+        );
+    }, [isAllSelected, isSomeSelected, toggleSelectAllVisible]);
 
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
@@ -336,7 +513,7 @@ export default function OrdersPage() {
                 <table>
                     <thead>
                         <tr>
-                            ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_withdrawals' && col !== 'linked_deliveries').map(col => {
+                            ${visibleColumns.filter(col => col !== 'selection' && col !== 'actions' && col !== 'linked_withdrawals' && col !== 'linked_deliveries').map(col => {
                                 const column = allColumns.find(c => c.key === col);
                                 return `<th>${column?.label || col}</th>`;
                             }).join('')}
@@ -345,7 +522,7 @@ export default function OrdersPage() {
                     <tbody>
                         ${filteredAndSortedOrders.map(order => `
                             <tr>
-                                ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_withdrawals' && col !== 'linked_deliveries').map(col => {
+                                ${visibleColumns.filter(col => col !== 'selection' && col !== 'actions' && col !== 'linked_withdrawals' && col !== 'linked_deliveries').map(col => {
                                     let value = '';
                                     switch (col) {
                                         case 'order_date':
@@ -535,6 +712,27 @@ export default function OrdersPage() {
                         </SelectContent>
                     </Select>
 
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startPrintQueue(selectedIds)}
+                        disabled={selectionCount === 0}
+                    >
+                        <Printer className="h-4 w-4 ml-2" />
+                        הדפס נבחרים{selectionCount > 0 ? ` (${selectionCount})` : ''}
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => requestDelete(selectedIds)}
+                        disabled={selectionCount === 0}
+                    >
+                        <Trash2 className="h-4 w-4 ml-2" />
+                        מחק נבחרים{selectionCount > 0 ? ` (${selectionCount})` : ''}
+                    </Button>
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -613,6 +811,14 @@ export default function OrdersPage() {
                             <DropdownMenuItem onClick={handlePrint}>
                                 <Printer className="h-4 w-4 ml-2" />
                                 הדפס
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => startPrintQueue(selectedIds)} disabled={selectionCount === 0}>
+                                <Printer className="h-4 w-4 ml-2" />
+                                הדפס נבחרים
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => requestDelete(selectedIds)} disabled={selectionCount === 0}>
+                                <Trash2 className="h-4 w-4 ml-2" />
+                                מחק נבחרים
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -720,6 +926,7 @@ export default function OrdersPage() {
                             sortDirection={sortDirection}
                             onSort={handleSort}
                             renderCell={renderCell}
+                            renderHeader={renderHeader}
                         />
 
                         {filteredAndSortedOrders.length === 0 && (
@@ -746,13 +953,19 @@ export default function OrdersPage() {
                             <div className="space-y-3">
                                 {/* Header: Order Number + Actions */}
                                 <div className="flex justify-between items-start gap-2">
-                                    <Link 
-                                        to={createPageUrl(`EditOrder?id=${order.id}`)}
-                                        className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
-                                    >
-                                        {order.order_number_temp}
-                                        <ExternalLink className="h-4 w-4" />
-                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            checked={selectedOrderIds.has(order.id)}
+                                            onCheckedChange={(checked) => toggleSelectOrder(order.id, checked === true)}
+                                        />
+                                        <Link 
+                                            to={createPageUrl(`EditOrder?id=${order.id}`)}
+                                            className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                        >
+                                            {order.order_number_temp}
+                                            <ExternalLink className="h-4 w-4" />
+                                        </Link>
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -763,6 +976,14 @@ export default function OrdersPage() {
                                             <DropdownMenuItem onClick={() => navigate(createPageUrl(`EditOrder?id=${order.id}`))}>
                                                 <Edit className="h-4 w-4 ml-2" />
                                                 עריכה
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => startPrintQueue([order.id])}>
+                                                <Printer className="h-4 w-4 ml-2" />
+                                                הדפס
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => requestDelete([order.id])} className="text-red-600">
+                                                <Trash2 className="h-4 w-4 ml-2" />
+                                                מחיקה
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -848,6 +1069,37 @@ export default function OrdersPage() {
                     ))
                 )}
             </div>
+
+            <PrintDialog
+                isOpen={showPrintDialog}
+                onClose={handlePrintDialogClose}
+                documentId={activePrintId}
+                documentType="order"
+                title="דרישת רכש"
+            />
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>אישור מחיקה</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteTargets.length === 1
+                                ? 'האם למחוק את דרישת הרכש שנבחרה? פעולה זו אינה ניתנת לשחזור.'
+                                : `האם למחוק ${deleteTargets.length} דרישות רכש? פעולה זו אינה ניתנת לשחזור.`}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            disabled={deleting}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'מחק'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

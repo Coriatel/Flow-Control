@@ -356,6 +356,59 @@ router.put(
 );
 
 /**
+ * DELETE /api/orders/:id
+ * Delete order (hard delete if possible, otherwise cancel)
+ */
+router.delete(
+  '/:id',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const existing = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        deliveries: true,
+        frameworkOrder: true,
+        items: true,
+      },
+    });
+
+    if (!existing) {
+      throw new AppError('Order not found', 404);
+    }
+
+    // If order has related deliveries or framework order, cancel instead of deleting
+    if ((existing.deliveries && existing.deliveries.length > 0) || existing.frameworkOrder) {
+      const cancelled = await prisma.order.update({
+        where: { id },
+        data: { status: 'CANCELLED', closedDate: new Date() },
+        include: {
+          supplier: true,
+          items: true,
+        },
+      });
+      const response: ApiResponse = {
+        success: true,
+        data: mapOrderResponse(cancelled),
+        message: 'Order cancelled (related data exists)',
+      };
+      res.json(response);
+      return;
+    }
+
+    await prisma.orderItem.deleteMany({ where: { orderId: id } });
+    const deleted = await prisma.order.delete({ where: { id } });
+
+    const response: ApiResponse = {
+      success: true,
+      data: deleted,
+      message: 'Order deleted',
+    };
+    res.json(response);
+  })
+);
+
+/**
  * POST /api/orders/:id/items
  * Add item to order
  */

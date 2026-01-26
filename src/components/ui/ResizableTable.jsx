@@ -20,7 +20,8 @@ export default function ResizableTable({
   sortField = '',
   sortDirection = 'asc',
   onSort = () => {},
-  renderCell = () => null
+  renderCell = () => null,
+  renderHeader = null
 }) {
   // State for column widths
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -102,22 +103,44 @@ export default function ResizableTable({
                 style={{ minWidth: `${columnWidths[column.key]}px` }}
               >
                 <div className="flex items-center justify-between">
-                  {column.sortable ? (
-                    <button
-                      onClick={() => onSort(column.key)}
-                      className="flex items-center gap-2 hover:text-slate-900 transition-colors w-full text-right"
-                    >
-                      <span>{column.label}</span>
-                      {sortField === column.key && (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )
-                      )}
-                    </button>
+                  {renderHeader ? (
+                    renderHeader(column) ?? (
+                      column.sortable ? (
+                        <button
+                          onClick={() => onSort(column.key)}
+                          className="flex items-center gap-2 hover:text-slate-900 transition-colors w-full text-right"
+                        >
+                          <span>{column.label}</span>
+                          {sortField === column.key && (
+                            sortDirection === 'asc' ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )
+                          )}
+                        </button>
+                      ) : (
+                        <span>{column.label}</span>
+                      )
+                    )
                   ) : (
-                    <span>{column.label}</span>
+                    column.sortable ? (
+                      <button
+                        onClick={() => onSort(column.key)}
+                        className="flex items-center gap-2 hover:text-slate-900 transition-colors w-full text-right"
+                      >
+                        <span>{column.label}</span>
+                        {sortField === column.key && (
+                          sortDirection === 'asc' ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )
+                        )}
+                      </button>
+                    ) : (
+                      <span>{column.label}</span>
+                    )
                   )}
                 </div>
 

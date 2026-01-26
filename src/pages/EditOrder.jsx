@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
     Loader2, Save, X, ArrowLeft, Edit, Eye, Trash2,
-    FileText, Package, Calendar, AlertCircle, ExternalLink, Truck, ShoppingCart, User as UserIcon
+    FileText, Package, Calendar, AlertCircle, ExternalLink, Truck, ShoppingCart, User as UserIcon, Printer
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -26,6 +26,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import PrintDialog from '@/components/ui/PrintDialog';
 
 export default function EditOrderPage() {
     const navigate = useNavigate();
@@ -37,6 +38,7 @@ export default function EditOrderPage() {
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showPrintDialog, setShowPrintDialog] = useState(false);
 
     const [order, setOrder] = useState(null);
     const [items, setItems] = useState([]);
@@ -213,6 +215,13 @@ export default function EditOrderPage() {
                         <>
                             <Button
                                 variant="outline"
+                                onClick={() => setShowPrintDialog(true)}
+                            >
+                                <Printer className="h-4 w-4 mr-2" />
+                                הדפסה
+                            </Button>
+                            <Button
+                                variant="outline"
                                 onClick={() => setIsEditMode(true)}
                                 disabled={order.status === 'closed' || order.status === 'cancelled'}
                             >
@@ -251,6 +260,14 @@ export default function EditOrderPage() {
                     )}
                 </div>
             </div>
+
+            <PrintDialog
+                isOpen={showPrintDialog}
+                onClose={() => setShowPrintDialog(false)}
+                documentId={orderId}
+                documentType="order"
+                title="דרישת רכש"
+            />
 
             {/* Status & Mode Indicator */}
             <div className="flex items-center gap-3 mb-6">
