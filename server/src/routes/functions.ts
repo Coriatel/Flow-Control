@@ -1529,6 +1529,133 @@ router.post(
                 break;
             }
 
+            case 'createAutomaticWithdrawal': {
+                const frameworkOrderId = params.frameworkOrderId || params.framework_order_id;
+                const items = Array.isArray(params.items) ? params.items : [];
+                const urgencyLevel = params.urgencyLevel || params.urgency_level || 'routine';
+
+                if (!frameworkOrderId) {
+                    result = { success: false, error: 'frameworkOrderId is required' };
+                    break;
+                }
+
+                if (items.length === 0) {
+                    result = { success: false, error: 'At least one item is required' };
+                    break;
+                }
+
+                // Get the framework order with its parent order
+                const frameworkOrder = await prisma.frameworkOrder.findUnique({
+                    where: { id: frameworkOrderId },
+                    include: {
+                        order: {
+                            include: {
+                                supplier: true,
+                            },
+                        },
+                    },
+                });
+
+                if (!frameworkOrder) {
+                    // Try to find by order id instead
+                    const order = await prisma.order.findUnique({
+                        where: { id: frameworkOrderId },
+                        include: {
+                            supplier: true,
+                            frameworkOrder: true,
+                        },
+                    });
+
+                    if (!order || !order.frameworkOrder) {
+                        result = { success: false, error: 'Framework order not found' };
+                        break;
+                    }
+
+                    // Use the found order's framework order
+                    const fwOrder = order.frameworkOrder;
+
+                    // Generate withdrawal number
+                    const count = await prisma.withdrawalRequest.count();
+                    const withdrawalNumber = `WD-${String(count + 1).padStart(6, '0')}`;
+
+                    // Create the withdrawal request
+                    const withdrawal = await prisma.withdrawalRequest.create({
+                        data: {
+                            withdrawalNumber,
+                            supplierId: order.supplierId,
+                            supplierSnapshot: order.supplierSnapshot || order.supplier?.name || '',
+                            frameworkOrderId: fwOrder.id,
+                            status: 'SUBMITTED',
+                            requestDate: new Date(),
+                            requesterNotes: `נוצר אוטומטית מהשלמות מלאי. דחיפות: ${urgencyLevel}`,
+                        },
+                    });
+
+                    // Create withdrawal items
+                    for (const item of items) {
+                        const reagentId = item.reagent_id || item.reagentId;
+                        const quantity = Number(item.quantity) || 0;
+
+                        if (!reagentId || quantity <= 0) continue;
+
+                        await prisma.withdrawalItem.create({
+                            data: {
+                                withdrawalRequestId: withdrawal.id,
+                                reagentId,
+                                requestedQuantity: quantity,
+                            },
+                        });
+                    }
+
+                    result = {
+                        success: true,
+                        withdrawalId: withdrawal.id,
+                        withdrawalNumber: withdrawal.withdrawalNumber,
+                    };
+                    break;
+                }
+
+                // Generate withdrawal number
+                const count = await prisma.withdrawalRequest.count();
+                const withdrawalNumber = `WD-${String(count + 1).padStart(6, '0')}`;
+
+                // Create the withdrawal request
+                const withdrawal = await prisma.withdrawalRequest.create({
+                    data: {
+                        withdrawalNumber,
+                        supplierId: frameworkOrder.order.supplierId,
+                        supplierSnapshot: frameworkOrder.order.supplierSnapshot || frameworkOrder.order.supplier?.name || '',
+                        frameworkOrderId: frameworkOrder.id,
+                        status: 'SUBMITTED',
+                        requestDate: new Date(),
+                        requesterNotes: `נוצר אוטומטית מהשלמות מלאי. דחיפות: ${urgencyLevel}`,
+                    },
+                });
+
+                // Create withdrawal items
+                for (const item of items) {
+                    const reagentId = item.reagent_id || item.reagentId;
+                    const quantity = Number(item.quantity) || 0;
+
+                    if (!reagentId || quantity <= 0) continue;
+
+                    await prisma.withdrawalItem.create({
+                        data: {
+                            withdrawalRequestId: withdrawal.id,
+                            reagentId,
+                            requestedQuantity: quantity,
+                        },
+                    });
+                }
+
+                result = {
+                    success: true,
+                    withdrawalId: withdrawal.id,
+                    withdrawalNumber: withdrawal.withdrawalNumber,
+                };
+                break;
+            }
+
             case 'calculateAverageUsage':
             case 'testCOAAccess':
             case 'migrateLegacySuppliers':
@@ -1536,7 +1663,6 @@ router.post(
             case 'changeReagentSupplier':
             case 'deleteReagent':
             case 'calculateReplenishment':
-            case 'createAutomaticWithdrawal':
             case 'checkPendingWithdrawals':
             case 'getAdvancedAnalytics':
             case 'fixDataIntegrity':

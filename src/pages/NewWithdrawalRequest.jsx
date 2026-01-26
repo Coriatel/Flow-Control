@@ -16,8 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Order } from '@/api/entities';
 import { OrderItem } from '@/api/entities';
 import { WithdrawalRequest } from '@/api/entities';
-import { WithdrawalItem } from '@/api/entities';
-import { User } from '@/api/entities';
 import WithdrawalItemRow from '../components/withdrawal/WithdrawalItemRow';
 import BackButton from '@/components/ui/BackButton'; // Added import
 import PrintDialog from '@/components/ui/PrintDialog'; // Added import
@@ -39,7 +37,7 @@ export default function NewWithdrawalRequestPage() {
 
   const [frameworkOrders, setFrameworkOrders] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
-  
+
   const [savingRequest, setSavingRequest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,24 +68,24 @@ export default function NewWithdrawalRequestPage() {
   const handleFrameworkOrderChange = useCallback((orderId) => {
     const selectedOrder = frameworkOrders.find(order => order.id === orderId);
     if (!selectedOrder) return;
-    
+
     setWithdrawalForm(prev => ({ ...prev, framework_order_id: orderId }));
-    
+
     const orderItems = allFrameworkOrderItemsRef.current.filter(item => item.order_id === orderId);
-    
+
     const itemsWithQuantities = (orderItems || [])
-        .filter(item => {
-            const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
-            const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
-            return isUsableStatus && remaining > 0;
-        })
-        .map(item => ({
-          ...item,
-          requested_quantity: 0,
-          max_quantity: (item.quantity_ordered || 0) - (item.quantity_received || 0),
-          is_prefilled: false,
-        }));
-    
+      .filter(item => {
+        const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
+        const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
+        return isUsableStatus && remaining > 0;
+      })
+      .map(item => ({
+        ...item,
+        requested_quantity: 0,
+        max_quantity: (item.quantity_ordered || 0) - (item.quantity_received || 0),
+        is_prefilled: false,
+      }));
+
     setAvailableItems(itemsWithQuantities);
   }, [frameworkOrders]);
 
@@ -108,16 +106,16 @@ export default function NewWithdrawalRequestPage() {
             console.error("Failed to parse prefilled items:", e);
           }
         }
-        
+
         // Step 1: Fetch all raw data once
         const [allOrders, allItems] = await Promise.all([
           Order.filter({ order_type: 'framework', status: { $in: ['approved', 'partially_received'] } }),
           OrderItem.list()
         ]);
-        
+
         setFrameworkOrders(allOrders);
         allFrameworkOrderItemsRef.current = allItems;
-        
+
         // Step 2: Process prefilled data if it exists
         if (source === 'inventory_replenishment' && prefilledFrameworkOrderId && prefilledItemsData.length > 0) {
           const selectedOrder = allOrders.find(o => o.id === prefilledFrameworkOrderId);
@@ -127,23 +125,23 @@ export default function NewWithdrawalRequestPage() {
             const orderItems = allItems.filter(item => item.order_id === prefilledFrameworkOrderId);
             const itemsWithQuantities = (orderItems || [])
               .filter(item => {
-                  const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
-                  const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
-                  return isUsableStatus && remaining > 0;
+                const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
+                const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
+                return isUsableStatus && remaining > 0;
               })
               .map(item => {
-                  const matchingPrefilled = prefilledItemsData.find(p => p.reagent_id === item.reagent_id);
-                  const maxQuantity = (item.quantity_ordered || 0) - (item.quantity_received || 0);
-                  const requestedQuantity = matchingPrefilled ? Math.min(matchingPrefilled.quantity || 0, maxQuantity) : 0;
-                  
-                  return {
-                    ...item,
-                    requested_quantity: requestedQuantity,
-                    max_quantity: maxQuantity,
-                    is_prefilled: !!matchingPrefilled
-                  };
+                const matchingPrefilled = prefilledItemsData.find(p => p.reagent_id === item.reagent_id);
+                const maxQuantity = (item.quantity_ordered || 0) - (item.quantity_received || 0);
+                const requestedQuantity = matchingPrefilled ? Math.min(matchingPrefilled.quantity || 0, maxQuantity) : 0;
+
+                return {
+                  ...item,
+                  requested_quantity: requestedQuantity,
+                  max_quantity: maxQuantity,
+                  is_prefilled: !!matchingPrefilled
+                };
               });
-            
+
             setAvailableItems(itemsWithQuantities);
           } else {
             toast({ title: "שגיאה", description: "הזמנת המסגרת שצוינה לא נמצאה או שאינה פעילה.", variant: "destructive" });
@@ -184,30 +182,52 @@ export default function NewWithdrawalRequestPage() {
       return;
     }
 
+    // Get the selected framework order to extract supplier info
+    const selectedOrder = frameworkOrders.find(order => order.id === withdrawalForm.framework_order_id);
+    if (!selectedOrder) {
+      toast({ title: "שגיאה", description: "יש לבחור הזמנת מסגרת.", variant: "destructive" });
+      setSavingRequest(false);
+      return;
+    }
+
+    // Get supplierId from the selected framework order
+    const supplierId = selectedOrder.supplier_id || selectedOrder.supplierId;
+    if (!supplierId) {
+      toast({ title: "שגיאה", description: "לא נמצא ספק להזמנת המסגרת שנבחרה.", variant: "destructive" });
+      setSavingRequest(false);
+      return;
+    }
+
     try {
+      // Format items for backend (camelCase, correct structure)
+      const formattedItems = itemsToSubmit.map(item => ({
+        reagentId: item.reagent_id || item.reagentId,
+        requestedQuantity: item.requested_quantity,
+        unitPrice: item.unit_price || item.unitPrice || undefined
+      }));
+
+      // Create withdrawal with all required fields in camelCase format
       const withdrawalReq = await WithdrawalRequest.create({
-        ...withdrawalForm,
-        status: 'submitted',
+        supplierId: supplierId,
+        frameworkOrderId: withdrawalForm.framework_order_id,
+        items: formattedItems,
+        requesterNotes: withdrawalForm.requester_notes || undefined
       });
 
-      for (const item of itemsToSubmit) {
-        await WithdrawalItem.create({
-          withdrawal_request_id: withdrawalReq.id,
-          reagent_id: item.reagent_id,
-          reagent_name_snapshot: item.reagent_name_snapshot,
-          quantity_requested: item.requested_quantity,
-          line_status: 'pending'
-        });
+      // Check if we got a valid ID back
+      const createdId = withdrawalReq?.id;
+      if (!createdId) {
+        throw new Error('לא התקבל מזהה לבקשה שנוצרה');
       }
 
       toast({
         title: "בקשת משיכה נשלחה בהצלחה",
-        description: `בקשה מספר ${withdrawalForm.withdrawal_number} נוצרה ונשלחה.`,
+        description: `בקשה מספר ${withdrawalReq.withdrawalNumber || withdrawalForm.withdrawal_number} נוצרה ונשלחה.`,
         variant: "success",
       });
-      
+
       // Open print dialog
-      setCreatedWithdrawalId(withdrawalReq.id);
+      setCreatedWithdrawalId(createdId);
       setShowPrintDialog(true);
 
     } catch (err) {
