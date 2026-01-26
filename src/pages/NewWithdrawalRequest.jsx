@@ -109,7 +109,19 @@ export default function NewWithdrawalRequestPage() {
 
         // Step 1: Fetch all raw data once
         const [allOrders, allItems] = await Promise.all([
-          Order.filter({ order_type: 'framework', status: { $in: ['approved', 'partially_received'] } }),
+          Order.filter({
+            order_type: 'framework',
+            status: {
+              $in: [
+                'draft',
+                'pending_sap_details',
+                'pending_sap_permanent_id',
+                'pending_sap_po_number',
+                'approved',
+                'partially_received'
+              ]
+            }
+          }),
           OrderItem.list()
         ]);
 

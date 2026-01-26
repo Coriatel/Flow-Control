@@ -1544,8 +1544,47 @@ router.post(
                     break;
                 }
 
+                const createFrameworkOrderFromOrder = async (order: any) => {
+                    const orderItems = Array.isArray(order.items) && order.items.length > 0
+                        ? order.items
+                        : await prisma.orderItem.findMany({ where: { orderId: order.id } });
+                    const totalAllocated = orderItems.reduce((sum: number, item: any) => {
+                        return sum + (Number(item.requestedQuantity) || 0);
+                    }, 0);
+                    const validFrom = order.orderDate ? new Date(order.orderDate) : new Date();
+                    const validTo = new Date(validFrom);
+                    validTo.setFullYear(validTo.getFullYear() + 1);
+
+                    const created = await prisma.frameworkOrder.create({
+                        data: {
+                            orderId: order.id,
+                            validFrom,
+                            validTo,
+                            maxTotalQuantity: totalAllocated,
+                            availableQuantity: totalAllocated,
+                        },
+                    });
+
+                    if (orderItems.length > 0) {
+                        await prisma.frameworkOrderItem.createMany({
+                            data: orderItems.map((item: any) => {
+                                const allocated = Number(item.requestedQuantity) || 0;
+                                return {
+                                    frameworkOrderId: created.id,
+                                    reagentId: item.reagentId,
+                                    allocatedQuantity: allocated,
+                                    consumedQuantity: 0,
+                                    availableQuantity: allocated,
+                                };
+                            }),
+                        });
+                    }
+
+                    return created;
+                };
+
                 // Get the framework order with its parent order
-                const frameworkOrder = await prisma.frameworkOrder.findUnique({
+                let frameworkOrder: any = await prisma.frameworkOrder.findUnique({
                     where: { id: frameworkOrderId },
                     include: {
                         order: {
@@ -1553,8 +1592,10 @@ router.post(
                                 supplier: true,
                             },
                         },
+                        items: true,
                     },
                 });
+                let orderForSupplier: any = frameworkOrder?.order ?? null;
 
                 if (!frameworkOrder) {
                     // Try to find by order id instead
@@ -1562,58 +1603,61 @@ router.post(
                         where: { id: frameworkOrderId },
                         include: {
                             supplier: true,
-                            frameworkOrder: true,
+                            frameworkOrder: { include: { items: true } },
+                            items: true,
                         },
                     });
 
-                    if (!order || !order.frameworkOrder) {
+                    if (!order) {
                         result = { success: false, error: 'Framework order not found' };
                         break;
                     }
 
-                    // Use the found order's framework order
-                    const fwOrder = order.frameworkOrder;
+                    orderForSupplier = order;
 
-                    // Generate withdrawal number
-                    const count = await prisma.withdrawalRequest.count();
-                    const withdrawalNumber = `WD-${String(count + 1).padStart(6, '0')}`;
-
-                    // Create the withdrawal request
-                    const withdrawal = await prisma.withdrawalRequest.create({
-                        data: {
-                            withdrawalNumber,
-                            supplierId: order.supplierId,
-                            supplierSnapshot: order.supplierSnapshot || order.supplier?.name || '',
-                            frameworkOrderId: fwOrder.id,
-                            status: 'SUBMITTED',
-                            requestDate: new Date(),
-                            requesterNotes: `נוצר אוטומטית מהשלמות מלאי. דחיפות: ${urgencyLevel}`,
-                        },
-                    });
-
-                    // Create withdrawal items
-                    for (const item of items) {
-                        const reagentId = item.reagent_id || item.reagentId;
-                        const quantity = Number(item.quantity) || 0;
-
-                        if (!reagentId || quantity <= 0) continue;
-
-                        await prisma.withdrawalItem.create({
-                            data: {
-                                withdrawalRequestId: withdrawal.id,
-                                reagentId,
-                                requestedQuantity: quantity,
-                            },
-                        });
+                    if (order.frameworkOrder) {
+                        frameworkOrder = order.frameworkOrder;
+                        if (Array.isArray(order.frameworkOrder.items) && order.frameworkOrder.items.length === 0) {
+                            const orderItems = Array.isArray(order.items) && order.items.length > 0
+                                ? order.items
+                                : await prisma.orderItem.findMany({ where: { orderId: order.id } });
+                            if (orderItems.length > 0) {
+                                await prisma.frameworkOrderItem.createMany({
+                                    data: orderItems.map((item: any) => {
+                                        const allocated = Number(item.requestedQuantity) || 0;
+                                        return {
+                                            frameworkOrderId: order.frameworkOrder.id,
+                                            reagentId: item.reagentId,
+                                            allocatedQuantity: allocated,
+                                            consumedQuantity: 0,
+                                            availableQuantity: allocated,
+                                        };
+                                    }),
+                                });
+                            }
+                        }
+                    } else {
+                        const normalizedOrderType = order.orderType ? order.orderType.toUpperCase() : '';
+                        if (normalizedOrderType !== 'FRAMEWORK') {
+                            result = { success: false, error: 'Framework order not found' };
+                            break;
+                        }
+                        frameworkOrder = await createFrameworkOrderFromOrder(order);
                     }
+                }
 
-                    result = {
-                        success: true,
-                        withdrawalId: withdrawal.id,
-                        withdrawalNumber: withdrawal.withdrawalNumber,
-                    };
+                if (!frameworkOrder) {
+                    result = { success: false, error: 'Framework order not found' };
                     break;
                 }
+
+                const supplierId = orderForSupplier?.supplierId || frameworkOrder.order?.supplierId;
+                const supplierSnapshot =
+                    orderForSupplier?.supplierSnapshot ||
+                    orderForSupplier?.supplier?.name ||
+                    frameworkOrder.order?.supplierSnapshot ||
+                    frameworkOrder.order?.supplier?.name ||
+                    '';
 
                 // Generate withdrawal number
                 const count = await prisma.withdrawalRequest.count();
@@ -1623,8 +1667,8 @@ router.post(
                 const withdrawal = await prisma.withdrawalRequest.create({
                     data: {
                         withdrawalNumber,
-                        supplierId: frameworkOrder.order.supplierId,
-                        supplierSnapshot: frameworkOrder.order.supplierSnapshot || frameworkOrder.order.supplier?.name || '',
+                        supplierId,
+                        supplierSnapshot,
                         frameworkOrderId: frameworkOrder.id,
                         status: 'SUBMITTED',
                         requestDate: new Date(),

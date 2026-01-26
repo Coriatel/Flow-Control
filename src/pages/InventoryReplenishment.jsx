@@ -512,7 +512,7 @@ export default function InventoryReplenishmentPage() {
                 urgencyLevel: 'routine'
             });
 
-            const success = response?.success ?? response?.data?.success ?? response?.data?.data?.success;
+            const success = response?.data?.success ?? response?.success ?? response?.data?.data?.success;
             const payload = response?.data?.data ?? response?.data ?? response ?? {};
             const errorMessage = response?.error || response?.data?.error;
 
@@ -536,7 +536,7 @@ export default function InventoryReplenishmentPage() {
                     setPrintDocumentType('withdrawal');
                 }, 500);
             } else {
-                throw new Error(errorMessage || 'Failed to create withdrawal');
+                throw new Error(errorMessage || payload.error || 'Failed to create withdrawal');
             }
         } catch (error) {
             console.error('Error in executeWithdrawalCreation:', error);

@@ -168,11 +168,83 @@ router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: 
     throw new AppError('Supplier not found', 404);
   }
 
-  // If frameworkOrderId provided, validate it exists and is active
+  // If frameworkOrderId provided, validate it exists or resolve it from order id
+  let resolvedFrameworkOrderId = frameworkOrderId;
   if (frameworkOrderId) {
-    const frameworkOrder = await prisma.frameworkOrder.findUnique({
-      where: { id: frameworkOrderId }
+    let frameworkOrder: any = await prisma.frameworkOrder.findUnique({
+      where: { id: frameworkOrderId },
+      include: { items: true }
     });
+
+    if (!frameworkOrder) {
+      const order = await prisma.order.findUnique({
+        where: { id: frameworkOrderId },
+        include: { items: true }
+      });
+
+      if (!order) {
+        throw new AppError('Framework order not found', 404);
+      }
+
+      const normalizedOrderType = order.orderType ? order.orderType.toUpperCase() : '';
+      if (normalizedOrderType !== 'FRAMEWORK') {
+        throw new AppError('Framework order not found', 404);
+      }
+
+      const orderItems = Array.isArray(order.items) ? order.items : [];
+      const totalAllocated = orderItems.reduce((sum, item: any) => {
+        return sum + (Number(item.requestedQuantity) || 0);
+      }, 0);
+
+      const validFrom = order.orderDate ? new Date(order.orderDate) : new Date();
+      const validTo = new Date(validFrom);
+      validTo.setFullYear(validTo.getFullYear() + 1);
+
+      frameworkOrder = await prisma.frameworkOrder.create({
+        data: {
+          orderId: order.id,
+          validFrom,
+          validTo,
+          maxTotalQuantity: totalAllocated,
+          availableQuantity: totalAllocated
+        }
+      });
+
+      if (orderItems.length > 0) {
+        await prisma.frameworkOrderItem.createMany({
+          data: orderItems.map((item: any) => {
+            const allocated = Number(item.requestedQuantity) || 0;
+            return {
+              frameworkOrderId: frameworkOrder!.id,
+              reagentId: item.reagentId,
+              allocatedQuantity: allocated,
+              consumedQuantity: 0,
+              availableQuantity: allocated
+            };
+          })
+        });
+      }
+    } else if (Array.isArray(frameworkOrder.items) && frameworkOrder.items.length === 0) {
+      const order = await prisma.order.findUnique({
+        where: { id: frameworkOrder.orderId },
+        include: { items: true }
+      });
+      const orderItems = Array.isArray(order?.items) ? order!.items : [];
+      if (orderItems.length > 0) {
+        await prisma.frameworkOrderItem.createMany({
+          data: orderItems.map((item: any) => {
+            const allocated = Number(item.requestedQuantity) || 0;
+            return {
+              frameworkOrderId: frameworkOrder!.id,
+              reagentId: item.reagentId,
+              allocatedQuantity: allocated,
+              consumedQuantity: 0,
+              availableQuantity: allocated
+            };
+          })
+        });
+      }
+    }
 
     if (!frameworkOrder) {
       throw new AppError('Framework order not found', 404);
@@ -182,6 +254,8 @@ router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: 
     if (now < frameworkOrder.validFrom || now > frameworkOrder.validTo) {
       throw new AppError('Framework order is not currently valid', 400);
     }
+
+    resolvedFrameworkOrderId = frameworkOrder.id;
   }
 
   // Generate withdrawal number
@@ -201,7 +275,7 @@ router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: 
       withdrawalNumber,
       supplierId,
       supplierSnapshot: supplier.name,
-      frameworkOrderId,
+      frameworkOrderId: resolvedFrameworkOrderId,
       status: 'DRAFT',
       requesterNotes,
       requestedById: req.user?.id,
