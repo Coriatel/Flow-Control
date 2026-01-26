@@ -407,10 +407,12 @@ export default function InventoryReplenishmentPage() {
             const supplierNameLower = supplierName.trim().toLowerCase();
 
             const relevantFrameworkOrders = (allOpenOrders || []).filter(o => {
-                const matchesSupplierId = supplierId && o.supplier_id === supplierId;
-                const matchesSupplierName = supplierNameLower && (o.supplier_name_snapshot || '').toLowerCase() === supplierNameLower;
+                const orderSupplierId = o.supplier_id || o.supplierId;
+                const orderSupplierName = (o.supplier_name_snapshot || o.supplierSnapshot || '').trim().toLowerCase();
+                const matchesSupplierId = supplierId && orderSupplierId && orderSupplierId === supplierId;
+                const matchesSupplierName = supplierNameLower && orderSupplierName && orderSupplierName === supplierNameLower;
                 return (
-                    o.order_type === 'framework' &&
+                    (o.order_type === 'framework' || o.order_type === 'framework_order') &&
                     (matchesSupplierId || matchesSupplierName) &&
                     [
                         'approved',
