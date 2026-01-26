@@ -111,12 +111,15 @@ export default function ManageSuppliersPage() {
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getManageSuppliersData();
-      
-      if (response.data.success) {
-        setSuppliers(response.data.data.suppliers);
-        console.log(`[ManageSuppliers Frontend] ✅ Loaded ${response.data.data.suppliers.length} suppliers`);
+
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        setSuppliers(payload.suppliers || []);
+        console.log(`[ManageSuppliers Frontend] ✅ Loaded ${payload.suppliers?.length || 0} suppliers`);
       } else {
-        throw new Error(response.data.error || 'Failed to load data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load data');
       }
     } catch (error) {
       console.error('[ManageSuppliers Frontend] ❌ Error:', error);

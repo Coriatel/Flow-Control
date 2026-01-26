@@ -83,12 +83,15 @@ export default function OutgoingShipmentsPage() {
         limit: '500'
       });
 
-      if (response.data.success) {
-        setShipments(response.data.data.shipments || []);
-        setSummary(response.data.data.summary || {});
-        console.log('✅ [OutgoingShipments Frontend] Data loaded:', response.data.data.shipments.length);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        setShipments(payload.shipments || []);
+        setSummary(payload.summary || {});
+        console.log('✅ [OutgoingShipments Frontend] Data loaded:', payload.shipments?.length || 0);
       } else {
-        throw new Error(response.data.error || 'Failed to fetch shipments');
+        throw new Error(response?.error || response?.data?.error || 'Failed to fetch shipments');
       }
     } catch (err) {
       console.error('❌ [OutgoingShipments Frontend] Error:', err);

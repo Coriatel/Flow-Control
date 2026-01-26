@@ -62,11 +62,14 @@ export default function ImportContactsPage() {
 
       const response = await uploadContactsFile(formData);
       
-      if (response.data && response.data.success) {
-        setValidationResults(response.data.results);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        setValidationResults(payload.results);
         setStep('validate');
       } else {
-        throw new Error(response.data?.error || 'שגיאה בולידציה');
+        throw new Error(response?.error || response?.data?.error || 'שגיאה בולידציה');
       }
     } catch (error) {
       console.error('Validation error:', error);
@@ -91,17 +94,20 @@ export default function ImportContactsPage() {
 
       const response = await uploadContactsFile(formData);
       
-      if (response.data && response.data.success) {
-        setImportResults(response.data.results);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        setImportResults(payload.results);
         setStep('complete');
         
         toast({
           title: "ייבוא הושלם בהצלחה",
-          description: `נוספו ${response.data.results.imported} אנשי קשר חדשים`,
+          description: `נוספו ${payload.results?.imported || 0} אנשי קשר חדשים`,
           variant: "default"
         });
       } else {
-        throw new Error(response.data?.error || 'שגיאה בייבוא');
+        throw new Error(response?.error || response?.data?.error || 'שגיאה בייבוא');
       }
     } catch (error) {
       console.error('Import error:', error);

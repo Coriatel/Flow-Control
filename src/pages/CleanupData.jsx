@@ -234,12 +234,14 @@ export default function CleanupData() {
         options
       });
       
-      if (response.data && response.data.success) {
-        const { result } = response.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        const { result } = payload;
         
         toast({
           title: "פעולת ניקוי הושלמה",
-          description: `${response.data.message}. ${JSON.stringify(result)}`,
+          description: `${payload.message || 'בוצע בהצלחה'}. ${JSON.stringify(result)}`,
           variant: "default",
           duration: 8000
         });
@@ -249,7 +251,7 @@ export default function CleanupData() {
           window.location.reload();
         }, 2000);
       } else {
-        throw new Error(response.data?.message || "שגיאה בפעולת הניקוי");
+        throw new Error(response?.error || response?.data?.message || "שגיאה בפעולת הניקוי");
       }
     } catch (error) {
       console.error("Error in server cleanup:", error);

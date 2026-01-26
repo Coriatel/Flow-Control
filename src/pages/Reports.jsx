@@ -86,8 +86,10 @@ export default function ReportsPage() {
     setAnalyticsLoading(true);
     try {
       const response = await getAdvancedAnalytics({ period: selectedPeriod });
-      if (response.data && response.data.success) {
-        setAnalyticsData(response.data.data);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        setAnalyticsData(payload);
       } else {
         toast({
           title: "שגיאה בטעינת נתונים",
@@ -116,14 +118,15 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const response = await generateReports(reportFilters);
-      
-      if (response.data && response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
         // Download the generated report
-        const blob = new Blob([response.data.reportData], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([payload.reportData || ''], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = response.data.fileName;
+        link.download = payload.fileName || 'report.csv';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -131,11 +134,11 @@ export default function ReportsPage() {
 
         toast({
           title: "דוח הופק בהצלחה",
-          description: `הדוח ${response.data.fileName} נוצר והורד למחשב`,
+          description: `הדוח ${payload.fileName || 'report.csv'} נוצר והורד למחשב`,
           variant: "default"
         });
       } else {
-        throw new Error(response.data?.message || 'שגיאה לא ידועה');
+        throw new Error(response?.error || response?.data?.message || 'שגיאה לא ידועה');
       }
     } catch (error) {
       console.error('Error generating report:', error);

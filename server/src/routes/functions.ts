@@ -58,7 +58,7 @@ router.post(
                 break;
 
             // Implemented data functions
-            // Format: { success: true, data: { <entityName>: [...], summary?: {} } }
+            // Format (wrapped at response): { success: true, data: { <entityName>: [...], summary?: {} } }
             case 'getOrdersData': {
                 const orders = await prisma.order.findMany({
                     include: {
@@ -133,7 +133,7 @@ router.post(
                     };
                 });
 
-                result = { success: true, data: { orders: mappedOrders } };
+                result = { orders: mappedOrders };
                 break;
             }
 
@@ -188,7 +188,7 @@ router.post(
                         return acc;
                     }, {}),
                 };
-                result = { success: true, data: { deliveries: mappedDeliveries, summary } };
+                result = { deliveries: mappedDeliveries, summary };
                 break;
             }
 
@@ -210,7 +210,7 @@ router.post(
                         return acc;
                     }, {}),
                 };
-                result = { success: true, data: { shipments, summary: shipmentsSummary } };
+                result = { shipments, summary: shipmentsSummary };
                 break;
             }
 
@@ -233,31 +233,106 @@ router.post(
                         return acc;
                     }, {}),
                 };
-                result = { success: true, data: { withdrawals, summary: withdrawalsSummary } };
+                result = { withdrawals, summary: withdrawalsSummary };
                 break;
             }
 
             case 'getSupplyTrackingData': {
-                const supplies = await prisma.delivery.findMany({
-                    where: { isRecurringSupply: true },
-                    include: {
-                        supplier: true,
-                        items: {
-                            include: {
-                                reagent: true,
-                            },
+                const limit = params.limit ? Number(params.limit) : 100;
+                const sortBy = typeof params.sortBy === 'string' ? params.sortBy : '-request_date';
+                const sortField = sortBy.startsWith('-') ? sortBy.slice(1) : sortBy;
+                const sortDirection = sortBy.startsWith('-') ? 'desc' : 'asc';
+
+                const [orders, withdrawals] = await Promise.all([
+                    prisma.order.findMany({
+                        where: { status: { notIn: ['CLOSED', 'CANCELLED'] } },
+                        include: {
+                            supplier: true,
+                            items: true,
                         },
-                    },
-                    orderBy: { deliveryDate: 'desc' },
-                });
-                const suppliesSummary = {
-                    total: supplies.length,
-                    byStatus: supplies.reduce((acc: Record<string, number>, s: any) => {
-                        acc[s.status] = (acc[s.status] || 0) + 1;
-                        return acc;
-                    }, {}),
+                        orderBy: { orderDate: 'desc' },
+                    }),
+                    prisma.withdrawalRequest.findMany({
+                        where: { status: { notIn: ['CLOSED', 'CANCELLED'] } },
+                        include: {
+                            supplier: true,
+                            items: true,
+                        },
+                        orderBy: { requestDate: 'desc' },
+                    }),
+                ]);
+
+                const now = new Date();
+                const mapUrgencyFromDays = (daysWaiting: number) => {
+                    if (daysWaiting > 14) return 'emergency';
+                    if (daysWaiting > 7) return 'urgent';
+                    return 'routine';
                 };
-                result = { success: true, data: { supplies, summary: suppliesSummary } };
+
+                const supplies = [
+                    ...orders.map((order: any) => {
+                        const requestDate = order.orderDate || order.createdAt;
+                        const daysWaiting = requestDate
+                            ? Math.max(0, Math.floor((now.getTime() - new Date(requestDate).getTime()) / 86400000))
+                            : 0;
+                        return {
+                            id: order.id,
+                            type: 'order',
+                            document_number: order.permanentNumber || order.tempNumber || null,
+                            request_date: order.orderDate?.toISOString() || null,
+                            expected_delivery: order.expectedDeliveryEnd?.toISOString() ||
+                                order.expectedDeliveryStart?.toISOString() || null,
+                            supplier: order.supplierSnapshot || order.supplier?.name || null,
+                            status: mapOrderStatus(order.status) || (order.status ? order.status.toLowerCase() : null),
+                            urgency: mapUrgencyFromDays(daysWaiting),
+                            total_items: Array.isArray(order.items) ? order.items.length : 0,
+                            days_waiting: daysWaiting,
+                            items: order.items || [],
+                        };
+                    }),
+                    ...withdrawals.map((withdrawal: any) => {
+                        const requestDate = withdrawal.requestDate || withdrawal.createdAt;
+                        const daysWaiting = requestDate
+                            ? Math.max(0, Math.floor((now.getTime() - new Date(requestDate).getTime()) / 86400000))
+                            : 0;
+                        const normalizedStatus = withdrawal.status ? withdrawal.status.toUpperCase() : null;
+                        const status = normalizedStatus === 'SHIPPING'
+                            ? 'in_delivery'
+                            : (normalizedStatus ? normalizedStatus.toLowerCase() : null);
+                        return {
+                            id: withdrawal.id,
+                            type: 'withdrawal',
+                            document_number: withdrawal.withdrawalNumber,
+                            request_date: withdrawal.requestDate?.toISOString() || null,
+                            expected_delivery: null,
+                            supplier: withdrawal.supplierSnapshot || withdrawal.supplier?.name || null,
+                            status,
+                            urgency: mapUrgencyFromDays(daysWaiting),
+                            total_items: Array.isArray(withdrawal.items) ? withdrawal.items.length : 0,
+                            days_waiting: daysWaiting,
+                            items: withdrawal.items || [],
+                        };
+                    }),
+                ];
+
+                const sortedSupplies = supplies.sort((a: any, b: any) => {
+                    const aDate = a[sortField];
+                    const bDate = b[sortField];
+                    if (!aDate && !bDate) return 0;
+                    if (!aDate) return sortDirection === 'asc' ? -1 : 1;
+                    if (!bDate) return sortDirection === 'asc' ? 1 : -1;
+                    const diff = new Date(aDate).getTime() - new Date(bDate).getTime();
+                    return sortDirection === 'asc' ? diff : -diff;
+                });
+
+                const limitedSupplies = Number.isFinite(limit) ? sortedSupplies.slice(0, limit) : sortedSupplies;
+                const summary = {
+                    totalSupplies: limitedSupplies.length,
+                    ordersCount: orders.length,
+                    withdrawalsCount: withdrawals.length,
+                    urgentCount: limitedSupplies.filter((s: any) => s.urgency !== 'routine').length,
+                };
+                result = { supplies: limitedSupplies, summary };
                 break;
             }
 
@@ -267,13 +342,13 @@ router.post(
                     take: 100,
                 });
                 // ActivityLog frontend expects response.data.data to be the array directly
-                result = { success: true, data: activities, totalCount: activities.length, filteredCount: activities.length };
+                result = { activities, totalCount: activities.length, filteredCount: activities.length };
                 break;
             }
 
             case 'getManageSuppliersData': {
                 const suppliers = await supplierService.getAll(true);
-                result = { success: true, data: { suppliers } };
+                result = { suppliers };
                 break;
             }
 
@@ -284,7 +359,7 @@ router.post(
                     },
                     orderBy: { name: 'asc' },
                 });
-                result = { success: true, data: { contacts } };
+                result = { contacts };
                 break;
             }
 
@@ -299,7 +374,7 @@ router.post(
                     },
                     orderBy: { name: 'asc' },
                 });
-                result = { success: true, data: { reagents } };
+                result = { reagents };
                 break;
             }
 
@@ -320,17 +395,14 @@ router.post(
                 const totalActiveBatches = reagents.reduce((sum, r) => sum + r.batches.length, 0);
                 const reagentsWithNewBatches = 0;
                 result = {
-                    success: true,
-                    data: {
-                        reagents,
-                        draft,
-                        lastCompletedCount: lastCount,
-                        summary: {
-                            totalReagents: reagents.length,
-                            withBatches: reagents.filter(r => r.batches.length > 0).length,
-                            totalActiveBatches,
-                            reagentsWithNewBatches,
-                        },
+                    reagents,
+                    draft,
+                    lastCompletedCount: lastCount,
+                    summary: {
+                        totalReagents: reagents.length,
+                        withBatches: reagents.filter(r => r.batches.length > 0).length,
+                        totalActiveBatches,
+                        reagentsWithNewBatches,
                     },
                 };
                 break;
@@ -928,6 +1000,92 @@ router.post(
                 break;
             }
 
+            case 'getEditWithdrawalData': {
+                const withdrawalId = params.withdrawal_request_id || params.withdrawalId;
+                if (!withdrawalId) {
+                    result = { success: false, error: 'withdrawal_request_id is required' };
+                    break;
+                }
+
+                const withdrawal = await prisma.withdrawalRequest.findUnique({
+                    where: { id: withdrawalId },
+                    include: {
+                        supplier: true,
+                        deliveries: true,
+                        items: {
+                            include: {
+                                reagent: true,
+                            },
+                        },
+                        frameworkOrder: {
+                            include: {
+                                order: true,
+                            },
+                        },
+                    },
+                });
+
+                if (!withdrawal) {
+                    result = { success: false, error: 'Withdrawal request not found' };
+                    break;
+                }
+
+                const mappedRequest = {
+                    id: withdrawal.id,
+                    withdrawal_number: withdrawal.withdrawalNumber,
+                    status: withdrawal.status ? withdrawal.status.toLowerCase() : 'draft',
+                    supplier_snapshot: withdrawal.supplierSnapshot || withdrawal.supplier?.name || null,
+                    supplier_id: withdrawal.supplierId,
+                    framework_order_id: withdrawal.frameworkOrderId || null,
+                    request_date: withdrawal.requestDate?.toISOString() || null,
+                    created_date: withdrawal.createdAt?.toISOString() || null,
+                    updated_date: withdrawal.updatedAt?.toISOString() || null,
+                    requester_notes: withdrawal.requesterNotes || null,
+                    approver_notes: withdrawal.approverNotes || null,
+                    total_value_requested: withdrawal.totalValueRequested ?? null,
+                    total_value_approved: withdrawal.totalValueApproved ?? null,
+                    urgency_level: null,
+                    requested_delivery_date: null,
+                    special_instructions: null,
+                    created_by: null,
+                    linked_delivery_ids: Array.isArray(withdrawal.deliveries)
+                        ? withdrawal.deliveries.map((delivery: any) => delivery.id)
+                        : [],
+                };
+
+                const mappedItems = withdrawal.items.map((item: any) => ({
+                    withdrawal_item_id: item.id,
+                    reagent_id: item.reagentId,
+                    reagent_name_snapshot: item.reagent?.name || null,
+                    reagent_catalog_number_snapshot: item.reagent?.catalogNumber || null,
+                    requested_quantity: Number(item.requestedQuantity) || 0,
+                    approved_quantity: item.approvedQuantity ?? null,
+                    quantity_received: Number(item.fulfilledQuantity) || 0,
+                    justification: null,
+                    notes: null,
+                }));
+
+                const frameworkOrder = withdrawal.frameworkOrder ? {
+                    id: withdrawal.frameworkOrder.id,
+                    order_id: withdrawal.frameworkOrder.orderId,
+                    order_number_temp: withdrawal.frameworkOrder.order?.tempNumber || null,
+                    order_number_permanent: withdrawal.frameworkOrder.order?.permanentNumber || null,
+                    status: mapOrderStatus(withdrawal.frameworkOrder.order?.status),
+                    valid_from: withdrawal.frameworkOrder.validFrom?.toISOString() || null,
+                    valid_to: withdrawal.frameworkOrder.validTo?.toISOString() || null,
+                } : null;
+
+                result = {
+                    success: true,
+                    data: {
+                        withdrawalRequest: mappedRequest,
+                        frameworkOrder,
+                        items: mappedItems,
+                    },
+                };
+                break;
+            }
+
             // Other placeholder functions
             case 'getProcessingProgress':
             case 'cleanupOperations':
@@ -965,6 +1123,13 @@ router.post(
 
                 // Get expired product logs (handled batches)
                 const handledBatches = await prisma.expiredProductLog.findMany({
+                    include: {
+                        batch: {
+                            include: {
+                                reagent: true,
+                            },
+                        },
+                    },
                     orderBy: { createdAt: 'desc' },
                 });
 
@@ -1002,21 +1167,39 @@ router.post(
                     expiry_date: b.expiryDate?.toISOString(),
                     current_quantity: Number(b.currentQuantity),
                     initial_quantity: Number(b.initialQuantity),
-                    status: b.status?.toLowerCase(),
-                    storage_location: b.storageLocation,
-                    qc_status: b.qcStatus,
-                    received_date: b.receivedDate?.toISOString(),
+                    reserved_quantity: Number(b.reservedQuantity) || 0,
+                    status: b.status ? b.status.toLowerCase() : 'active',
+                    storage_location: b.storageLocation || null,
+                    storage_conditions: b.storageConditions || null,
+                    qc_status: b.qcStatus ? b.qcStatus.toLowerCase() : null,
+                    qc_notes: b.qcNotes || null,
+                    manufacture_date: b.manufactureDate?.toISOString() || null,
+                    received_date: b.receivedDate?.toISOString() || null,
+                    coa_document_url: b.coaDocumentUrl || null,
+                    coa_upload_date: null,
+                    coa_uploaded_by: null,
                     supplier: b.reagent?.supplier?.name || null,
                 }));
 
+                const mappedHandledBatches = handledBatches.map((log: any) => ({
+                    id: log.id,
+                    reagent_id: log.reagentId,
+                    batch_id: log.batchId,
+                    batch_number_snapshot: log.batch?.batchNumber || null,
+                    reagent_name_snapshot: log.batch?.reagent?.name || null,
+                    original_expiry_date: log.batch?.expiryDate?.toISOString() || null,
+                    action_taken: log.actionTaken ? String(log.actionTaken).toLowerCase() : null,
+                    quantity_affected: Number(log.quantity) || 0,
+                    action_notes: log.notes || null,
+                    documented_date: log.handledAt?.toISOString() || null,
+                    documented_by_user_id: log.handledById || null,
+                }));
+
                 result = {
-                    success: true,
-                    data: {
-                        allBatches: transformedBatches,
-                        handledBatches,
-                        allSuppliers: allSuppliers.map((s: any) => ({ id: s.id, name: s.name })),
-                        reagentInfoCache,
-                    },
+                    allBatches: transformedBatches,
+                    handledBatches: mappedHandledBatches,
+                    allSuppliers: allSuppliers.map((s: any) => ({ id: s.id, name: s.name })),
+                    reagentInfoCache,
                 };
                 break;
             }
@@ -1356,7 +1539,6 @@ router.post(
             case 'createAutomaticWithdrawal':
             case 'checkPendingWithdrawals':
             case 'getAdvancedAnalytics':
-            case 'getEditWithdrawalData':
             case 'fixDataIntegrity':
             case 'deleteWithdrawal':
             case 'getEditShipmentData':

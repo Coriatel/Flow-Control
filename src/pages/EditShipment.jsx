@@ -119,8 +119,11 @@ export default function EditShipmentPage() {
         shipment_id: shipmentId
       });
 
-      if (response.data.success) {
-        const { shipment, shipmentItems, linkedDelivery, linkedOrder } = response.data.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        const { shipment, shipmentItems, linkedDelivery, linkedOrder } = payload;
         
         setShipment(shipment);
         setShipmentItems(shipmentItems || []);
@@ -136,7 +139,7 @@ export default function EditShipmentPage() {
           confirmation_received: shipment.confirmation_received || false
         });
       } else {
-        throw new Error(response.data.error || 'Failed to load shipment data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load shipment data');
       }
     } catch (error) {
       console.error('Error loading shipment:', error);
@@ -202,11 +205,12 @@ export default function EditShipmentPage() {
         deleteReason: 'נמחק על ידי המשתמש במסך עריכה'
       });
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast.success('המשלוח נמחק בהצלחה');
         navigate(createPageUrl('OutgoingShipments'));
       } else {
-        throw new Error(response.data.error || 'Failed to delete shipment');
+        throw new Error(response?.error || response?.data?.error || 'Failed to delete shipment');
       }
     } catch (error) {
       console.error('Error deleting shipment:', error);

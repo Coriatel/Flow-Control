@@ -105,12 +105,16 @@ export default function ContactsPage() {
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getContactsData();
-      
-      if (response.data.success) {
-        setContacts(response.data.data.contacts);
-        console.log(`[Contacts Frontend] ✅ Loaded ${response.data.data.contacts.length} contacts`);
+
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      const errorMessage = response?.error || response?.data?.error;
+
+      if (success) {
+        setContacts(payload.contacts || []);
+        console.log(`[Contacts Frontend] ✅ Loaded ${payload.contacts?.length || 0} contacts`);
       } else {
-        throw new Error(response.data.error || 'Failed to load data');
+        throw new Error(errorMessage || 'Failed to load data');
       }
     } catch (error) {
       console.error('[Contacts Frontend] ❌ Error:', error);

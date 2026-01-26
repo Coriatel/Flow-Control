@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { batchService } from '../services';
+import prisma from '../utils/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ApiResponse, BatchStatus } from '../types';
 
@@ -12,13 +13,16 @@ const router = Router();
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { reagentId, status, expiringWithinDays } = req.query;
+    const reagentId = (req.query.reagentId || req.query.reagent_id) as string | undefined;
+    const statusRaw = (req.query.status as string | undefined) || undefined;
+    const status = statusRaw ? statusRaw.toUpperCase() : undefined;
+    const expiringWithinDays = req.query.expiringWithinDays || req.query.expiring_within_days;
 
     const data = await batchService.getAll({
-      reagentId: reagentId as string | undefined,
+      reagentId,
       status: status as BatchStatus | undefined,
       expiringWithinDays: expiringWithinDays
-        ? parseInt(expiringWithinDays as string)
+        ? parseInt(expiringWithinDays as string, 10)
         : undefined,
     });
 
@@ -80,24 +84,58 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { reagentId, batchNumber, expiryDate, initialQuantity, receivedDate, notes } =
-      req.body;
+    const body = req.body || {};
+    const reagentId = body.reagentId || body.reagent_id;
+    const batchNumber = body.batchNumber || body.batch_number;
+    const expiryDateRaw = body.expiryDate || body.expiry_date;
+    const initialQuantityRaw = body.initialQuantity ?? body.initial_quantity ?? body.currentQuantity ?? body.current_quantity;
 
-    if (!reagentId || !batchNumber || !expiryDate || initialQuantity === undefined) {
+    if (!reagentId || !batchNumber || initialQuantityRaw === undefined) {
       throw new AppError(
-        'reagentId, batchNumber, expiryDate, and initialQuantity are required',
+        'reagentId/reagent_id, batchNumber/batch_number, and initialQuantity/currentQuantity are required',
         400
       );
     }
 
-    const data = await batchService.create({
-      reagentId,
-      batchNumber,
-      expiryDate: new Date(expiryDate),
-      initialQuantity: parseFloat(initialQuantity),
-      receivedDate: receivedDate ? new Date(receivedDate) : undefined,
-      notes,
+    const initialQuantity = parseFloat(initialQuantityRaw);
+    if (Number.isNaN(initialQuantity)) {
+      throw new AppError('initialQuantity must be a valid number', 400);
+    }
+
+    let expiryDate = expiryDateRaw ? new Date(expiryDateRaw) : null;
+    if (!expiryDate || Number.isNaN(expiryDate.getTime())) {
+      expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 100);
+    }
+
+    const currentQuantityRaw = body.currentQuantity ?? body.current_quantity;
+    const currentQuantity = currentQuantityRaw !== undefined
+      ? parseFloat(currentQuantityRaw)
+      : initialQuantity;
+
+    const data = await prisma.reagentBatch.create({
+      data: {
+        reagentId,
+        batchNumber,
+        expiryDate,
+        manufactureDate: body.manufacture_date ? new Date(body.manufacture_date) : undefined,
+        initialQuantity,
+        currentQuantity,
+        reservedQuantity: body.reserved_quantity ?? body.reservedQuantity ?? 0,
+        receivedDate: body.receivedDate ? new Date(body.receivedDate) : (body.received_date ? new Date(body.received_date) : new Date()),
+        deliveryId: body.delivery_id || body.deliveryId || null,
+        status: body.status ? String(body.status).toUpperCase() : 'ACTIVE',
+        qcStatus: body.qc_status ? String(body.qc_status).toUpperCase() : (body.qcStatus ? String(body.qcStatus).toUpperCase() : undefined),
+        qcNotes: body.qc_notes || body.qcNotes || null,
+        coaDocumentUrl: body.coa_document_url || body.coaDocumentUrl || null,
+        storageLocation: body.storage_location || body.storageLocation || null,
+        storageConditions: body.storage_conditions || body.storageConditions || null,
+        generalNotes: body.notes || body.general_notes || null,
+      },
+      include: { reagent: true },
     });
+
+    await batchService.updateReagentAggregates(reagentId);
 
     const response: ApiResponse = {
       success: true,
@@ -116,14 +154,63 @@ router.put(
   '/:id',
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { currentQuantity, status, notes } = req.body;
+    const body = req.body || {};
 
-    const data = await batchService.update(id, {
-      currentQuantity:
-        currentQuantity !== undefined ? parseFloat(currentQuantity) : undefined,
-      status,
-      notes,
+    const updateData: any = {};
+    if (body.currentQuantity !== undefined || body.current_quantity !== undefined) {
+      const value = body.currentQuantity ?? body.current_quantity;
+      updateData.currentQuantity = parseFloat(value);
+    }
+    if (body.initialQuantity !== undefined || body.initial_quantity !== undefined) {
+      const value = body.initialQuantity ?? body.initial_quantity;
+      updateData.initialQuantity = parseFloat(value);
+    }
+    if (body.reservedQuantity !== undefined || body.reserved_quantity !== undefined) {
+      const value = body.reservedQuantity ?? body.reserved_quantity;
+      updateData.reservedQuantity = parseFloat(value);
+    }
+    if (body.status !== undefined) {
+      updateData.status = String(body.status).toUpperCase();
+    }
+    if (body.expiry_date !== undefined || body.expiryDate !== undefined) {
+      const value = body.expiryDate ?? body.expiry_date;
+      updateData.expiryDate = value ? new Date(value) : undefined;
+    }
+    if (body.manufacture_date !== undefined || body.manufactureDate !== undefined) {
+      const value = body.manufactureDate ?? body.manufacture_date;
+      updateData.manufactureDate = value ? new Date(value) : undefined;
+    }
+    if (body.received_date !== undefined || body.receivedDate !== undefined) {
+      const value = body.receivedDate ?? body.received_date;
+      updateData.receivedDate = value ? new Date(value) : undefined;
+    }
+    if (body.storage_location !== undefined || body.storageLocation !== undefined) {
+      updateData.storageLocation = body.storageLocation ?? body.storage_location;
+    }
+    if (body.storage_conditions !== undefined || body.storageConditions !== undefined) {
+      updateData.storageConditions = body.storageConditions ?? body.storage_conditions;
+    }
+    if (body.qc_status !== undefined || body.qcStatus !== undefined) {
+      const value = body.qcStatus ?? body.qc_status;
+      updateData.qcStatus = value ? String(value).toUpperCase() : undefined;
+    }
+    if (body.qc_notes !== undefined || body.qcNotes !== undefined) {
+      updateData.qcNotes = body.qcNotes ?? body.qc_notes;
+    }
+    if (body.coa_document_url !== undefined || body.coaDocumentUrl !== undefined) {
+      updateData.coaDocumentUrl = body.coaDocumentUrl ?? body.coa_document_url;
+    }
+    if (body.notes !== undefined || body.general_notes !== undefined) {
+      updateData.generalNotes = body.notes ?? body.general_notes;
+    }
+
+    const data = await prisma.reagentBatch.update({
+      where: { id },
+      data: updateData,
+      include: { reagent: true },
     });
+
+    await batchService.updateReagentAggregates(data.reagentId);
 
     const response: ApiResponse = {
       success: true,

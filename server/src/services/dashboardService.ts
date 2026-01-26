@@ -38,6 +38,23 @@ class DashboardService {
       pendingOrders,
     });
 
+    const pendingSupplies = [
+      ...pendingOrders.map((o) => ({
+        id: o.id,
+        type: 'order' as const,
+        number: o.tempNumber || o.orderNumber || '',
+        supplier: (o as any).supplier?.name || '',
+        requestDate: o.orderDate,
+      })),
+      ...pendingWithdrawals.map((w) => ({
+        id: w.id,
+        type: 'withdrawal' as const,
+        number: w.withdrawalNumber,
+        supplier: w.supplierSnapshot,
+        requestDate: w.requestDate,
+      })),
+    ];
+
     return {
       expiringReagents,
       lowStockReagents,
@@ -48,15 +65,7 @@ class DashboardService {
         status: o.status,
         orderDate: o.orderDate,
       })),
-      pendingSupplies: [
-        ...pendingWithdrawals.map((w) => ({
-          id: w.id,
-          type: 'withdrawal' as const,
-          number: w.withdrawalNumber,
-          supplier: w.supplierSnapshot,
-          requestDate: w.requestDate,
-        })),
-      ],
+      pendingSupplies,
       dashboardNotes: dashboardNotes.map((n) => ({
         id: n.id,
         title: n.title || null,

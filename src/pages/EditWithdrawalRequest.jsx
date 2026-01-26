@@ -53,16 +53,17 @@ export default function EditWithdrawalRequestPage() {
                 withdrawal_request_id: withdrawalId
             });
 
-            if (!response.data.withdrawalRequest) {
+            const payload = response?.data?.data ?? response?.data ?? response ?? {};
+            if (!payload.withdrawalRequest) {
                 throw new Error('בקשת משיכה לא נמצאה');
             }
 
-            setWithdrawalRequest(response.data.withdrawalRequest);
-            setFrameworkOrder(response.data.frameworkOrder);
-            setItems(response.data.items || []);
+            setWithdrawalRequest(payload.withdrawalRequest);
+            setFrameworkOrder(payload.frameworkOrder);
+            setItems(payload.items || []);
             setOriginalData({
-                withdrawalRequest: response.data.withdrawalRequest,
-                items: response.data.items || []
+                withdrawalRequest: payload.withdrawalRequest,
+                items: payload.items || []
             });
 
         } catch (error) {
@@ -138,11 +139,12 @@ export default function EditWithdrawalRequestPage() {
                 withdrawalId: withdrawalId
             });
 
-            if (response.data.success) {
+            const success = response?.success ?? response?.data?.success;
+            if (success) {
                 sonnerToast.success('בקשת המשיכה נמחקה בהצלחה');
                 navigate(createPageUrl('WithdrawalRequests'));
             } else {
-                throw new Error(response.data.error || 'Failed to delete');
+                throw new Error(response?.error || response?.data?.error || 'Failed to delete');
             }
         } catch (error) {
             console.error('Error deleting withdrawal:', error);

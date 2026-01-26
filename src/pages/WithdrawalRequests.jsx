@@ -99,12 +99,15 @@ export default function WithdrawalRequestsPage() {
         limit: '200'
       });
 
-      if (response.data.success) {
-        setWithdrawals(response.data.data.withdrawals || []);
-        setSummary(response.data.data.summary || {});
-        console.log('✅ [WithdrawalRequests Frontend] Data loaded:', response.data.data.withdrawals.length);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? {};
+
+      if (success) {
+        setWithdrawals(payload.withdrawals || []);
+        setSummary(payload.summary || {});
+        console.log('✅ [WithdrawalRequests Frontend] Data loaded:', payload.withdrawals?.length || 0);
       } else {
-        throw new Error(response.data.error || 'Failed to fetch withdrawals');
+        throw new Error(response?.data?.error || response?.error || 'Failed to fetch withdrawals');
       }
     } catch (err) {
       console.error('❌ [WithdrawalRequests Frontend] Error:', err);
@@ -192,11 +195,12 @@ export default function WithdrawalRequestsPage() {
         reason: 'Deleted by user from WithdrawalRequests page'
       });
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast.success('בקשת המשיכה נמחקה בהצלחה');
         await loadWithdrawals();
       } else {
-        throw new Error(response.data.error || 'Failed to delete withdrawal');
+        throw new Error(response?.error || response?.data?.error || 'Failed to delete withdrawal');
       }
     } catch (error) {
       console.error('Error deleting withdrawal:', error);

@@ -136,11 +136,15 @@ export const orderService = {
     const orderNumber = await this.generateOrderNumber();
 
     // Create order first
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: data.supplierId },
+    });
+
     const order = await prisma.order.create({
       data: {
         tempNumber: orderNumber,
         supplierId: data.supplierId,
-        supplierSnapshot: data.supplierId, // Will be updated with supplier name
+        supplierSnapshot: supplier?.name || data.supplierId,
         status: OrderStatus.DRAFT,
         internalNotes: data.notes,
       },
@@ -159,10 +163,6 @@ export const orderService = {
     }
 
     // Return order with supplier and items
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: data.supplierId },
-    });
-
     const items = await prisma.orderItem.findMany({
       where: { orderId: order.id },
     });

@@ -145,8 +145,11 @@ export default function EditReagentBatchPage() {
         batch_id: batchId
       });
 
-      if (response.data.success) {
-        const { batch, reagentData, relatedTransactions, deliveryItems, shipmentItems, linkedDelivery } = response.data.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        const { batch, reagentData, relatedTransactions, deliveryItems, shipmentItems, linkedDelivery } = payload;
         
         setBatch(batch);
         setReagentData(reagentData);
@@ -168,7 +171,7 @@ export default function EditReagentBatchPage() {
           order_reference: batch.order_reference || ''
         });
       } else {
-        throw new Error(response.data.error || 'Failed to load batch data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load batch data');
       }
     } catch (error) {
       console.error('Error loading batch:', error);
@@ -668,12 +671,10 @@ export default function EditReagentBatchPage() {
                 תעודת אנליזה (COA)
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <COAManager
+              <CardContent className="p-4">
+                <COAManager
+                batch={batch}
                 batchId={batchId}
-                currentCOA={batch.coa_document_url}
-                uploadDate={batch.coa_upload_date}
-                uploadedBy={batch.coa_uploaded_by}
                 onUploadSuccess={fetchBatchData}
               />
             </CardContent>

@@ -134,7 +134,7 @@ router.post('/', authorize('ADMIN'), validateBody(createUserSchema), asyncHandle
       action: 'CREATE_USER',
       entityType: 'User',
       entityId: user.id,
-      details: { email: user.email, role: user.role }
+      details: JSON.stringify({ email: user.email, role: user.role })
     }
   });
 
@@ -198,7 +198,7 @@ router.put('/:id', authorize('ADMIN'), validateBody(updateUserSchema), asyncHand
       action: 'UPDATE_USER',
       entityType: 'User',
       entityId: user.id,
-      details: { changes: { email, name, role, isActive } }
+      details: JSON.stringify({ changes: { email, name, role, isActive } })
     }
   });
 
@@ -242,7 +242,7 @@ router.delete('/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res:
       action: 'DEACTIVATE_USER',
       entityType: 'User',
       entityId: id,
-      details: { email: existing.email }
+      details: JSON.stringify({ email: existing.email })
     }
   });
 
@@ -287,7 +287,7 @@ router.post('/:id/activate', authorize('ADMIN'), asyncHandler(async (req: Reques
       action: 'ACTIVATE_USER',
       entityType: 'User',
       entityId: id,
-      details: { email: user.email }
+      details: JSON.stringify({ email: user.email })
     }
   });
 
@@ -330,7 +330,7 @@ router.post('/:id/reset-password', authorize('ADMIN'), validateBody(resetPasswor
       action: 'RESET_USER_PASSWORD',
       entityType: 'User',
       entityId: id,
-      details: { email: existing.email }
+      details: JSON.stringify({ email: existing.email })
     }
   });
 
@@ -390,7 +390,7 @@ router.put('/:id/role', authorize('ADMIN'), asyncHandler(async (req: Request, re
       action: 'CHANGE_USER_ROLE',
       entityType: 'User',
       entityId: id,
-      details: { email: user.email, oldRole: existing.role, newRole: role }
+      details: JSON.stringify({ email: user.email, oldRole: existing.role, newRole: role })
     }
   });
 

@@ -136,32 +136,33 @@ export default function Dashboard() {
 
       // 🎯 קריאה אחת בלבד לפונקציית Backend - כל הלוגיקה בשרת!
       const response = await getDashboardData();
-      
-      if (response.data.error) {
-        throw new Error(response.data.error);
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      const errorMessage = response?.error || response?.data?.error;
+      if (errorMessage) {
+        throw new Error(errorMessage);
       }
 
       console.log("[Dashboard Frontend] ✅ Data received:", {
-        expiringCount: response.data.expiringReagents?.length || 0,
-        lowStockCount: response.data.lowStockReagents?.length || 0,
-        pendingOrdersCount: response.data.pendingOrders?.length || 0,
-        pendingSuppliesCount: response.data.pendingSupplies?.length || 0,
-        notesCount: response.data.dashboardNotes?.length || 0,
-        activityCount: response.data.recentActivity?.length || 0,
-        criticalActionsCount: response.data.criticalActions?.length || 0
+        expiringCount: payload.expiringReagents?.length || 0,
+        lowStockCount: payload.lowStockReagents?.length || 0,
+        pendingOrdersCount: payload.pendingOrders?.length || 0,
+        pendingSuppliesCount: payload.pendingSupplies?.length || 0,
+        notesCount: payload.dashboardNotes?.length || 0,
+        activityCount: payload.recentActivity?.length || 0,
+        criticalActionsCount: payload.criticalActions?.length || 0
       });
 
       // פשוט מעדכן state - אין צורך בשום עיבוד!
       setDashboardData({
-        expiringReagents: response.data.expiringReagents || [],
-        lowStockReagents: response.data.lowStockReagents || [],
-        pendingOrders: response.data.pendingOrders || [],
-        pendingSupplies: response.data.pendingSupplies || [],
-        dashboardNotes: response.data.dashboardNotes || [],
-        lastInventoryCount: response.data.lastInventoryCount || null,
-        recentActivity: response.data.recentActivity || [],
-        criticalActions: response.data.criticalActions || [],
-        statistics: response.data.statistics || {}
+        expiringReagents: payload.expiringReagents || [],
+        lowStockReagents: payload.lowStockReagents || [],
+        pendingOrders: payload.pendingOrders || [],
+        pendingSupplies: payload.pendingSupplies || [],
+        dashboardNotes: payload.dashboardNotes || [],
+        lastInventoryCount: payload.lastInventoryCount || null,
+        recentActivity: payload.recentActivity || [],
+        criticalActions: payload.criticalActions || [],
+        statistics: payload.statistics || {}
       });
 
     } catch (err) {

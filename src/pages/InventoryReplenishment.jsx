@@ -175,7 +175,9 @@ export default function InventoryReplenishmentPage() {
         setError(null);
         try {
             const response = await getReplenishmentData({});
-            if (response.data && !response.data.error) {
+            const payload = response?.data?.data ?? response?.data ?? response ?? {};
+            const errorMessage = response?.error || response?.data?.error;
+            if (!errorMessage) {
                 const {
                     reagentsData = [], 
                     batchesData = [], 
@@ -188,7 +190,7 @@ export default function InventoryReplenishmentPage() {
                     inDeliveryByReagent = {},
                     quantityInTransitByReagent = {},
                     quantityInTransitWithoutTempByReagent = {}
-                } = response.data;
+                } = payload;
 
                 setRawReagents(Array.isArray(reagentsData) ? reagentsData : []);
                 setAllBatches(Array.isArray(batchesData) ? batchesData : []);
@@ -204,7 +206,7 @@ export default function InventoryReplenishmentPage() {
                 setQuantityInTransitByReagentState(quantityInTransitByReagent || {});
                 setQuantityInTransitWithoutTempByReagentState(quantityInTransitWithoutTempByReagent || {});
             } else {
-                throw new Error(response.data?.error || "No data returned from server function.");
+                throw new Error(errorMessage || "No data returned from server function.");
             }
         } catch (err) {
             console.error('[InventoryReplenishment] Error:', err);
@@ -489,9 +491,13 @@ export default function InventoryReplenishmentPage() {
                 urgencyLevel: 'routine'
             });
 
-            if (response.data?.success) {
-                const newWithdrawalId = response.data.withdrawalId;
-                const newWithdrawalNumber = response.data.withdrawalNumber;
+            const success = response?.success ?? response?.data?.success ?? response?.data?.data?.success;
+            const payload = response?.data?.data ?? response?.data ?? response ?? {};
+            const errorMessage = response?.error || response?.data?.error;
+
+            if (success) {
+                const newWithdrawalId = payload.withdrawalId;
+                const newWithdrawalNumber = payload.withdrawalNumber;
 
                 toast({
                     title: "משיכה נוצרה בהצלחה",
@@ -509,7 +515,7 @@ export default function InventoryReplenishmentPage() {
                     setPrintDocumentType('withdrawal');
                 }, 500);
             } else {
-                throw new Error(response.data?.error || 'Failed to create withdrawal');
+                throw new Error(errorMessage || 'Failed to create withdrawal');
             }
         } catch (error) {
             console.error('Error in executeWithdrawalCreation:', error);
@@ -542,23 +548,27 @@ export default function InventoryReplenishmentPage() {
                 }))
             });
 
-            if (response.data.success) {
+            const success = response?.success ?? response?.data?.success ?? response?.data?.data?.success;
+            const payload = response?.data?.data ?? response?.data ?? response ?? {};
+            const errorMessage = response?.error || response?.data?.error;
+
+            if (success) {
                 toast({
                     title: "דרישת רכש נוצרה בהצלחה",
-                    description: `מספר דרישה: ${response.data.orderNumber} - עובר לעריכת הדרישה`,
+                    description: `מספר דרישה: ${payload.orderNumber} - עובר לעריכת הדרישה`,
                 });
 
                 clearSelection();
                 
-                navigate(createPageUrl('EditOrder') + `?orderId=${response.data.orderId}`);
+                navigate(createPageUrl('EditOrder') + `?orderId=${payload.orderId}`);
                 
                 setTimeout(() => {
                     setShowPrintDialog(true);
-                    setPrintDocumentId(response.data.orderId);
+                    setPrintDocumentId(payload.orderId);
                     setPrintDocumentType('order');
                 }, 500);
             } else {
-                throw new Error(response.data.error || "יצירת דרישה נכשלה");
+                throw new Error(errorMessage || "יצירת דרישה נכשלה");
             }
         } catch (error) {
             console.error('Error in handleOrderCreation:', error);

@@ -9,6 +9,12 @@ import authRoutes from './auth';
 import deliveriesRoutes from './deliveries';
 import withdrawalsRoutes from './withdrawals';
 import shipmentsRoutes from './shipments';
+import deliveryItemsRoutes from './deliveryitems';
+import withdrawalItemsRoutes from './withdrawalitems';
+import shipmentItemsRoutes from './shipmentitems';
+import inventoryTransactionsRoutes from './inventorytransactions';
+import expiredProductLogsRoutes from './expiredproductlogs';
+import reagentReceiptEventsRoutes from './reagentreceiptevents';
 import filesRoutes from './files';
 import usersRoutes from './users';
 import alertsRoutes from './alerts';
@@ -45,6 +51,12 @@ router.use('/orders', ordersRoutes);
 router.use('/deliveries', deliveriesRoutes);
 router.use('/withdrawals', withdrawalsRoutes);
 router.use('/shipments', shipmentsRoutes);
+router.use('/deliveryitems', deliveryItemsRoutes);
+router.use('/withdrawalitems', withdrawalItemsRoutes);
+router.use('/shipmentitems', shipmentItemsRoutes);
+router.use('/inventorytransactions', inventoryTransactionsRoutes);
+router.use('/expiredproductlogs', expiredProductLogsRoutes);
+router.use('/reagentreceiptevents', reagentReceiptEventsRoutes);
 
 // Administration routes (protected)
 router.use('/users', usersRoutes);

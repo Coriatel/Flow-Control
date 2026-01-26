@@ -124,8 +124,11 @@ export default function InventoryCountPage() {
 
       const response = await getInventoryCountDraftData();
 
-      if (response.data.success) {
-        const { reagents: smartReagents, lastCompletedCount, summary } = response.data.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        const { reagents: smartReagents, lastCompletedCount, summary } = payload;
 
         console.log('[InventoryCount] ✅ Smart data loaded:', summary);
 
@@ -145,7 +148,7 @@ export default function InventoryCountPage() {
           loadDraftData(draftsData[0], smartReagents);
         }
       } else {
-        throw new Error(response.data.error || 'Failed to load smart data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load smart data');
       }
     } catch (error) {
       console.error('[InventoryCount] Error loading smart data:', error);
@@ -279,9 +282,12 @@ export default function InventoryCountPage() {
         draftId: draftToProcess.id
       });
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
         toast.success('ספירת המלאי נשלחה לעיבוד!', {
-          description: `מספר ספירה: ${response.data.data.count_number}`
+          description: `מספר ספירה: ${payload.count_number}`
         });
 
         setCurrentDraft(null);
@@ -289,7 +295,7 @@ export default function InventoryCountPage() {
         await fetchSmartInventoryData();
         setActiveTab('history');
       } else {
-        throw new Error(response.data.error || 'Processing failed');
+        throw new Error(response?.error || response?.data?.error || 'Processing failed');
       }
     } catch (error) {
       console.error('Error submitting count:', error);
@@ -315,9 +321,11 @@ export default function InventoryCountPage() {
         sort_direction: historySortDirection
       });
 
-      if (response.data.success) {
-        setHistoryCounts(response.data.data.counts || []);
-        setHistoryPagination(response.data.data.pagination);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        setHistoryCounts(payload.counts || []);
+        setHistoryPagination(payload.pagination);
       }
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -340,8 +348,10 @@ export default function InventoryCountPage() {
       const response = await getSingleInventoryCountDetails({
         count_id: countId
       });
-      if (response.data.success) {
-        setSelectedCountDetails(response.data.data);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        setSelectedCountDetails(payload);
       }
     } catch (error) {
       console.error('Error loading count details:', error);

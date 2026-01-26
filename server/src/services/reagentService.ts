@@ -77,6 +77,8 @@ class ReagentService {
 
       results.push({
         ...reagent,
+        supplier_id: reagent.supplierId,
+        supplier_name: supplier ? supplier.name : null,
         supplier: supplier ? { id: supplier.id, name: supplier.name } : null,
       });
     }

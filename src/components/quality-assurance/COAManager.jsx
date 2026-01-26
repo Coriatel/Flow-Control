@@ -1,21 +1,35 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Upload, Eye, X, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
-import { manageCOA } from '@/api/functions';
+import { Upload, Eye, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
+import { UploadFile } from '@/api/integrations';
+import { ReagentBatch, User } from '@/api/entities';
 
-export default function COAManager({ batch, onCOAUpdate }) {
+export default function COAManager({
+  batch,
+  batchId,
+  batchNumber,
+  reagentName,
+  currentCOA,
+  uploadDate,
+  uploadedBy,
+  onCOAUpdate,
+  onUploadSuccess
+}) {
   const { toast } = useToast();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
-  const hasCOA = batch?.coa_documents && batch.coa_documents.length > 0;
-  const latestCOA = hasCOA ? batch.coa_documents[0] : null;
+  const effectiveBatchId = batch?.id || batchId;
+  const effectiveBatchNumber = batch?.batch_number || batchNumber;
+  const effectiveReagentName = batch?.reagent_name || reagentName;
+  const coaUrl = batch?.coa_document_url || currentCOA || null;
+  const hasCOA = Boolean(coaUrl);
+  const notifyUploadSuccess = onUploadSuccess || onCOAUpdate;
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -46,6 +60,15 @@ export default function COAManager({ batch, onCOAUpdate }) {
   };
 
   const handleUpload = async () => {
+    if (!effectiveBatchId) {
+      toast({
+        title: "לא ניתן להעלות COA",
+        description: "מזהה האצווה חסר. יש לרענן את הדף ולנסות שוב.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!selectedFile) {
       toast({
         title: "לא נבחר קובץ",
@@ -57,30 +80,37 @@ export default function COAManager({ batch, onCOAUpdate }) {
 
     setIsUploading(true);
     try {
-      const { data } = await manageCOA({
-        action: 'upload',
-        batchId: batch.id,
-        catalogId: batch.catalog_item_id,
-        batchNumber: batch.batch_number,
-        file: selectedFile
+      const uploadResult = await UploadFile({ file: selectedFile });
+      const fileUrl = uploadResult?.file_url || uploadResult?.data?.path;
+
+      if (!fileUrl) {
+        throw new Error('לא התקבל קישור לקובץ שהועלה');
+      }
+
+      let currentUser = null;
+      try {
+        currentUser = await User.me();
+      } catch (userError) {
+        console.warn('Could not resolve current user for COA upload:', userError);
+      }
+
+      await ReagentBatch.update(effectiveBatchId, {
+        coa_document_url: fileUrl,
+        coa_upload_date: new Date().toISOString(),
+        coa_uploaded_by: currentUser?.email || uploadedBy || 'system'
       });
 
-      if (data.success) {
-        toast({
-          title: "COA הועלה בהצלחה",
-          description: "תעודת האנליזה נשמרה במערכת",
-        });
-        
-        // Notify parent component to refresh data
-        if (onCOAUpdate) {
-          onCOAUpdate();
-        }
-        
-        setShowUploadDialog(false);
-        setSelectedFile(null);
-      } else {
-        throw new Error(data.message || 'העלאה נכשלה');
+      toast({
+        title: "COA הועלה בהצלחה",
+        description: "תעודת האנליזה נשמרה במערכת",
+      });
+
+      if (notifyUploadSuccess) {
+        notifyUploadSuccess();
       }
+
+      setShowUploadDialog(false);
+      setSelectedFile(null);
     } catch (error) {
       console.error('COA upload error:', error);
       toast({
@@ -94,9 +124,8 @@ export default function COAManager({ batch, onCOAUpdate }) {
   };
 
   const handleView = () => {
-    if (latestCOA && latestCOA.coa_document_url) {
-      // Open COA in new window/tab
-      window.open(latestCOA.coa_document_url, '_blank');
+    if (coaUrl) {
+      window.open(coaUrl, '_blank');
     } else {
       toast({
         title: "COA לא זמין",
@@ -149,14 +178,17 @@ export default function COAManager({ batch, onCOAUpdate }) {
               <FileText className="h-5 w-5" />
               העלאת תעודת אנליזה (COA)
             </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600">
+              העלה קובץ תעודת אנליזה עבור האצווה הנבחרת.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="bg-slate-50 p-3 rounded-lg">
               <div className="text-sm font-medium text-slate-700">פרטי אצווה:</div>
               <div className="text-xs text-slate-600 mt-1">
-                <div>ריאגנט: {batch?.reagent_name}</div>
-                <div>אצווה: {batch?.batch_number}</div>
+                <div>ריאגנט: {effectiveReagentName || 'לא ידוע'}</div>
+                <div>אצווה: {effectiveBatchNumber || 'לא ידוע'}</div>
               </div>
             </div>
 

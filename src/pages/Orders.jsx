@@ -91,11 +91,14 @@ export default function OrdersPage() {
                 limit: '200'
             });
 
-            if (response.data.success) {
-                setOrders(response.data.data.orders || []);
-                console.log('✅ [Orders Frontend] Data loaded:', response.data.data.orders.length);
+            const success = response?.success ?? response?.data?.success;
+            const payload = response?.data?.data ?? response?.data ?? {};
+
+            if (success) {
+                setOrders(payload.orders || []);
+                console.log('✅ [Orders Frontend] Data loaded:', payload.orders?.length || 0);
             } else {
-                throw new Error(response.data.error || 'Failed to fetch orders');
+                throw new Error(response?.data?.error || response?.error || 'Failed to fetch orders');
             }
         } catch (err) {
             console.error('❌ [Orders Frontend] Error:', err);

@@ -109,8 +109,11 @@ export default function EditReagentPage() {
         reagent_id: reagentId
       });
 
-      if (response.data.success) {
-        const { reagent, activeBatches, recentTransactions, relatedOrders, supplierData } = response.data.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        const { reagent, activeBatches, recentTransactions, relatedOrders, supplierData } = payload;
         
         setReagent(reagent);
         setActiveBatches(activeBatches || []);
@@ -127,7 +130,7 @@ export default function EditReagentPage() {
           is_critical: reagent.is_critical || false
         });
       } else {
-        throw new Error(response.data.error || 'Failed to load reagent data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load reagent data');
       }
     } catch (error) {
       console.error('Error loading reagent:', error);
@@ -171,11 +174,12 @@ export default function EditReagentPage() {
         reagentId: reagentId
       });
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast.success('הריאגנט נמחק בהצלחה');
         navigate(createPageUrl('ManageReagents'));
       } else {
-        throw new Error(response.data.error || 'Failed to delete reagent');
+        throw new Error(response?.error || response?.data?.error || 'Failed to delete reagent');
       }
     } catch (error) {
       console.error('Error deleting reagent:', error);

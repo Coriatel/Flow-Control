@@ -15,7 +15,10 @@ export const UploadFile = async (params) => {
     formData.append('metadata', JSON.stringify(params.metadata));
   }
 
-  return apiClient.post('/files/upload', formData);
+  const response = await apiClient.post('/files/upload', formData);
+  const filename = response?.data?.filename;
+  const fileUrl = filename ? `/api/files/download/${filename}` : response?.data?.path;
+  return { ...response, file_url: fileUrl };
 };
 
 // Create File Signed URL
@@ -35,7 +38,10 @@ export const UploadPrivateFile = async (params) => {
     formData.append('metadata', JSON.stringify(params.metadata));
   }
 
-  return apiClient.post('/files/upload-private', formData);
+  const response = await apiClient.post('/files/upload-private', formData);
+  const filename = response?.data?.filename;
+  const fileUrl = filename ? `/api/files/download/${filename}` : response?.data?.path;
+  return { ...response, file_url: fileUrl };
 };
 
 // Extract Data from Uploaded File

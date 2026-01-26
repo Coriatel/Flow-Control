@@ -39,7 +39,6 @@ import BackButton from '@/components/ui/BackButton';
 import PrintDialog from '@/components/ui/PrintDialog';
 
 import { Order } from '@/api/entities';
-import { OrderItem } from '@/api/entities';
 import { Reagent } from '@/api/entities';
 import { getRelevantSuppliers } from "@/components/utils/supplierHelpers";
 
@@ -67,6 +66,7 @@ export default function NewOrderPage() {
 
   const [order, setOrder] = useState({
     order_number_temp: '',
+    supplier_id: '',
     supplier_name_snapshot: '',
     order_date: format(new Date(), 'yyyy-MM-dd'),
     status: 'pending_sap_details',
@@ -112,8 +112,17 @@ export default function NewOrderPage() {
   useEffect(() => {
     let result = allReagents;
 
-    if (order.supplier_name_snapshot) {
-      result = result.filter(r => r.supplier === order.supplier_name_snapshot);
+    if (order.supplier_id || order.supplier_name_snapshot) {
+      const selectedSupplierId = order.supplier_id;
+      const selectedSupplier = order.supplier_name_snapshot.trim().toLowerCase();
+      result = result.filter(r => {
+        const supplierName = typeof r.supplier === 'string' ? r.supplier : r.supplier?.name;
+        const supplierId = r.supplier_id || r.supplierId || r.supplier?.id;
+        if (selectedSupplierId && supplierId) {
+          return supplierId === selectedSupplierId;
+        }
+        return supplierName && supplierName.trim().toLowerCase() === selectedSupplier;
+      });
     } else {
       result = []; // Show no reagents if no supplier is selected
     }
@@ -121,7 +130,7 @@ export default function NewOrderPage() {
     if (reagentFilters.searchTerm) {
       result = result.filter(r =>
         (r.name && r.name.toLowerCase().includes(reagentFilters.searchTerm.toLowerCase())) ||
-        (r.catalog_number && r.catalog_number.toLowerCase().includes(reagentFilters.searchTerm.toLowerCase()))
+        ((r.catalog_number || r.catalogNumber) && (r.catalog_number || r.catalogNumber).toLowerCase().includes(reagentFilters.searchTerm.toLowerCase()))
       );
     }
 
@@ -130,11 +139,11 @@ export default function NewOrderPage() {
     }
     
     setFilteredReagents(result);
-  }, [order.supplier_name_snapshot, reagentFilters, allReagents]);
+  }, [order.supplier_id, order.supplier_name_snapshot, reagentFilters, allReagents]);
 
 
   const validateForm = useCallback(() => {
-    if (!order.supplier_name_snapshot) {
+    if (!order.supplier_id && !order.supplier_name_snapshot) {
       toast({ title: "שגיאה", description: "יש לבחור ספק.", variant: "destructive" });
       return false;
     }
@@ -143,17 +152,31 @@ export default function NewOrderPage() {
       return false;
     }
     return true;
-  }, [order.supplier_name_snapshot, items, toast]);
+  }, [order.supplier_id, order.supplier_name_snapshot, items, toast]);
 
   const handleSave = useCallback(async () => {
     if (!validateForm()) return;
     setSaving(true);
     try {
-      const newOrder = await Order.create(order);
       const itemsToSave = items.filter(item => (item.quantity_ordered || 0) > 0);
-      for (const item of itemsToSave) {
-        await OrderItem.create({ ...item, order_id: newOrder.id });
+      const supplierMatch = suppliers.find(s => s.id === order.supplier_id || s.name === order.supplier_name_snapshot || s.display_name === order.supplier_name_snapshot);
+      const supplierId = order.supplier_id || supplierMatch?.id;
+      if (!supplierId) {
+        throw new Error('לא נמצא מזהה ספק. נסה לבחור את הספק מחדש.');
       }
+
+      const orderPayload = {
+        supplierId,
+        orderType: order.order_type === 'framework' ? 'FRAMEWORK' : 'IMMEDIATE',
+        internalNotes: order.notes || undefined,
+        items: itemsToSave.map(item => ({
+          reagentId: item.reagent_id,
+          requestedQuantity: Number(item.quantity_ordered) || 0,
+          notes: item.notes || undefined,
+        })),
+      };
+
+      const newOrder = await Order.create(orderPayload);
       toast({ title: "דרישת רכש נוצרה בהצלחה" });
       
       // Open print dialog
@@ -181,7 +204,7 @@ export default function NewOrderPage() {
                 return [...prev, {
                     reagent_id: reagent.id,
                     reagent_name_snapshot: reagent.name,
-                    reagent_catalog_number_snapshot: reagent.catalog_number,
+                    reagent_catalog_number_snapshot: reagent.catalog_number || reagent.catalogNumber,
                     quantity_ordered: 1, // Default quantity
                     ui_id: reagent.id,
                 }];
@@ -203,7 +226,7 @@ export default function NewOrderPage() {
           return [...prev, {
             reagent_id: reagent.id,
             reagent_name_snapshot: reagent.name,
-            reagent_catalog_number_snapshot: reagent.catalog_number,
+            reagent_catalog_number_snapshot: reagent.catalog_number || reagent.catalogNumber,
             quantity_ordered: quantity,
             ui_id: reagent.id,
           }];
@@ -233,10 +256,24 @@ export default function NewOrderPage() {
   
   const selectedItems = useMemo(() => items.filter(i => (i.quantity_ordered || 0) > 0), [items]);
 
+  const selectedSupplierName = useMemo(() => {
+    if (order.supplier_id) {
+      const match = suppliers.find(s => s.id === order.supplier_id);
+      return match?.display_name || match?.name || order.supplier_name_snapshot;
+    }
+    return order.supplier_name_snapshot;
+  }, [order.supplier_id, order.supplier_name_snapshot, suppliers]);
+
   const availableCategories = useMemo(() => {
-    const supplierReagents = allReagents.filter(r => r.supplier === order.supplier_name_snapshot);
+    const supplierReagents = allReagents.filter(r => {
+      const supplierId = r.supplier_id || r.supplierId || r.supplier?.id;
+      if (order.supplier_id && supplierId) {
+        return supplierId === order.supplier_id;
+      }
+      return r.supplier === order.supplier_name_snapshot;
+    });
     return [...new Set(supplierReagents.map(r => r.category).filter(Boolean))].sort();
-  }, [allReagents, order.supplier_name_snapshot]);
+  }, [allReagents, order.supplier_id, order.supplier_name_snapshot]);
 
   return (
     <>
@@ -284,10 +321,22 @@ export default function NewOrderPage() {
                           </div>
                           <div className="space-y-1.5">
                               <Label htmlFor="supplier" className="text-sm font-medium">ספק *</Label>
-                              <Select value={order.supplier_name_snapshot} onValueChange={(v) => {setOrder({...order, supplier_name_snapshot: v}); setItems([]); setReagentFilters({searchTerm: '', category: 'all'}); }}>
+                              <Select
+                                value={order.supplier_id || ''}
+                                onValueChange={(value) => {
+                                  const supplier = suppliers.find(s => s.id === value);
+                                  setOrder({
+                                    ...order,
+                                    supplier_id: value,
+                                    supplier_name_snapshot: supplier?.name || ''
+                                  });
+                                  setItems([]);
+                                  setReagentFilters({ searchTerm: '', category: 'all' });
+                                }}
+                              >
                                   <SelectTrigger id="supplier"><SelectValue placeholder="בחר ספק" /></SelectTrigger>
                                   <SelectContent>
-                                    {suppliers.map(s => <SelectItem key={s.id} value={s.name}>{s.display_name || s.name}</SelectItem>)}
+                                    {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.display_name || s.name}</SelectItem>)}
                                   </SelectContent>
                               </Select>
                           </div>
@@ -320,13 +369,13 @@ export default function NewOrderPage() {
                     בחירת פריטים
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    {order.supplier_name_snapshot ? `מוצגים ${filteredReagents.length} פריטים עבור ספק: ${order.supplier_name_snapshot}` : 'נא לבחור ספק כדי להציג פריטים.'}
+                    {selectedSupplierName ? `מוצגים ${filteredReagents.length} פריטים עבור ספק: ${selectedSupplierName}` : 'נא לבחור ספק כדי להציג פריטים.'}
                   </CardDescription>
                 </div>
               </div>
               
               {/* Filters */}
-              {order.supplier_name_snapshot && (
+              {selectedSupplierName && (
                 <div className="flex flex-col sm:flex-row gap-3 mt-4">
                   <div className="relative flex-1">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -351,7 +400,7 @@ export default function NewOrderPage() {
             </CardHeader>
             
             <CardContent>
-              {order.supplier_name_snapshot ? (
+              {selectedSupplierName ? (
                 <div className="border rounded-lg overflow-hidden max-h-[60vh]">
                   <ScrollArea className="h-full">
                     <div className="divide-y divide-slate-200">

@@ -106,7 +106,7 @@ export default function NewShipmentPage() {
     try {
       const [userData, reagentsData, activeBatchesData, suppliersData] = await Promise.all([
         User.me(),
-        Reagent.filter({ total_quantity_all_batches: { $gt: 0 } }), // Filtered reagents
+        Reagent.list(), // Load all reagents; availability is derived from active batches below
         ReagentBatch.filter({ status: 'active', current_quantity: { $gt: 0 } }),
         Supplier.list() // Fetch all suppliers
       ]);

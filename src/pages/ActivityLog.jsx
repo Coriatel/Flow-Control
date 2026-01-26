@@ -152,14 +152,16 @@ export default function ActivityLogPage() {
       // 🚀 קריאה אחת בלבד!
       const response = await getAggregatedActivityLog(params);
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         // פשוט מעדכן state - הכל כבר מעובד בשרת!
-        setActivities(response.data.data || []);
-        setTotalCount(response.data.totalCount || 0);
-        setFilteredCount(response.data.filteredCount || 0);
-        console.log('✅ [ActivityLog Frontend] Activities loaded:', response.data.data.length);
+        const payload = response?.data?.data ?? response?.data ?? {};
+        setActivities(payload.activities || []);
+        setTotalCount(payload.totalCount || 0);
+        setFilteredCount(payload.filteredCount || 0);
+        console.log('✅ [ActivityLog Frontend] Activities loaded:', payload.activities?.length || 0);
       } else {
-        throw new Error(response.data.error || 'Failed to fetch activities');
+        throw new Error(response?.data?.error || response?.error || 'Failed to fetch activities');
       }
     } catch (error) {
       console.error('❌ [ActivityLog Frontend] Error fetching activities:', error);

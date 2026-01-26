@@ -523,13 +523,13 @@ router.post('/generate', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req:
                   entityId: batch.id,
                   severity: rule.thresholdDays <= 7 ? 'CRITICAL' : rule.thresholdDays <= 30 ? 'HIGH' : 'MEDIUM',
                   message: `Batch ${batch.batchNumber} of ${batch.reagent.name} expires on ${batch.expiryDate.toLocaleDateString()}`,
-                  details: {
+                  details: JSON.stringify({
                     reagentId: batch.reagentId,
                     reagentName: batch.reagent.name,
                     batchNumber: batch.batchNumber,
                     expiryDate: batch.expiryDate,
                     currentQuantity: batch.currentQuantity
-                  }
+                  })
                 }
               });
               alertsCreated++;
@@ -567,12 +567,12 @@ router.post('/generate', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req:
                   entityId: reagent.id,
                   severity: Number(reagent.monthsOfStock || 0) <= 1 ? 'CRITICAL' : 'HIGH',
                   message: `${reagent.name} has low stock: ${reagent.monthsOfStock?.toFixed(1)} months remaining`,
-                  details: {
+                  details: JSON.stringify({
                     reagentName: reagent.name,
                     supplier: reagent.supplier?.name,
                     monthsOfStock: reagent.monthsOfStock,
                     currentQuantity: reagent.totalQuantity
-                  }
+                  })
                 }
               });
               alertsCreated++;
@@ -610,11 +610,11 @@ router.post('/generate', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req:
                 entityId: batch.id,
                 severity: 'MEDIUM',
                 message: `Batch ${batch.batchNumber} of ${batch.reagent.name} is missing COA document`,
-                details: {
+                details: JSON.stringify({
                   reagentId: batch.reagentId,
                   reagentName: batch.reagent.name,
                   batchNumber: batch.batchNumber
-                }
+                })
               }
             });
             alertsCreated++;

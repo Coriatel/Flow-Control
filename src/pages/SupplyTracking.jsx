@@ -114,12 +114,15 @@ export default function SupplyTracking() {
         sortBy: sortDirection === 'desc' ? `-${sortField}` : sortField
       });
 
-      if (response.data.success) {
-        setSupplies(response.data.data.supplies || []);
-        setSummary(response.data.data.summary || {});
-        console.log('✅ [SupplyTracking Frontend] Data loaded:', response.data.data.supplies.length);
+      const success = response?.data?.success ?? response?.success;
+      const payload = response?.data?.data ?? response?.data ?? {};
+
+      if (success) {
+        setSupplies(payload.supplies || []);
+        setSummary(payload.summary || {});
+        console.log('✅ [SupplyTracking Frontend] Data loaded:', payload.supplies?.length || 0);
       } else {
-        throw new Error(response.data.error || 'Failed to fetch supplies');
+        throw new Error(response?.data?.error || response?.error || 'Failed to fetch supplies');
       }
     } catch (error) {
       console.error('❌ [SupplyTracking Frontend] Error:', error);

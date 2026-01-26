@@ -107,8 +107,11 @@ export default function EditDeliveryPage() {
         delivery_id: deliveryId
       });
 
-      if (response.data.success) {
-        const { delivery, deliveryItems, linkedOrder, linkedWithdrawals } = response.data.data;
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        const { delivery, deliveryItems, linkedOrder, linkedWithdrawals } = payload;
         
         setDelivery(delivery);
         setDeliveryItems(deliveryItems || []);
@@ -123,7 +126,7 @@ export default function EditDeliveryPage() {
           status: delivery.status || 'open'
         });
       } else {
-        throw new Error(response.data.error || 'Failed to load delivery data');
+        throw new Error(response?.error || response?.data?.error || 'Failed to load delivery data');
       }
     } catch (error) {
       console.error('Error loading delivery:', error);

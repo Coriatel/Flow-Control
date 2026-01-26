@@ -83,12 +83,15 @@ export default function DeliveriesPage() {
         limit: '500'
       });
 
-      if (response.data.success) {
-        setDeliveries(response.data.data.deliveries || []);
-        setSummary(response.data.data.summary || {});
-        console.log('✅ [Deliveries Frontend] Data loaded:', response.data.data.deliveries.length);
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+
+      if (success) {
+        setDeliveries(payload.deliveries || []);
+        setSummary(payload.summary || {});
+        console.log('✅ [Deliveries Frontend] Data loaded:', payload.deliveries?.length || 0);
       } else {
-        throw new Error(response.data.error || 'Failed to fetch deliveries');
+        throw new Error(response?.error || response?.data?.error || 'Failed to fetch deliveries');
       }
     } catch (err) {
       console.error('❌ [Deliveries Frontend] Error:', err);

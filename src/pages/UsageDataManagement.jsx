@@ -142,13 +142,15 @@ export default function UsageDataManagement() {
         data: { periodMonths: 6 }
       });
 
-      if (response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
         toast.success('חישוב צריכה הושלם', {
-          description: `${response.data.updatedCount} ריאגנטים עודכנו`
+          description: `${payload.updatedCount} ריאגנטים עודכנו`
         });
         await fetchReagents();
       } else {
-        throw new Error(response.data.error || 'Failed to calculate usage');
+        throw new Error(response?.error || response?.data?.error || 'Failed to calculate usage');
       }
     } catch (error) {
       console.error('Error calculating usage:', error);

@@ -40,7 +40,7 @@ import {
   Calendar as CalendarIcon,
   Columns
 } from "lucide-react";
-import { format, parseISO, isValid, addDays, isAfter, isBefore, startOfToday, differenceInDays, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { format, parseISO, isValid, addDays, isAfter, isBefore, startOfToday, differenceInDays } from "date-fns";
 import { he } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -277,8 +277,8 @@ export default function BatchAndExpiryManagement() {
         filters: parsedFilters ? {
           searchTerm: parsedFilters.searchTerm || '',
           selectedStatuses: Array.isArray(parsedFilters.selectedStatuses) ? parsedFilters.selectedStatuses : [],
-          startDate: parsedFilters.startDate ? new Date(parsedFilters.startDate) : startOfMonth(new Date()),
-          endDate: parsedFilters.endDate ? new Date(parsedFilters.endDate) : endOfMonth(new Date()),
+          startDate: parsedFilters.startDate ? new Date(parsedFilters.startDate) : null,
+          endDate: parsedFilters.endDate ? new Date(parsedFilters.endDate) : null,
           showHandled: parsedFilters.showHandled || false,
           showExpiredOnly: parsedFilters.showExpiredOnly || false,
           showInStockOnly: parsedFilters.showInStockOnly || false,
@@ -312,8 +312,8 @@ export default function BatchAndExpiryManagement() {
   // NEW: Individual filter states replacing the `filters` object, initialized from savedState
   const [searchTerm, setSearchTerm] = useState(savedState.filters?.searchTerm ?? '');
   const [selectedStatuses, setSelectedStatuses] = useState(savedState.filters?.selectedStatuses ?? []);
-  const [startDate, setStartDate] = useState(savedState.filters?.startDate ?? startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState(savedState.filters?.endDate ?? endOfMonth(new Date()));
+  const [startDate, setStartDate] = useState(savedState.filters?.startDate ?? null);
+  const [endDate, setEndDate] = useState(savedState.filters?.endDate ?? null);
   const [showHandled, setShowHandled] = useState(savedState.filters?.showHandled ?? false);
   const [showExpiredOnly, setShowExpiredOnly] = useState(savedState.filters?.showExpiredOnly ?? false);
   const [showInStockOnly, setShowInStockOnly] = useState(savedState.filters?.showInStockOnly ?? false);
@@ -435,8 +435,8 @@ export default function BatchAndExpiryManagement() {
   const clearAllFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedStatuses([]);
-    setStartDate(startOfMonth(new Date()));
-    setEndDate(endOfMonth(new Date()));
+    setStartDate(null);
+    setEndDate(null);
     setShowHandled(false);
     setShowExpiredOnly(false);
     setShowInStockOnly(false);
@@ -574,7 +574,8 @@ export default function BatchAndExpiryManagement() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await getBatchAndExpiryData();
+      const response = await getBatchAndExpiryData();
+      const data = response?.data?.data ?? response?.data ?? null;
 
       if (!data) {
         throw new Error("לא התקבל מידע מהשרת.");
@@ -1067,19 +1068,32 @@ export default function BatchAndExpiryManagement() {
     }
 
     try {
-        const correspondingBatches = await ReagentBatch.filter({
+        const filterPayload = {
             reagent_id: log?.reagent_id,
             batch_number: log?.batch_number_snapshot,
-            expiry_date: log?.original_expiry_date,
-        });
+        };
+        if (log?.original_expiry_date) {
+            filterPayload.expiry_date = log.original_expiry_date;
+        }
+
+        const correspondingBatches = await ReagentBatch.filter(filterPayload);
 
         if (correspondingBatches.length > 0) {
             const batchToUpdate = correspondingBatches[0];
             const quantityToRestore = log?.quantity_affected;
 
+            let nextStatus = batchToUpdate.status || 'active';
+            if (batchToUpdate.expiry_date) {
+                const expiryValue = batchToUpdate.expiry_date;
+                const parsedExpiry = typeof expiryValue === 'string' ? parseISO(expiryValue) : new Date(expiryValue);
+                if (isValid(parsedExpiry)) {
+                    nextStatus = isAfter(parsedExpiry, new Date()) ? 'active' : 'expired';
+                }
+            }
+
             await ReagentBatch.update(batchToUpdate.id, {
                 current_quantity: (batchToUpdate.current_quantity || 0) + quantityToRestore,
-                status: isAfter(parseISO(batchToUpdate.expiry_date), new Date()) ? 'active' : 'expired'
+                status: nextStatus
             });
 
             await InventoryTransaction.create({
@@ -1379,8 +1393,8 @@ export default function BatchAndExpiryManagement() {
   const activeFilterCount = [
     searchTerm ? 1 : 0,
     selectedStatuses.length > 0 ? 1 : 0,
-    startDate && !isSameDay(startDate, startOfMonth(new Date())) ? 1 : 0,
-    endDate && !isSameDay(endDate, endOfMonth(new Date())) ? 1 : 0,
+    startDate ? 1 : 0,
+    endDate ? 1 : 0,
     showHandled ? 1 : 0,
     showExpiredOnly ? 1 : 0,
     showInStockOnly ? 1 : 0,

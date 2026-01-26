@@ -73,8 +73,11 @@ export default function AlertsManagement() {
         data: { filters: filterOptions } 
       });
 
-      if (alertsResponse?.data?.success) {
-        setActiveAlerts(alertsResponse.data.data || []);
+      const success = alertsResponse?.success ?? alertsResponse?.data?.success;
+      const payload = alertsResponse?.data?.data ?? alertsResponse?.data ?? alertsResponse ?? {};
+
+      if (success) {
+        setActiveAlerts(Array.isArray(payload) ? payload : []);
       } else {
         setActiveAlerts([]);
       }
@@ -106,7 +109,8 @@ export default function AlertsManagement() {
         data: { alertId }
       });
 
-      if (response.data && response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast({
           title: "התראה אושרה",
           description: "ההתראה סומנה כנקראה",
@@ -135,7 +139,8 @@ export default function AlertsManagement() {
         data: { alertId, resolution }
       });
 
-      if (response.data && response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast({
           title: "התראה נפתרה",
           description: "ההתראה סומנה כפתורה",
@@ -170,7 +175,8 @@ export default function AlertsManagement() {
         data: newRule
       });
 
-      if (response.data && response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      if (success) {
         toast({
           title: "כלל התראה נוצר",
           description: `כלל "${newRule.rule_name}" נוצר בהצלחה`,

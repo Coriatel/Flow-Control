@@ -32,15 +32,17 @@ export default function SystemManagement() {
 
     try {
       const response = await runSummaryUpdates();
-      if (response.data && response.data.success) {
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
         toast({
           title: "תהליך העדכון הסתיים בהצלחה",
-          description: `עודכנו ${response.data.updatedCounts} ספירות מלאי וטופלו ${response.data.updatedReagentsCount} ריאגנטים.`,
+          description: `עודכנו ${payload.updatedCounts} ספירות מלאי וטופלו ${payload.updatedReagentsCount} ריאגנטים.`,
           variant: "default",
           duration: 7000,
         });
       } else {
-        throw new Error(response.data?.error || "שגיאה לא ידועה בתהליך העדכון");
+        throw new Error(response?.error || response?.data?.error || "שגיאה לא ידועה בתהליך העדכון");
       }
     } catch (error) {
       console.error("Error running summary updates:", error);
@@ -98,11 +100,13 @@ export default function SystemManagement() {
     setCoaExportResults(null);
     try {
       const response = await exportAllCoas({ year });
-      if (response.data && response.data.success) {
-        setCoaExportResults(response.data.results);
-        toast({ title: "ייצוא COA הושלם!", description: `נוצרו ${response.data.results?.length || 0} קבצים חודשיים.`, variant: "default", duration: 8000 });
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        setCoaExportResults(payload.results || []);
+        toast({ title: "ייצוא COA הושלם!", description: `נוצרו ${payload.results?.length || 0} קבצים חודשיים.`, variant: "default", duration: 8000 });
       } else {
-        throw new Error(response.data?.error || "תגובה לא תקינה מהשרת");
+        throw new Error(response?.error || response?.data?.error || "תגובה לא תקינה מהשרת");
       }
     } catch (error) {
       toast({ title: "ייצוא COA נכשל", description: error.message || "אירעה שגיאה בלתי צפויה.", variant: "destructive", duration: 10000 });
@@ -118,10 +122,12 @@ export default function SystemManagement() {
     setReminderLoading(true);
     try {
       const response = await createAnnualReminders({ year: currentYear, type: 'COA_EXPORT' });
-      if (response.data && response.data.success) {
-        toast({ title: "פעולה הושלמה", description: response.data.message, variant: "default", duration: 6000 });
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        toast({ title: "פעולה הושלמה", description: payload.message, variant: "default", duration: 6000 });
       } else {
-        throw new Error(response.data?.error || "תגובה לא תקינה מהשרת");
+        throw new Error(response?.error || response?.data?.error || "תגובה לא תקינה מהשרת");
       }
     } catch (error) {
       toast({ title: "יצירת תזכורת נכשלה", description: error.message, variant: "destructive" });
@@ -153,16 +159,18 @@ export default function SystemManagement() {
         archiveType: 'full'
       });
       
-      if (response.data && response.data.success) {
-        setArchiveResults(response.data); // Set the full response data
+      const success = response?.success ?? response?.data?.success;
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      if (success) {
+        setArchiveResults(payload); // Set the full response data
         toast({
           title: dryRun ? "בדיקת ארכוב הושלמה" : "ארכוב הושלם בהצלחה",
-          description: `עובדו ${response.data.totalItemsProcessed} רשומות. ${dryRun ? '(בדיקה בלבד - לא בוצעו שינויים)' : ''}`,
+          description: `עובדו ${payload.totalItemsProcessed} רשומות. ${dryRun ? '(בדיקה בלבד - לא בוצעו שינויים)' : ''}`,
           variant: "default",
           duration: 8000
         });
       } else {
-        throw new Error(response.data?.error || "שגיאה בתהליך הארכוב");
+        throw new Error(response?.error || response?.data?.error || "שגיאה בתהליך הארכוב");
       }
     } catch (error) {
       console.error("Archive process failed:", error);

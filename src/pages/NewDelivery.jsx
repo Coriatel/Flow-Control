@@ -1228,25 +1228,23 @@ export default function NewDeliveryPage() { // Renamed component as per outline
         item.isPreFilled && parseFloat(item.quantity_received) < (item.quantity_remaining_available || 0)
       );
 
+      const supplierMatch = suppliers.find(s =>
+        s.id === deliveryData.supplier ||
+        s.name === deliveryData.supplier ||
+        s.display_name === deliveryData.supplier
+      );
+
+      if (!supplierMatch?.id) {
+        throw new Error('לא נמצא מזהה ספק. נסה לבחור את הספק מחדש.');
+      }
+
       const deliveryDocData = {
-        supplier: deliveryData.supplier,
-        delivery_number: deliveryData.delivery_number || `DEL-${Date.now()}`,
-        delivery_date: deliveryData.delivery_date,
-        order_number: deliveryData.order_number,
-        linked_order_id: actualLinkedOrderId,
-        linked_withdrawal_id: actualLinkedWithdrawalId,
-        delivery_type: deliveryData.delivery_type,
+        supplierId: supplierMatch.id,
+        orderId: actualLinkedOrderId || undefined,
+        withdrawalRequestId: actualLinkedWithdrawalId || undefined,
+        deliveryDate: deliveryData.delivery_date,
         notes: deliveryData.notes,
-        status: isFinal ? 'processed' : 'draft', // Changed status as per outline
-        total_items_received: totalItemsReceived,
-        document_url: documentUrl,
-        // New fields from outline
-        completion_type: hasPartialItems ? 'partial' : 'full',
-        has_non_order_items: hasNonOrderItems,
-        has_replacements: false, // Defaulting as not handled in form
-        delivery_reason_text: deliveryData.notes, // Using notes as a proxy for now
-        created_by: currentUser.email,
-        updated_by: currentUser.email,
+        isRecurringSupply: false,
       };
 
       console.log('[handleSave] Creating delivery document:', deliveryDocData);
@@ -1518,13 +1516,21 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       return [];
     }
 
-    let relevantReagents = reagents.filter(r => r.supplier === deliveryData.supplier);
+    const supplierValue = deliveryData.supplier;
+    const supplierNameValue = (typeof supplierValue === 'string' ? supplierValue : '').trim().toLowerCase();
+    let relevantReagents = reagents.filter(r => {
+        const supplierName = typeof r.supplier === 'string' ? r.supplier : r.supplier?.name;
+        const supplierId = r.supplier_id || r.supplierId || r.supplier?.id;
+        const matchesId = supplierId && supplierValue && supplierId === supplierValue;
+        const matchesName = supplierName && supplierName.trim().toLowerCase() === supplierNameValue;
+        return matchesId || matchesName;
+    });
 
     if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         relevantReagents = relevantReagents.filter(reagent =>
             (reagent?.name && reagent.name.toLowerCase().includes(searchLower)) ||
-            (reagent?.catalog_number && reagent.catalog_number.toLowerCase().includes(searchLower))
+            ((reagent?.catalog_number || reagent?.catalogNumber) && (reagent?.catalog_number || reagent?.catalogNumber).toLowerCase().includes(searchLower))
         );
     }
     return relevantReagents;
@@ -1948,7 +1954,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                       )}
                     </div>
                     <div className="text-sm text-gray-600">
-                      ספק: {reagent.supplier} | קטלוג: {reagent.catalog_item_id}
+                      ספק: {typeof reagent.supplier === 'string' ? reagent.supplier : reagent.supplier?.name} | קטלוג: {reagent.catalog_item_id}
                       {reagent.total_quantity_all_batches !== undefined && ` | מלאי כולל: ${formatQuantity(reagent.total_quantity_all_batches || 0)}`}
                       {quantityInfo && (
                         <span className="text-blue-600 font-medium">

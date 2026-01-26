@@ -272,7 +272,8 @@ State Management:
   const fetchBatches = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await getBatchAndExpiryData();
+      const response = await getBatchAndExpiryData();
+      const data = response?.data?.data ?? response?.data ?? null;
       setBatches(data.allBatches);
       setError(null);
     } catch (err) {

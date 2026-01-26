@@ -29,7 +29,11 @@ function hasAnyComplexFilters(params) {
 
 // Helper to apply MongoDB-style filter to a single item
 function matchesFilter(item, key, filterValue) {
-  const itemValue = item[key];
+  let itemValue = item ? item[key] : undefined;
+  if (itemValue === undefined && key.includes('_')) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    itemValue = item ? item[camelKey] : undefined;
+  }
 
   if (filterValue === null || filterValue === undefined) {
     return itemValue === filterValue;
@@ -106,6 +110,7 @@ function buildSimpleQueryParams(params) {
 const BASE_PATH_OVERRIDES = {
   reagentbatch: '/batches',
   withdrawalrequest: '/withdrawals',
+  delivery: '/deliveries',
 };
 
 // Helper function to create entity CRUD operations
@@ -191,6 +196,13 @@ function createEntity(entityName) {
       return unwrapResponse(response);
     },
 
+    // Bulk create items
+    async bulkCreate(items = []) {
+      const payload = Array.isArray(items) ? { items } : items;
+      const response = await apiClient.post(`${basePath}/bulk`, payload);
+      return unwrapResponse(response);
+    },
+
     // Update existing item
     async update(id, data) {
       const response = await apiClient.put(`${basePath}/${id}`, data);
@@ -257,7 +269,8 @@ export const FeatureDocumentation = createEntity('featuredocumentation');
 // User/Auth entity - special case with auth methods
 export const User = {
   async me() {
-    return apiClient.get('/auth/me');
+    const response = await apiClient.get('/auth/me');
+    return response?.data ?? response;
   },
 
   async updateMyUserData(data) {
