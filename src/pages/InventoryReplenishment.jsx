@@ -353,13 +353,19 @@ export default function InventoryReplenishmentPage() {
             return toast({ title: 'לא נבחרו פריטים', description: 'יש לבחור לפחות פריט אחד עם כמות גדולה מ-0.', variant: 'destructive' });
         }
         
-        const suppliers = [...new Set(items.map(item => item.supplier))];
-        if (suppliers.length > 1) {
+        const supplierKeys = items.map(item => {
+            const supplier = item.supplier;
+            if (!supplier) return '';
+            if (typeof supplier === 'string') return supplier;
+            return supplier.id || supplier.name || '';
+        }).filter(Boolean);
+        const uniqueSupplierKeys = [...new Set(supplierKeys)];
+        if (uniqueSupplierKeys.length > 1) {
             return toast({ title: 'ספקים מרובים', description: 'יש לבחור פריטים מספק אחד בלבד.', variant: 'destructive' });
         }
 
         if (documentType === 'withdrawal') {
-            await handleWithdrawalCreation(items, suppliers[0]);
+            await handleWithdrawalCreation(items, items[0]?.supplier || uniqueSupplierKeys[0]);
         } else {
             setProcessingItems(items);
             setShowOrderTypeDialog(true);
@@ -394,22 +400,33 @@ export default function InventoryReplenishmentPage() {
                 }
             }
 
-            const relevantFrameworkOrders = (allOpenOrders || []).filter(o => 
-                o.order_type === 'framework' && 
-                o.supplier_name_snapshot === supplier && 
-                [
-                    'approved', 
-                    'partially_received', 
-                    'pending_sap_details', 
-                    'pending_sap_permanent_id', 
-                    'pending_sap_po_number'
-                ].includes(o.status)
-            );
+            const supplierId = typeof supplier === 'object' && supplier ? (supplier.id || supplier.supplier_id) : null;
+            const supplierName = typeof supplier === 'string'
+                ? supplier
+                : (supplier?.name || supplier?.supplier_name || '');
+            const supplierNameLower = supplierName.trim().toLowerCase();
+
+            const relevantFrameworkOrders = (allOpenOrders || []).filter(o => {
+                const matchesSupplierId = supplierId && o.supplier_id === supplierId;
+                const matchesSupplierName = supplierNameLower && (o.supplier_name_snapshot || '').toLowerCase() === supplierNameLower;
+                return (
+                    o.order_type === 'framework' &&
+                    (matchesSupplierId || matchesSupplierName) &&
+                    [
+                        'approved',
+                        'partially_received',
+                        'pending_sap_details',
+                        'pending_sap_permanent_id',
+                        'pending_sap_po_number'
+                    ].includes(o.status)
+                );
+            });
 
             if (relevantFrameworkOrders.length === 0) {
+                const supplierLabel = supplierName || supplierId || 'לא ידוע';
                 toast({ 
                     title: 'לא נמצאה הזמנת מסגרת', 
-                    description: `לא קיימת הזמנת מסגרת (גם לא זמנית) עבור ספק ${supplier}.`, 
+                    description: `לא קיימת הזמנת מסגרת (גם לא זמנית) עבור ספק ${supplierLabel}.`, 
                     variant: 'destructive' 
                 });
                 setLoading(false);
@@ -435,9 +452,10 @@ export default function InventoryReplenishmentPage() {
             }
 
             if (!selectedFrameworkOrder) {
+                const supplierLabel = supplierName || supplierId || 'לא ידוע';
                 toast({ 
                     title: 'לא נמצאה הזמנת מסגרת מתאימה', 
-                    description: `לא נמצאה הזמנת מסגרת אחת שיכולה לספק את כל הפריטים שנבחרו מספק ${supplier}.`, 
+                    description: `לא נמצאה הזמנת מסגרת אחת שיכולה לספק את כל הפריטים שנבחרו מספק ${supplierLabel}.`, 
                     variant: 'destructive' 
                 });
                 setLoading(false);
