@@ -215,6 +215,18 @@ router.post(
             }
 
             case 'getWithdrawalRequestsData': {
+                const mapWithdrawalStatus = (status?: string | null) => {
+                    if (!status) return 'draft';
+                    const normalized = status.toUpperCase();
+                    if (normalized === 'DRAFT') return 'draft';
+                    if (normalized === 'SUBMITTED') return 'submitted';
+                    if (normalized === 'APPROVED') return 'approved';
+                    if (normalized === 'SHIPPING') return 'in_delivery';
+                    if (normalized === 'CLOSED') return 'completed';
+                    if (normalized === 'CANCELLED') return 'cancelled';
+                    return status.toLowerCase();
+                };
+
                 const withdrawals = await prisma.withdrawalRequest.findMany({
                     include: {
                         supplier: true,
@@ -223,17 +235,64 @@ router.post(
                                 reagent: true,
                             },
                         },
+                        frameworkOrder: {
+                            include: {
+                                order: true,
+                            },
+                        },
+                        deliveries: true,
                     },
                     orderBy: { requestDate: 'desc' },
                 });
+
+                const mappedWithdrawals = withdrawals.map((withdrawal: any) => {
+                    const items = Array.isArray(withdrawal.items) ? withdrawal.items : [];
+                    const totalItems = items.length;
+                    const totalQuantityRequested = items.reduce((sum: number, item: any) => {
+                        return sum + (Number(item.requestedQuantity) || 0);
+                    }, 0);
+                    const totalQuantityApproved = items.reduce((sum: number, item: any) => {
+                        return sum + (Number(item.approvedQuantity ?? 0) || 0);
+                    }, 0);
+
+                    const linkedDeliveries = Array.isArray(withdrawal.deliveries) ? withdrawal.deliveries : [];
+                    const linkedDeliveryNumbers = linkedDeliveries.map((delivery: any) => delivery.deliveryNumber);
+                    const linkedDeliveryIds = linkedDeliveries.map((delivery: any) => delivery.id);
+
+                    const frameworkOrderNumberSnapshot = withdrawal.frameworkOrder?.order?.permanentNumber
+                        || withdrawal.frameworkOrder?.order?.tempNumber
+                        || null;
+
+                    return {
+                        id: withdrawal.id,
+                        withdrawal_number: withdrawal.withdrawalNumber,
+                        status: mapWithdrawalStatus(withdrawal.status),
+                        urgency_level: 'routine',
+                        supplier_snapshot: withdrawal.supplierSnapshot || withdrawal.supplier?.name || null,
+                        supplier_id: withdrawal.supplierId,
+                        framework_order_id: withdrawal.frameworkOrderId || null,
+                        framework_order_number_snapshot: frameworkOrderNumberSnapshot,
+                        request_date: withdrawal.requestDate?.toISOString() || null,
+                        created_date: withdrawal.createdAt?.toISOString() || null,
+                        updated_date: withdrawal.updatedAt?.toISOString() || null,
+                        requested_delivery_date: null,
+                        total_items: totalItems,
+                        total_quantity_requested: totalQuantityRequested,
+                        total_quantity_approved: totalQuantityApproved,
+                        linked_delivery_ids: linkedDeliveryIds,
+                        linked_delivery_numbers: linkedDeliveryNumbers,
+                        linked_delivery_count: linkedDeliveryIds.length,
+                    };
+                });
+
                 const withdrawalsSummary = {
-                    total: withdrawals.length,
-                    byStatus: withdrawals.reduce((acc: Record<string, number>, w: any) => {
+                    totalWithdrawals: mappedWithdrawals.length,
+                    byStatus: mappedWithdrawals.reduce((acc: Record<string, number>, w: any) => {
                         acc[w.status] = (acc[w.status] || 0) + 1;
                         return acc;
                     }, {}),
                 };
-                result = { withdrawals, summary: withdrawalsSummary };
+                result = { withdrawals: mappedWithdrawals, summary: withdrawalsSummary };
                 break;
             }
 
