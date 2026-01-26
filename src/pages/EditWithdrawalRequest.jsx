@@ -511,6 +511,7 @@ export default function EditWithdrawalRequestPage() {
                                         key={item.id || index}
                                         item={item}
                                         isEditMode={isEditMode}
+                                        variant="table"
                                         onUpdate={(updatedItem) => {
                                             const newItems = [...items];
                                             newItems[index] = updatedItem;
