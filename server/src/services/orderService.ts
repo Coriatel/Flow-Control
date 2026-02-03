@@ -52,79 +52,43 @@ export const orderService = {
 
     const orders = await prisma.order.findMany({
       where,
+      include: {
+        supplier: true,
+        items: {
+          include: { reagent: true },
+        },
+      },
       orderBy: { orderDate: 'desc' },
     });
 
-    // Manually add supplier, items, and count for each order
-    const results = [];
-    for (const order of orders) {
-      const supplier = await prisma.supplier.findUnique({
-        where: { id: order.supplierId },
-      });
-
-      const items = await prisma.orderItem.findMany({
-        where: { orderId: order.id },
-      });
-
-      // Get reagent info for each item
-      const itemsWithReagent = [];
-      for (const item of items) {
-        const reagent = await prisma.reagent.findUnique({
-          where: { id: item.reagentId },
-        });
-        itemsWithReagent.push({ ...item, reagent });
-      }
-
-      results.push({
-        ...order,
-        supplier,
-        items: itemsWithReagent,
-        _count: { items: items.length },
-      });
-    }
-
-    return results;
+    return orders.map((order) => ({
+      ...order,
+      _count: { items: order.items.length },
+    }));
   },
 
   /**
    * Get order by ID with full details (simplified for basic pg client)
    */
   async getById(id: string) {
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        supplier: {
+          include: { contacts: true },
+        },
+        items: {
+          include: { reagent: true },
+        },
+        deliveries: true,
+      },
+    });
+
     if (!order) return null;
-
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: order.supplierId },
-    });
-
-    let contacts: any[] = [];
-    if (supplier) {
-      contacts = await prisma.supplierContact.findMany({
-        where: { supplierId: supplier.id },
-      });
-    }
-
-    const items = await prisma.orderItem.findMany({
-      where: { orderId: id },
-    });
-
-    // Get reagent info for each item
-    const itemsWithReagent = [];
-    for (const item of items) {
-      const reagent = await prisma.reagent.findUnique({
-        where: { id: item.reagentId },
-      });
-      itemsWithReagent.push({ ...item, reagent });
-    }
-
-    // Note: delivery table may not exist yet, return null for now
-    const delivery = null;
 
     return {
       ...order,
-      supplier: supplier ? { ...supplier, contacts } : null,
-      items: itemsWithReagent,
-      delivery,
+      delivery: order.deliveries?.[0] || null,
     };
   },
 

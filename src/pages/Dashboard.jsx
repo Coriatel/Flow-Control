@@ -39,7 +39,8 @@ export default function Dashboard() {
     lastInventoryCount: null,
     recentActivity: [],
     criticalActions: [],
-    statistics: {}
+    statistics: {},
+    onOrderQuantity: 0
   });
 
   /**
@@ -149,7 +150,8 @@ export default function Dashboard() {
         pendingSuppliesCount: payload.pendingSupplies?.length || 0,
         notesCount: payload.dashboardNotes?.length || 0,
         activityCount: payload.recentActivity?.length || 0,
-        criticalActionsCount: payload.criticalActions?.length || 0
+        criticalActionsCount: payload.criticalActions?.length || 0,
+        onOrderQuantity: payload.onOrderQuantity || 0
       });
 
       // פשוט מעדכן state - אין צורך בשום עיבוד!
@@ -162,7 +164,8 @@ export default function Dashboard() {
         lastInventoryCount: payload.lastInventoryCount || null,
         recentActivity: payload.recentActivity || [],
         criticalActions: payload.criticalActions || [],
-        statistics: payload.statistics || {}
+        statistics: payload.statistics || {},
+        onOrderQuantity: payload.onOrderQuantity || 0
       });
 
     } catch (err) {
@@ -241,7 +244,7 @@ export default function Dashboard() {
     );
   }
 
-  const { expiringReagents, lowStockReagents, pendingSupplies, pendingOrders, criticalActions } = dashboardData;
+  const { expiringReagents, lowStockReagents, pendingSupplies, pendingOrders, criticalActions, onOrderQuantity } = dashboardData;
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
@@ -308,7 +311,14 @@ export default function Dashboard() {
                             linkTo="Orders" 
                             color="purple" 
                             popoverItems={pendingOrders} 
-                            popoverType="pending_orders" 
+                            popoverType="pending_orders"
+                        />
+                        <SummaryCard
+                            icon={<ShoppingCart/>}
+                            title="בהמתינה לקבלה"
+                            count={Math.round(onOrderQuantity)}
+                            linkTo="Orders"
+                            color="teal"
                         />
                     </div>
 
@@ -381,10 +391,17 @@ export default function Dashboard() {
                             linkTo="Orders" 
                             color="purple" 
                             popoverItems={pendingOrders} 
-                            popoverType="pending_orders" 
+                            popoverType="pending_orders"
+                        />
+                        <SummaryCard
+                            icon={<ShoppingCart/>}
+                            title="בהמתינה לקבלה"
+                            count={Math.round(onOrderQuantity)}
+                            linkTo="Orders"
+                            color="teal"
                         />
                     </div>
-                    
+
                     <div className="w-full">
                         <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-end">
                             <div className="bg-sky-100 p-2 rounded-lg ml-3">

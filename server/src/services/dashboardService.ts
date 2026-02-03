@@ -20,6 +20,7 @@ class DashboardService {
       lastInventoryCount,
       recentActivity,
       statistics,
+      onOrderQuantity,
     ] = await Promise.all([
       this.getExpiringReagents(),
       this.getLowStockReagents(),
@@ -29,6 +30,7 @@ class DashboardService {
       this.getLastInventoryCount(),
       this.getRecentActivity(),
       this.getStatistics(),
+      this.getOnOrderQuantity(),
     ]);
 
     const criticalActions = this.calculateCriticalActions({
@@ -42,8 +44,8 @@ class DashboardService {
       ...pendingOrders.map((o) => ({
         id: o.id,
         type: 'order' as const,
-        number: o.tempNumber || o.orderNumber || '',
-        supplier: (o as any).supplier?.name || '',
+        number: o.tempNumber || '',
+        supplier: o.supplier?.name || '',
         requestDate: o.orderDate,
       })),
       ...pendingWithdrawals.map((w) => ({
@@ -60,8 +62,8 @@ class DashboardService {
       lowStockReagents,
       pendingOrders: pendingOrders.map((o) => ({
         id: o.id,
-        tempNumber: o.tempNumber || o.orderNumber || '',
-        supplier: (o as any).supplier?.name || '',
+        tempNumber: o.tempNumber || '',
+        supplier: o.supplier?.name || '',
         status: o.status,
         orderDate: o.orderDate,
       })),
@@ -83,6 +85,7 @@ class DashboardService {
       recentActivity,
       criticalActions,
       statistics,
+      onOrderQuantity,
     };
   }
 
@@ -93,100 +96,73 @@ class DashboardService {
     const now = new Date();
     const threshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Simplified query - get all active batches expiring within 30 days
     const batches = await prisma.reagentBatch.findMany({
       where: {
         status: 'ACTIVE',
         expiryDate: { lte: threshold },
       },
+      include: {
+        reagent: {
+          include: { supplier: true },
+        },
+      },
       orderBy: { expiryDate: 'asc' },
       take: 20,
     });
 
-    // Get reagent info for each batch
-    const results: ExpiringReagent[] = [];
-    for (const batch of batches) {
-      if (Number(batch.currentQuantity) <= 0) continue;
-
-      const reagent = await prisma.reagent.findUnique({ where: { id: batch.reagentId } });
-      let supplierName = '';
-      if (reagent?.supplierId) {
-        const supplier = await prisma.supplier.findUnique({ where: { id: reagent.supplierId } });
-        supplierName = supplier?.name || '';
-      }
-
-      results.push({
+    return batches
+      .filter((batch) => Number(batch.currentQuantity) > 0)
+      .map((batch) => ({
         id: batch.id,
-        name: reagent?.name || '',
+        name: batch.reagent?.name || '',
         batchNumber: batch.batchNumber,
         expiryDate: batch.expiryDate,
         daysUntilExpiry: Math.ceil(
           (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
         ),
         currentQuantity: Number(batch.currentQuantity),
-        supplier: supplierName,
-      });
-    }
-    return results;
+        supplier: batch.reagent?.supplier?.name || '',
+      }));
   }
 
   /**
    * Get reagents with low stock (simplified)
    */
   async getLowStockReagents(): Promise<LowStockReagent[]> {
-    // Get all active reagents with low stock status
     const reagents = await prisma.reagent.findMany({
       where: {
         isDeleted: false,
         currentStockStatus: { in: ['LOW', 'CRITICAL', 'OUT_OF_STOCK'] },
       },
+      include: { supplier: true },
       orderBy: { monthsOfStock: 'asc' },
       take: 20,
     });
 
-    const results: LowStockReagent[] = [];
-    for (const r of reagents) {
-      const supplier = await prisma.supplier.findUnique({ where: { id: r.supplierId } });
-      results.push({
-        id: r.id,
-        name: r.name,
-        currentQuantity: Number(r.totalQuantity),
-        monthsOfStock: Number(r.monthsOfStock || 0),
-        averageUsage: Number(
-          r.useManualUsage ? r.manualMonthlyUsage : r.averageMonthlyUsage
-        ) || 0,
-        supplier: supplier?.name || '',
-      });
-    }
-    return results;
+    return reagents.map((r) => ({
+      id: r.id,
+      name: r.name,
+      currentQuantity: Number(r.totalQuantity),
+      monthsOfStock: Number(r.monthsOfStock || 0),
+      averageUsage: Number(
+        r.useManualUsage ? r.manualMonthlyUsage : r.averageMonthlyUsage
+      ) || 0,
+      supplier: r.supplier?.name || '',
+    }));
   }
 
   /**
    * Get pending orders (simplified for basic pg client)
    */
   async getPendingOrders() {
-    const orders = await prisma.order.findMany({
+    return prisma.order.findMany({
       where: {
         status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED'] },
       },
+      include: { supplier: true },
       orderBy: { orderDate: 'desc' },
       take: 10,
     });
-
-    // Manually fetch supplier names
-    const results = [];
-    for (const order of orders) {
-      let supplierName = '';
-      if (order.supplierId) {
-        const supplier = await prisma.supplier.findUnique({ where: { id: order.supplierId } });
-        supplierName = supplier?.name || '';
-      }
-      results.push({
-        ...order,
-        supplier: { name: supplierName },
-      });
-    }
-    return results;
   }
 
   /**
@@ -200,6 +176,25 @@ class DashboardService {
       orderBy: { requestDate: 'desc' },
       take: 10,
     });
+  }
+
+  /**
+   * Get total quantity on-order (ordered but not yet received)
+   */
+  async getOnOrderQuantity(): Promise<number> {
+    const items = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED', 'PARTIALLY_RECEIVED'] },
+        },
+      },
+      select: { requestedQuantity: true, receivedQuantity: true },
+    });
+
+    return items.reduce(
+      (sum, item) => sum + Math.max(0, Number(item.requestedQuantity) - Number(item.receivedQuantity)),
+      0
+    );
   }
 
   /**

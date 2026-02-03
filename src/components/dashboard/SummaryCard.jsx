@@ -30,6 +30,12 @@ const SummaryCard = ({ icon, title, count, linkTo, color, popoverItems, popoverT
       iconColor: 'text-purple-600',
       countColor: 'text-purple-700',
       border: 'border-purple-200'
+    },
+    teal: {
+      bg: 'bg-teal-50',
+      iconColor: 'text-teal-600',
+      countColor: 'text-teal-700',
+      border: 'border-teal-200'
     }
   };
 

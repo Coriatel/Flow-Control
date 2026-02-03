@@ -206,6 +206,7 @@ export interface DashboardData {
   recentActivity: ActivityItem[];
   criticalActions: CriticalAction[];
   statistics: DashboardStatistics;
+  onOrderQuantity: number;
 }
 
 export interface ExpiringReagent {

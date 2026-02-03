@@ -162,7 +162,7 @@ router.post(
                         : null;
                     const linkedWithdrawalNumbers = d.withdrawalRequest ? [d.withdrawalRequest.withdrawalNumber] : [];
                     const linkedWithdrawalIds = d.withdrawalRequest ? [d.withdrawalRequest.id] : [];
-                    const deliveryType = d.withdrawalRequestId ? 'with_order' : 'with_order';
+                    const deliveryType = d.withdrawalRequestId ? 'with_order' : 'standalone';
                     return {
                         id: d.id,
                         delivery_number: d.deliveryNumber,
@@ -1497,7 +1497,7 @@ router.post(
 
                 // Get pending withdrawal requests
                 const deliveryWithdrawals = await prisma.withdrawalRequest.findMany({
-                    where: { status: { in: ['PENDING', 'APPROVED'] } },
+                    where: { status: { in: ['SUBMITTED', 'APPROVED'] } },
                     include: {
                         supplier: true,
                         items: true,
