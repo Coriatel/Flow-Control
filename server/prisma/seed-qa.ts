@@ -290,7 +290,7 @@ async function createReagents(supplierIds: string[]): Promise<string[]> {
         supplierId,
         totalQuantity: 0,
         activeBatchesCount: 0,
-        averageMonthlyUsage: new Prisma.Decimal(randomInt(5, 50)),
+        averageMonthlyUsage: randomInt(5, 50),
         requiresBatches: reagentData.category !== 'CONSUMABLE',
         isConsumable: reagentData.category === 'CONSUMABLE'
       }
@@ -375,13 +375,14 @@ async function createBatches(reagentIds: string[], deliveryIds: string[]): Promi
         batchNumber,
         expiryDate,
         manufactureDate: new Date(expiryDate.getTime() - 365 * 24 * 60 * 60 * 1000),
-        initialQuantity: new Prisma.Decimal(initialQuantity),
-        currentQuantity: new Prisma.Decimal(currentQuantity),
-        reservedQuantity: new Prisma.Decimal(0),
+        initialQuantity: initialQuantity,
+        currentQuantity: currentQuantity,
+        reservedQuantity: 0,
         receivedDate: randomDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), now),
         deliveryId: deliveryIds.length > 0 ? randomElement(deliveryIds) : null,
         status,
         qcStatus: status === 'ON_HOLD' ? 'REQUIRES_REVIEW' : (Math.random() > 0.1 ? 'APPROVED' : 'PENDING'),
+        coaDocumentUrl: Math.random() > 0.7 ? `https://example.com/coa/${batchNumber}.pdf` : null,
         storageLocation: `Rack ${String.fromCharCode(65 + randomInt(0, 5))}${randomInt(1, 10)}`,
         storageConditions: randomElement(['2-8°C', '15-25°C', '-20°C', '-80°C'])
       }
@@ -448,15 +449,14 @@ async function createOrders(supplierIds: string[], reagentIds: string[]): Promis
           data: {
             orderId: order.id,
             reagentId,
-            requestedQuantity: new Prisma.Decimal(requestedQty),
+            requestedQuantity: requestedQty,
             approvedQuantity: ['APPROVED', 'PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CLOSED'].includes(status)
-              ? new Prisma.Decimal(requestedQty)
+              ? requestedQty
               : null,
-            receivedQuantity: new Prisma.Decimal(
+            receivedQuantity: 
               status === 'FULLY_RECEIVED' || status === 'CLOSED' ? requestedQty :
-              status === 'PARTIALLY_RECEIVED' ? requestedQty * 0.5 : 0
-            ),
-            unitPrice: new Prisma.Decimal(randomDecimal(50, 500)),
+              status === 'PARTIALLY_RECEIVED' ? requestedQty * 0.5 : 0,
+            unitPrice: randomDecimal(50, 500),
             currency: supplier?.defaultCurrency || 'ILS'
           }
         });
@@ -469,8 +469,8 @@ async function createOrders(supplierIds: string[], reagentIds: string[]): Promis
             orderId: order.id,
             validFrom: orderDate,
             validTo: new Date(orderDate.getTime() + 365 * 24 * 60 * 60 * 1000),
-            maxTotalQuantity: new Prisma.Decimal(1000),
-            availableQuantity: new Prisma.Decimal(randomInt(100, 1000))
+            maxTotalQuantity: 1000,
+            availableQuantity: randomInt(100, 1000)
           }
         });
       }
@@ -525,11 +525,11 @@ async function createDeliveries(supplierIds: string[], orderIds: string[], reage
           deliveryId: delivery.id,
           reagentId,
           batchNumber: `LOT-DEL-${i + 1}-${j + 1}`,
-          quantity: new Prisma.Decimal(quantity),
+          quantity: quantity,
           expiryDate: new Date(now.getTime() + randomInt(90, 365) * 24 * 60 * 60 * 1000),
-          acceptedQuantity: status === 'COMPLETED' ? new Prisma.Decimal(quantity) : null,
+          acceptedQuantity: status === 'COMPLETED' ? quantity : null,
           rejectedQuantity: status === 'COMPLETED' && Math.random() > 0.9
-            ? new Prisma.Decimal(randomDecimal(0.25, 5))
+            ? randomDecimal(0.25, 5)
             : null
         }
       });
@@ -587,14 +587,13 @@ async function createWithdrawals(supplierIds: string[], reagentIds: string[]): P
         data: {
           withdrawalRequestId: withdrawal.id,
           reagentId,
-          requestedQuantity: new Prisma.Decimal(requestedQty),
+          requestedQuantity: requestedQty,
           approvedQuantity: ['APPROVED', 'SHIPPING', 'CLOSED'].includes(status)
-            ? new Prisma.Decimal(requestedQty)
+            ? requestedQty
             : null,
-          fulfilledQuantity: new Prisma.Decimal(
+          fulfilledQuantity: 
             status === 'CLOSED' ? requestedQty :
             status === 'SHIPPING' ? requestedQty * 0.75 : 0
-          )
         }
       });
     }
@@ -642,7 +641,7 @@ async function createShipments(reagentIds: string[], batchIds: string[]): Promis
           shipmentId: shipment.id,
           reagentId,
           batchId: batchIds.length > 0 ? randomElement(batchIds) : null,
-          quantity: new Prisma.Decimal(randomDecimal(1, 20))
+          quantity: randomDecimal(1, 20)
         }
       });
     }
@@ -691,7 +690,7 @@ async function createInventoryTransactions(reagentIds: string[], batchIds: strin
         reagentId,
         batchId: batchIds.length > 0 ? randomElement(batchIds) : null,
         transactionType,
-        quantityDelta: new Prisma.Decimal(quantityDelta),
+        quantityDelta: quantityDelta,
         sourceType: randomElement(['delivery', 'withdrawal', 'count', 'destruction', 'manual']),
         sourceId: `QA-${i + 1}`,
         performedById: randomElement(userIdArray),
@@ -740,8 +739,8 @@ async function createAlertRulesAndAlerts(reagentIds: string[]): Promise<void> {
         name: ruleDef.name,
         description: `QA Alert Rule: ${ruleDef.name}`,
         thresholdDays: ruleDef.thresholdDays,
-        thresholdQuantity: ruleDef.thresholdQuantity ? new Prisma.Decimal(ruleDef.thresholdQuantity) : null,
-        appliesToCategories: ruleDef.categories || [],
+        thresholdQuantity: ruleDef.thresholdQuantity ? ruleDef.thresholdQuantity : null,
+        appliesToCategories: JSON.stringify(ruleDef.categories || []),
         isActive: true
       }
     });
@@ -764,7 +763,7 @@ async function createAlertRulesAndAlerts(reagentIds: string[]): Promise<void> {
         severity,
         status,
         message: `QA Alert ${i + 1}: ${rule.ruleType} triggered`,
-        details: { qaTest: true, index: i + 1 },
+        details: JSON.stringify({ qaTest: true, index: i + 1 }),
         resolvedAt: status === 'RESOLVED' ? randomDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), now) : null,
         createdAt: randomDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), now)
       }
@@ -803,7 +802,7 @@ async function createActivityLogs(userIds: Map<string, string>, reagentIds: stri
         action,
         entityType,
         entityId: entityType === 'reagent' ? randomElement(reagentIds) : `QA-${entityType}-${i + 1}`,
-        details: { qaTest: true, index: i + 1 },
+        details: JSON.stringify({ qaTest: true, index: i + 1 }),
         ipAddress: `192.168.1.${randomInt(1, 254)}`,
         userAgent: 'QA Test Agent',
         createdAt: randomDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), now)
@@ -842,7 +841,7 @@ async function updateReagentAggregates(reagentIds: string[]): Promise<void> {
     await prisma.reagent.update({
       where: { id: reagentId },
       data: {
-        totalQuantity: new Prisma.Decimal(totalQuantity),
+        totalQuantity: totalQuantity,
         activeBatchesCount,
         nearestExpiryDate,
         currentStockStatus
@@ -851,6 +850,83 @@ async function updateReagentAggregates(reagentIds: string[]): Promise<void> {
   }
 
   console.log(`   Updated ${reagentIds.length} reagents`);
+}
+
+async function createInventoryCounts(userIds: Map<string, string>, reagentIds: string[], batchIds: string[]): Promise<void> {
+  console.log('📋 Creating inventory counts...');
+  const now = new Date();
+  const userIdArray = Array.from(userIds.values());
+
+  // Create 5 inventory count drafts with mixed statuses
+  const statuses = ['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'COMPLETED', 'DRAFT'] as const;
+
+  for (let i = 0; i < 5; i++) {
+    const status = statuses[i];
+    const startedAt = randomDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), now);
+    
+    const draft = await prisma.inventoryCountDraft.create({
+      data: {
+        status,
+        startedAt,
+        lastSavedAt: status === 'COMPLETED' ? randomDate(startedAt, now) : startedAt,
+        startedById: randomElement(userIdArray),
+      }
+    });
+
+    // Add 5-15 entries per draft
+    const entryCount = randomInt(5, 15);
+    const usedReagents = new Set<string>();
+
+    for (let j = 0; j < entryCount; j++) {
+      let reagentId = randomElement(reagentIds);
+      // Try to find a unique reagent for this count to avoid duplicates
+      let attempts = 0;
+      while (usedReagents.has(reagentId) && attempts < 10) {
+        reagentId = randomElement(reagentIds);
+        attempts++;
+      }
+      usedReagents.add(reagentId);
+
+      const batchId = Math.random() > 0.3 ? randomElement(batchIds) : null;
+      let batchNumber = null;
+      
+      if (batchId) {
+        const batch = await prisma.reagentBatch.findUnique({ where: { id: batchId } });
+        if (batch && batch.reagentId === reagentId) {
+          batchNumber = batch.batchNumber;
+        }
+      }
+
+      await prisma.inventoryCountEntry.create({
+        data: {
+          countDraftId: draft.id,
+          reagentId,
+          batchNumber,
+          countedQuantity: randomDecimal(0, 100),
+          expiryDate: batchNumber ? randomDate(now, new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)) : null,
+          notes: Math.random() > 0.8 ? 'Double checked' : null
+        }
+      });
+    }
+
+    if (status === 'COMPLETED') {
+      await prisma.completedInventoryCount.create({
+        data: {
+          countDate: draft.startedAt,
+          completedAt: draft.lastSavedAt,
+          totalReagentsCounted: entryCount,
+          totalBatchesCounted: randomInt(entryCount, entryCount * 1.5),
+          completedById: draft.startedById,
+          varianceSummary: JSON.stringify({
+            totalVariance: randomDecimal(-10, 10),
+            itemsWithVariance: randomInt(0, 3)
+          })
+        }
+      });
+    }
+  }
+  
+  console.log('   Total inventory counts: 5');
 }
 
 // ============================================================================
@@ -899,6 +975,9 @@ async function main() {
 
     // Phase 12: Update Reagent Aggregates
     await updateReagentAggregates(reagentIds);
+
+    // Phase 13: Inventory Counts
+    await createInventoryCounts(userIds, reagentIds, batchIds);
 
     console.log('\n====================================');
     console.log('🎉 QA Seed completed successfully!');

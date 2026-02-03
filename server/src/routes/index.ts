@@ -75,7 +75,15 @@ router.get('/health', (_req, res) => {
 // Legacy/Frontend Compatibility Routes
 import { inventoryService } from '../services';
 import { asyncHandler } from '../middleware/errorHandler';
+import { authenticate } from '../middleware/auth';
 import prisma from '../utils/prisma';
+
+// Gate all legacy compatibility routes behind authentication
+router.use('/inventorycountdrafts', authenticate);
+router.use('/dashboardnotes', authenticate);
+router.use('/featuredocumentations', authenticate);
+router.use('/orderitems', authenticate);
+router.use('/withdrawalitems', authenticate);
 
 router.get('/inventorycountdrafts', asyncHandler(async (_req, res) => {
   const data = await inventoryService.getCurrentDraft();

@@ -28,3 +28,7 @@ server/node_modules
 server/dist
 server/.env
 server/uploads/
+
+# Backup and database files — never commit
+*.bak
+server/prisma/*.db

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { dashboardService, supplierService, orderService, inventoryService, reagentService } from '../services';
 import { asyncHandler } from '../middleware/errorHandler';
+import { authenticate } from '../middleware/auth';
 import { ApiResponse } from '../types';
 import prisma from '../utils/prisma';
 
@@ -33,6 +34,7 @@ const mapOrderType = (orderType?: string | null) => {
  */
 router.post(
     '/:functionName',
+    authenticate,
     asyncHandler(async (req: Request, res: Response) => {
         const { functionName } = req.params;
         const params = req.body || {};

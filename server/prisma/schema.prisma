@@ -1,6 +1,5 @@
 // Flow Control - Blood Bank Inventory Management System
-// Prisma Schema - SQLite Version for Development
-// Converted from PostgreSQL for embedded database support
+// Prisma Schema - PostgreSQL Version (Migrated)
 
 generator client {
   provider        = "prisma-client-js"
@@ -8,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -770,6 +769,7 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  @@map("app_users")
   @@index([email])
   @@index([role])
   @@index([isActive])
