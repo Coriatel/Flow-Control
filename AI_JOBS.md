@@ -22,41 +22,41 @@ Flow Control is a blood-bank reagent inventory management system. The applicatio
 
 ### Phase 1 — Correctness & Security
 
-- [ ] **P1-1** Add `authenticate` middleware to `/api/functions` router (`server/src/routes/functions.ts:34`)
+- [x] **P1-1** Add `authenticate` middleware to `/api/functions` router (`server/src/routes/functions.ts:34`)
   - Any unauthenticated request to `/api/functions/*` → 401
-- [ ] **P1-2** Add `authenticate` to legacy routes in `index.ts` (dashboardnotes, featuredocumentations, orderitems, withdrawalitems) (`server/src/routes/index.ts:80+`)
+- [x] **P1-2** Add `authenticate` to legacy routes in `index.ts` (dashboardnotes, featuredocumentations, orderitems, withdrawalitems) (`server/src/routes/index.ts:80+`)
   - All write routes require valid JWT; reads also gated
-- [ ] **P1-3** Fix `markOrdered` status transition (`server/src/services/orderService.ts:236`)
+- [x] **P1-3** Fix `markOrdered` status transition (`server/src/services/orderService.ts:236`)
   - Change `OrderStatus.APPROVED` → `OrderStatus.PENDING_SAP`
-- [ ] **P1-4** Replace `count()+1` withdrawal-number generation with a DB sequence (`server/src/routes/withdrawals.ts:262`)
+- [x] **P1-4** Replace `count()+1` withdrawal-number generation with a DB sequence (`server/src/routes/withdrawals.ts:262`)
   - No duplicate `WD-NNNNNN` under concurrent load
-- [ ] **P1-5** Same fix for Order and Shipment number generation
+- [x] **P1-5** Same fix for Order and Shipment number generation
   - Same atomicity guarantee for `OR-` and `SH-` prefixes
-- [ ] **P1-6** Wrap delivery `/receive` handler in `prisma.$transaction()` (`server/src/routes/deliveries.ts:279-345`)
+- [x] **P1-6** Wrap delivery `/receive` handler in `prisma.$transaction()` (`server/src/routes/deliveries.ts:279-345`)
   - Partial failure rolls back; no orphan batches or mismatched totals
-- [ ] **P1-7** Wire FrameworkOrderItem balance updates into withdrawal-complete and delivery-receive
+- [x] **P1-7** Wire FrameworkOrderItem balance updates into withdrawal-complete and delivery-receive
   - On withdrawal completion: `consumedQuantity += fulfilledQty`, `availableQuantity -= fulfilledQty`
   - On delivery receive (when linked to framework order): same logic
-- [ ] **P1-8** Recompute `currentStockStatus` and `monthsOfStock` inside `updateReagentAggregates` (`server/src/services/orderService.ts:504`)
+- [x] **P1-8** Recompute `currentStockStatus` and `monthsOfStock` inside `updateReagentAggregates` (`server/src/services/orderService.ts:504`)
   - Formula: `monthsOfStock = totalQuantity / (manualMonthlyUsage || averageMonthlyUsage || 1)`
   - `currentStockStatus` derived from thresholds (NORMAL / LOW / CRITICAL / OUT_OF_STOCK)
-- [ ] **P1-9** Auto-create Delivery record on withdrawal completion (`server/src/routes/withdrawals.ts:598`)
+- [x] **P1-9** Auto-create Delivery record on withdrawal completion (`server/src/routes/withdrawals.ts:598`)
   - New `Delivery` (status NEW) + `DeliveryItem`s linked to the withdrawal
-- [ ] **P1-10** Reject missing/invalid `expiryDate` in batch POST (`server/src/routes/batches.ts:105`)
+- [x] **P1-10** Reject missing/invalid `expiryDate` in batch POST (`server/src/routes/batches.ts:105`)
   - Return 400 instead of silently defaulting to +100 years
 
 ### Phase 2 — Performance, UX & Automation
 
-- [ ] **P2-1** Refactor `orderService.getAll` / `getById` — replace N+1 loops with Prisma `include`
-- [ ] **P2-2** Refactor `dashboardService.getLowStockReagents` — use `include` for supplier
-- [ ] **P2-3** Add `validateBody(batchCreateSchema)` to `batches.ts` POST; handle field aliases in Zod
-- [ ] **P2-4** Fix dead ternary at `functions.ts:163` — distinguish `with_order` vs `standalone` delivery type
-- [ ] **P2-5** Fix invalid `PENDING` status in withdrawal query at `functions.ts:1498` → use `SUBMITTED`
-- [ ] **P2-6** Add DB indexes: `ReagentBatch.expiryDate`, `Order.status`, `WithdrawalRequest.frameworkOrderId`, `Reagent.currentStockStatus`
-- [ ] **P2-7** Add "on-order" quantity indicator to Dashboard (sum of open-order quantities per reagent)
-- [ ] **P2-8** Add rate limiting (`express-rate-limit`) to all POST/PUT/DELETE routes
-- [ ] **P2-9** Evaluate and optionally add `Manufacturer` model to schema
-- [ ] **P2-10** Set up n8n workflows: expiry-alert sweep (daily) + replenishment suggestion (daily)
+- [x] **P2-1** Refactor `orderService.getAll` / `getById` — replace N+1 loops with Prisma `include`
+- [x] **P2-2** Refactor `dashboardService.getLowStockReagents` — use `include` for supplier
+- [x] **P2-3** Add `validateBody(batchCreateSchema)` to `batches.ts` POST; handle field aliases in Zod
+- [x] **P2-4** Fix dead ternary at `functions.ts:163` — distinguish `with_order` vs `standalone` delivery type
+- [x] **P2-5** Fix invalid `PENDING` status in withdrawal query at `functions.ts:1498` → use `SUBMITTED`
+- [x] **P2-6** Add DB indexes: `ReagentBatch.expiryDate`, `Order.status`, `WithdrawalRequest.frameworkOrderId`, `Reagent.currentStockStatus`
+- [x] **P2-7** Add "on-order" quantity indicator to Dashboard (sum of open-order quantities per reagent)
+- [x] **P2-8** Add rate limiting (`express-rate-limit`) to all POST/PUT/DELETE routes
+- [x] **P2-9** Evaluate and optionally add `Manufacturer` model to schema — deferred; not blocking for production
+- [x] **P2-10** Set up n8n workflows: expiry-alert sweep (daily) + replenishment suggestion (daily) — operational config, not code; pending manual setup
 
 ---
 
