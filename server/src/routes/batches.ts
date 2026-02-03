@@ -102,10 +102,9 @@ router.post(
       throw new AppError('initialQuantity must be a valid number', 400);
     }
 
-    let expiryDate = expiryDateRaw ? new Date(expiryDateRaw) : null;
+    const expiryDate = expiryDateRaw ? new Date(expiryDateRaw) : null;
     if (!expiryDate || Number.isNaN(expiryDate.getTime())) {
-      expiryDate = new Date();
-      expiryDate.setFullYear(expiryDate.getFullYear() + 100);
+      throw new AppError('expiryDate is required and must be a valid date', 400);
     }
 
     const currentQuantityRaw = body.currentQuantity ?? body.current_quantity;

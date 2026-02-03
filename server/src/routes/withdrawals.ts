@@ -258,10 +258,6 @@ router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: 
     resolvedFrameworkOrderId = frameworkOrder.id;
   }
 
-  // Generate withdrawal number
-  const count = await prisma.withdrawalRequest.count();
-  const withdrawalNumber = `WD-${String(count + 1).padStart(6, '0')}`;
-
   // Calculate total value
   let totalValueRequested = 0;
   for (const item of items) {
@@ -270,33 +266,46 @@ router.post('/', validateBody(createWithdrawalSchema), asyncHandler(async (req: 
     }
   }
 
-  const withdrawal = await prisma.withdrawalRequest.create({
-    data: {
-      withdrawalNumber,
-      supplierId,
-      supplierSnapshot: supplier.name,
-      frameworkOrderId: resolvedFrameworkOrderId,
-      status: 'DRAFT',
-      requesterNotes,
-      requestedById: req.user?.id,
-      totalValueRequested: totalValueRequested > 0 ? totalValueRequested : null,
-      items: {
-        create: items.map((item: any) => ({
-          reagentId: item.reagentId,
-          requestedQuantity: item.requestedQuantity,
-          unitPrice: item.unitPrice
-        }))
-      }
-    },
-    include: {
-      supplier: true,
-      items: {
-        include: {
-          reagent: true
+  const withdrawal = await prisma.$transaction(async (tx) => {
+    // Generate withdrawal number atomically
+    const lastWithdrawal = await tx.withdrawalRequest.findFirst({
+      orderBy: { withdrawalNumber: 'desc' }
+    });
+    let seq = 1;
+    if (lastWithdrawal) {
+      const lastNum = parseInt(lastWithdrawal.withdrawalNumber.replace('WD-', ''));
+      if (!isNaN(lastNum)) seq = lastNum + 1;
+    }
+    const withdrawalNumber = `WD-${String(seq).padStart(6, '0')}`;
+
+    return tx.withdrawalRequest.create({
+      data: {
+        withdrawalNumber,
+        supplierId,
+        supplierSnapshot: supplier.name,
+        frameworkOrderId: resolvedFrameworkOrderId,
+        status: 'DRAFT',
+        requesterNotes,
+        requestedById: req.user?.id,
+        totalValueRequested: totalValueRequested > 0 ? totalValueRequested : null,
+        items: {
+          create: items.map((item: any) => ({
+            reagentId: item.reagentId,
+            requestedQuantity: item.requestedQuantity,
+            unitPrice: item.unitPrice
+          }))
+        }
+      },
+      include: {
+        supplier: true,
+        items: {
+          include: {
+            reagent: true
+          }
         }
       }
-    }
-  });
+    });
+  }, { isolationLevel: 'Serializable' });
 
   const response: ApiResponse = {
     success: true,
@@ -577,38 +586,98 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
     throw new AppError('Can only complete withdrawal requests in APPROVED or SHIPPING status', 400);
   }
 
-  // Update fulfilled quantities for items
-  if (fulfilledItems && Array.isArray(fulfilledItems)) {
-    for (const fulfilledItem of fulfilledItems) {
-      await prisma.withdrawalItem.update({
-        where: { id: fulfilledItem.itemId },
-        data: { fulfilledQuantity: fulfilledItem.fulfilledQuantity }
-      });
+  const withdrawal = await prisma.$transaction(async (tx) => {
+    // Update fulfilled quantities for items
+    if (fulfilledItems && Array.isArray(fulfilledItems)) {
+      for (const fulfilledItem of fulfilledItems) {
+        await tx.withdrawalItem.update({
+          where: { id: fulfilledItem.itemId },
+          data: { fulfilledQuantity: fulfilledItem.fulfilledQuantity }
+        });
+      }
+    } else {
+      for (const item of existing.items) {
+        await tx.withdrawalItem.update({
+          where: { id: item.id },
+          data: { fulfilledQuantity: item.approvedQuantity || item.requestedQuantity }
+        });
+      }
     }
-  } else {
-    // If no specific fulfilled items, mark all as fully fulfilled
-    for (const item of existing.items) {
-      await prisma.withdrawalItem.update({
-        where: { id: item.id },
-        data: { fulfilledQuantity: item.approvedQuantity || item.requestedQuantity }
-      });
-    }
-  }
 
-  const withdrawal = await prisma.withdrawalRequest.update({
-    where: { id },
-    data: {
-      status: 'CLOSED',
-      completionDate: new Date()
-    },
-    include: {
-      supplier: true,
-      items: {
-        include: {
-          reagent: true
+    // Fetch updated items for balance updates and delivery creation
+    const updatedItems = await tx.withdrawalItem.findMany({
+      where: { withdrawalRequestId: id }
+    });
+
+    // Update FrameworkOrderItem balances if linked to a framework order
+    if (existing.frameworkOrderId) {
+      for (const item of updatedItems) {
+        const fulfilledQty = Number(item.fulfilledQuantity) || 0;
+        if (fulfilledQty > 0) {
+          await tx.frameworkOrderItem.updateMany({
+            where: {
+              frameworkOrderId: existing.frameworkOrderId,
+              reagentId: item.reagentId
+            },
+            data: {
+              consumedQuantity: { increment: fulfilledQty },
+              availableQuantity: { decrement: fulfilledQty }
+            }
+          });
         }
       }
     }
+
+    // Auto-create Delivery record for the fulfilled items
+    const lastDelivery = await tx.delivery.findFirst({
+      orderBy: { deliveryNumber: 'desc' }
+    });
+    let seq = 1;
+    if (lastDelivery) {
+      const lastNum = parseInt(lastDelivery.deliveryNumber.replace('DEL-', ''));
+      if (!isNaN(lastNum)) seq = lastNum + 1;
+    }
+    const deliveryNumber = `DEL-${String(seq).padStart(6, '0')}`;
+
+    const deliveryItems = updatedItems.filter(item => (Number(item.fulfilledQuantity) || 0) > 0);
+    if (deliveryItems.length > 0) {
+      await tx.delivery.create({
+        data: {
+          deliveryNumber,
+          supplierId: existing.supplierId,
+          supplierSnapshot: existing.supplierSnapshot,
+          withdrawalRequestId: id,
+          deliveryDate: new Date(),
+          status: 'NEW',
+          notes: `Auto-created from withdrawal ${existing.withdrawalNumber}`,
+          items: {
+            create: deliveryItems.map((item, idx) => ({
+              reagentId: item.reagentId,
+              batchNumber: `${existing.withdrawalNumber}-${String(idx + 1).padStart(3, '0')}`,
+              quantity: Number(item.fulfilledQuantity) || 0,
+              expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            }))
+          }
+        }
+      });
+    }
+
+    // Mark withdrawal as closed
+    return tx.withdrawalRequest.update({
+      where: { id },
+      data: {
+        status: 'CLOSED',
+        completionDate: new Date()
+      },
+      include: {
+        supplier: true,
+        items: {
+          include: {
+            reagent: true
+          }
+        }
+      }
+    });
   });
 
   const response: ApiResponse = {

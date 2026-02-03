@@ -129,39 +129,48 @@ router.post('/', validateBody(createDeliverySchema), asyncHandler(async (req: Re
     throw new AppError('Supplier not found', 404);
   }
 
-  // Generate delivery number
-  const count = await prisma.delivery.count();
-  const deliveryNumber = `DEL-${String(count + 1).padStart(6, '0')}`;
+  const delivery = await prisma.$transaction(async (tx) => {
+    // Generate delivery number atomically
+    const lastDelivery = await tx.delivery.findFirst({
+      orderBy: { deliveryNumber: 'desc' }
+    });
+    let seq = 1;
+    if (lastDelivery) {
+      const lastNum = parseInt(lastDelivery.deliveryNumber.replace('DEL-', ''));
+      if (!isNaN(lastNum)) seq = lastNum + 1;
+    }
+    const deliveryNumber = `DEL-${String(seq).padStart(6, '0')}`;
 
-  const delivery = await prisma.delivery.create({
-    data: {
-      deliveryNumber,
-      supplierId,
-      supplierSnapshot: supplier.name,
-      orderId,
-      withdrawalRequestId,
-      deliveryDate: new Date(deliveryDate),
-      status: 'NEW',
-      notes,
-      isRecurringSupply: isRecurringSupply || false,
-      items: items && items.length > 0 ? {
-        create: items.map((item: any) => ({
-          reagentId: item.reagentId,
-          batchNumber: item.batchNumber,
-          quantity: item.quantity,
-          expiryDate: new Date(item.expiryDate)
-        }))
-      } : undefined
-    },
-    include: {
-      supplier: true,
-      items: {
-        include: {
-          reagent: true
+    return tx.delivery.create({
+      data: {
+        deliveryNumber,
+        supplierId,
+        supplierSnapshot: supplier.name,
+        orderId,
+        withdrawalRequestId,
+        deliveryDate: new Date(deliveryDate),
+        status: 'NEW',
+        notes,
+        isRecurringSupply: isRecurringSupply || false,
+        items: items && items.length > 0 ? {
+          create: items.map((item: any) => ({
+            reagentId: item.reagentId,
+            batchNumber: item.batchNumber,
+            quantity: item.quantity,
+            expiryDate: new Date(item.expiryDate)
+          }))
+        } : undefined
+      },
+      include: {
+        supplier: true,
+        items: {
+          include: {
+            reagent: true
+          }
         }
       }
-    }
-  });
+    });
+  }, { isolationLevel: 'Serializable' });
 
   const response: ApiResponse = {
     success: true,
@@ -275,88 +284,81 @@ router.post('/:id/receive', authorize('ADMIN', 'MANAGER'), validateBody(receiveD
     throw new AppError('Cannot receive completed or cancelled delivery', 400);
   }
 
-  // Process each item - create/update batches
-  const batchOperations = items.map(async (item: any) => {
-    const { deliveryItemId, acceptedQuantity, rejectedQuantity, rejectionReason, storageLocation } = item;
+  const delivery = await prisma.$transaction(async (tx) => {
+    // Process each item sequentially within transaction
+    for (const item of items) {
+      const { deliveryItemId, acceptedQuantity, rejectedQuantity, rejectionReason, storageLocation } = item;
 
-    // Update delivery item with accepted/rejected quantities
-    await prisma.deliveryItem.update({
-      where: { id: deliveryItemId },
-      data: {
-        acceptedQuantity,
-        rejectedQuantity,
-        rejectionReason
+      await tx.deliveryItem.update({
+        where: { id: deliveryItemId },
+        data: {
+          acceptedQuantity,
+          rejectedQuantity,
+          rejectionReason
+        }
+      });
+
+      const deliveryItem = await tx.deliveryItem.findUnique({
+        where: { id: deliveryItemId }
+      });
+
+      if (!deliveryItem) {
+        throw new AppError(`Delivery item ${deliveryItemId} not found`, 404);
+      }
+
+      if (acceptedQuantity && acceptedQuantity > 0) {
+        const batch = await tx.reagentBatch.create({
+          data: {
+            reagentId: deliveryItem.reagentId,
+            batchNumber: deliveryItem.batchNumber,
+            expiryDate: deliveryItem.expiryDate,
+            initialQuantity: acceptedQuantity,
+            currentQuantity: acceptedQuantity,
+            receivedDate: new Date(),
+            deliveryId: id,
+            status: 'ACTIVE',
+            qcStatus: 'PENDING',
+            storageLocation
+          }
+        });
+
+        await tx.inventoryTransaction.create({
+          data: {
+            reagentId: deliveryItem.reagentId,
+            batchId: batch.id,
+            transactionType: 'RECEIPT',
+            quantityDelta: acceptedQuantity,
+            sourceType: 'delivery',
+            sourceId: id,
+            performedById: receivedBy,
+            notes: `Received from delivery ${existing.deliveryNumber}`
+          }
+        });
+
+        await tx.reagent.update({
+          where: { id: deliveryItem.reagentId },
+          data: {
+            totalQuantity: { increment: acceptedQuantity },
+            activeBatchesCount: { increment: 1 }
+          }
+        });
+      }
+    }
+
+    // Update delivery status
+    return tx.delivery.update({
+      where: { id },
+      data: { status: 'COMPLETED' },
+      include: {
+        supplier: true,
+        items: {
+          include: {
+            reagent: true
+          }
+        },
+        batches: true
       }
     });
-
-    // Get delivery item details
-    const deliveryItem = await prisma.deliveryItem.findUnique({
-      where: { id: deliveryItemId }
-    });
-
-    if (!deliveryItem) {
-      throw new AppError(`Delivery item ${deliveryItemId} not found`, 404);
-    }
-
-    // Create batch for accepted quantity
-    if (acceptedQuantity && acceptedQuantity > 0) {
-      const batch = await prisma.reagentBatch.create({
-        data: {
-          reagentId: deliveryItem.reagentId,
-          batchNumber: deliveryItem.batchNumber,
-          expiryDate: deliveryItem.expiryDate,
-          initialQuantity: acceptedQuantity,
-          currentQuantity: acceptedQuantity,
-          receivedDate: new Date(),
-          deliveryId: id,
-          status: 'ACTIVE',
-          qcStatus: 'PENDING',
-          storageLocation
-        }
-      });
-
-      // Create inventory transaction
-      await prisma.inventoryTransaction.create({
-        data: {
-          reagentId: deliveryItem.reagentId,
-          batchId: batch.id,
-          transactionType: 'RECEIPT',
-          quantityDelta: acceptedQuantity,
-          sourceType: 'delivery',
-          sourceId: id,
-          performedById: receivedBy,
-          notes: `Received from delivery ${existing.deliveryNumber}`
-        }
-      });
-
-      // Update reagent totals
-      await prisma.reagent.update({
-        where: { id: deliveryItem.reagentId },
-        data: {
-          totalQuantity: { increment: acceptedQuantity },
-          activeBatchesCount: { increment: 1 }
-        }
-      });
-
-      return batch;
-    }
-  });
-
-  await Promise.all(batchOperations);
-
-  // Update delivery status
-  const delivery = await prisma.delivery.update({
-    where: { id },
-    data: { status: 'COMPLETED' },
-    include: {
-      supplier: true,
-      items: {
-        include: {
-          reagent: true
-        }
-      },
-      batches: true
-    }
   });
 
   const response: ApiResponse = {

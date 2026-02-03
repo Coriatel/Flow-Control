@@ -129,34 +129,43 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
 router.post('/', validateBody(createShipmentSchema), asyncHandler(async (req: Request, res: Response) => {
   const { destinationHospital, destinationDepartment, shipmentDate, items, notes } = req.body;
 
-  // Generate shipment number
-  const count = await prisma.shipment.count();
-  const shipmentNumber = `SHP-${String(count + 1).padStart(6, '0')}`;
+  const shipment = await prisma.$transaction(async (tx) => {
+    // Generate shipment number atomically
+    const lastShipment = await tx.shipment.findFirst({
+      orderBy: { shipmentNumber: 'desc' }
+    });
+    let seq = 1;
+    if (lastShipment) {
+      const lastNum = parseInt(lastShipment.shipmentNumber.replace('SHP-', ''));
+      if (!isNaN(lastNum)) seq = lastNum + 1;
+    }
+    const shipmentNumber = `SHP-${String(seq).padStart(6, '0')}`;
 
-  const shipment = await prisma.shipment.create({
-    data: {
-      shipmentNumber,
-      destinationHospital,
-      destinationDepartment,
-      shipmentDate: new Date(shipmentDate),
-      status: 'DRAFT',
-      notes,
-      items: items && items.length > 0 ? {
-        create: items.map((item: any) => ({
-          reagentId: item.reagentId,
-          batchId: item.batchId,
-          quantity: item.quantity
-        }))
-      } : undefined
-    },
-    include: {
-      items: {
-        include: {
-          reagent: true
+    return tx.shipment.create({
+      data: {
+        shipmentNumber,
+        destinationHospital,
+        destinationDepartment,
+        shipmentDate: new Date(shipmentDate),
+        status: 'DRAFT',
+        notes,
+        items: items && items.length > 0 ? {
+          create: items.map((item: any) => ({
+            reagentId: item.reagentId,
+            batchId: item.batchId,
+            quantity: item.quantity
+          }))
+        } : undefined
+      },
+      include: {
+        items: {
+          include: {
+            reagent: true
+          }
         }
       }
-    }
-  });
+    });
+  }, { isolationLevel: 'Serializable' });
 
   const response: ApiResponse = {
     success: true,
