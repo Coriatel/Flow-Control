@@ -140,24 +140,24 @@ export default function EditOrderPage() {
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            'pending_sap_details': { label: 'ממתין לפרטי SAP', className: 'bg-yellow-100 text-yellow-800' },
-            'approved': { label: 'אושר', className: 'bg-green-100 text-green-800' },
-            'partially_received': { label: 'התקבל חלקית', className: 'bg-blue-100 text-blue-800' },
-            'fully_received': { label: 'התקבל במלואו', className: 'bg-purple-100 text-purple-800' },
-            'closed': { label: 'סגור', className: 'bg-gray-100 text-gray-800' },
-            'cancelled': { label: 'בוטל', className: 'bg-red-100 text-red-800' }
+            'pending_sap_details': { label: 'ממתין לפרטי SAP', variant: 'warning' },
+            'approved': { label: 'אושר', variant: 'success' },
+            'partially_received': { label: 'התקבל חלקית', variant: 'info' },
+            'fully_received': { label: 'התקבל במלואו', variant: 'success' },
+            'closed': { label: 'סגור', variant: 'secondary' },
+            'cancelled': { label: 'בוטל', variant: 'danger' }
         };
         const config = statusConfig[status] || statusConfig['pending_sap_details'];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     const getOrderTypeBadge = (type) => {
         const typeConfig = {
-            'immediate_delivery': { label: 'אספקה מיידית', className: 'bg-green-100 text-green-800' },
-            'framework': { label: 'מסגרת', className: 'bg-purple-100 text-purple-800' }
+            'immediate_delivery': { label: 'אספקה מיידית', variant: 'success' },
+            'framework': { label: 'מסגרת', variant: 'default' }
         };
         const config = typeConfig[type] || typeConfig['immediate_delivery'];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     if (loading) {
@@ -274,13 +274,13 @@ export default function EditOrderPage() {
                 {getStatusBadge(order.status)}
                 {getOrderTypeBadge(order.order_type)}
                 {isEditMode && (
-                    <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
+                    <Badge variant="info" className="flex items-center gap-1">
                         <Edit className="h-3 w-3" />
                         מצב עריכה
                     </Badge>
                 )}
                 {!isEditMode && (
-                    <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1">
+                    <Badge variant="secondary" className="flex items-center gap-1">
                         <Eye className="h-3 w-3" />
                         מצב צפייה
                     </Badge>
@@ -542,11 +542,11 @@ export default function EditOrderPage() {
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             {item.line_status === 'fully_received' ? (
-                                                <Badge className="bg-green-100 text-green-800">התקבל במלואו</Badge>
+                                                <Badge variant="success">התקבל במלואו</Badge>
                                             ) : item.line_status === 'partially_received' ? (
-                                                <Badge className="bg-blue-100 text-blue-800">התקבל חלקית</Badge>
+                                                <Badge variant="info">התקבל חלקית</Badge>
                                             ) : (
-                                                <Badge className="bg-yellow-100 text-yellow-800">פתוח</Badge>
+                                                <Badge variant="warning">פתוח</Badge>
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">

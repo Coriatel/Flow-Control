@@ -28,7 +28,7 @@ import {
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import {
-  Plus, Search, RefreshCw, Loader2, Columns3, Edit2, Trash2, SlidersHorizontal, FileDown
+  Plus, Search, RefreshCw, Loader2, Columns3, Edit2, Trash2, SlidersHorizontal, FileDown, Users
 } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
 import ResizableTable from '@/components/ui/ResizableTable';
@@ -573,8 +573,12 @@ export default function ContactsPage() {
               renderCell={renderCell}
             />
             {filteredAndSortedContacts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">לא נמצאו אנשי קשר התואמים את הסינון</p>
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <Users className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">לא נמצאו אנשי קשר</p>
+                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
               </div>
             )}
           </CardContent>
@@ -593,10 +597,14 @@ export default function ContactsPage() {
             />
           ))
         ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-gray-500">לא נמצאו אנשי קשר</p>
-            </CardContent>
+          <Card className="p-8">
+            <div className="text-center">
+              <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <Users className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">לا נמצאו אנשי קשר</p>
+              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
+            </div>
           </Card>
         )}
       </div>

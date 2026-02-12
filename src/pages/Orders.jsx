@@ -315,28 +315,28 @@ export default function OrdersPage() {
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            'pending_sap_details': { label: 'ממתין לפרטי SAP', className: 'bg-yellow-100 text-yellow-800' },
-            'pending_sap_permanent_id': { label: 'ממתין למספר קבוע', className: 'bg-orange-100 text-orange-800' },
-            'pending_sap_po_number': { label: 'ממתין למספר דרישה', className: 'bg-orange-100 text-orange-800' },
-            'approved': { label: 'מאושר', className: 'bg-green-100 text-green-800' },
-            'partially_received': { label: 'התקבל חלקית', className: 'bg-blue-100 text-blue-800' },
-            'fully_received': { label: 'התקבל במלואו', className: 'bg-teal-100 text-teal-800' },
-            'closed': { label: 'סגור', className: 'bg-gray-100 text-gray-800' },
-            'cancelled': { label: 'בוטל', className: 'bg-red-100 text-red-800' }
+            'pending_sap_details': { label: 'ממתין לפרטי SAP', variant: 'warning' },
+            'pending_sap_permanent_id': { label: 'ממתין למספר קבוע', variant: 'warning' },
+            'pending_sap_po_number': { label: 'ממתין למספר דרישה', variant: 'warning' },
+            'approved': { label: 'מאושר', variant: 'success' },
+            'partially_received': { label: 'התקבל חלקית', variant: 'info' },
+            'fully_received': { label: 'התקבל במלואו', variant: 'success' },
+            'closed': { label: 'סגור', variant: 'secondary' },
+            'cancelled': { label: 'בוטל', variant: 'danger' }
         };
 
         const config = statusConfig[status] || statusConfig['pending_sap_details'];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     const getOrderTypeBadge = (orderType) => {
         const typeConfig = {
-            'immediate_delivery': { label: 'אספקה מיידית', className: 'bg-purple-100 text-purple-800' },
-            'framework': { label: 'הזמנת מסגרת', className: 'bg-indigo-100 text-indigo-800' }
+            'immediate_delivery': { label: 'אספקה מיידית', variant: 'default' },
+            'framework': { label: 'הזמנת מסגרת', variant: 'info' }
         };
 
-        const config = typeConfig[orderType] || { label: orderType, className: 'bg-gray-100 text-gray-800' };
-        return <Badge className={config.className}>{config.label}</Badge>;
+        const config = typeConfig[orderType] || { label: orderType, variant: 'secondary' };
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     const formatDate = (dateString) => {

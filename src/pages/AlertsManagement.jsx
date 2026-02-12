@@ -229,13 +229,13 @@ export default function AlertsManagement() {
   };
 
   const getStatusBadge = (status) => {
-    const variants = {
-      active: 'bg-red-100 text-red-800',
-      acknowledged: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      snoozed: 'bg-purple-100 text-purple-800'
+    const variantMap = {
+      active: 'danger',
+      acknowledged: 'warning',
+      resolved: 'success',
+      snoozed: 'secondary'
     };
-    
+
     const labels = {
       active: 'פעילה',
       acknowledged: 'נקראה',
@@ -244,7 +244,7 @@ export default function AlertsManagement() {
     };
 
     return (
-      <Badge className={variants[status]}>
+      <Badge variant={variantMap[status]}>
         {labels[status]}
       </Badge>
     );

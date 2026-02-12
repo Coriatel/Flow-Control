@@ -224,28 +224,28 @@ export default function WithdrawalRequestsPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'draft': { label: 'טיוטה', className: 'bg-gray-100 text-gray-800' },
-      'submitted': { label: 'הוגשה', className: 'bg-blue-100 text-blue-800' },
-      'approved': { label: 'אושרה', className: 'bg-green-100 text-green-800' },
-      'rejected': { label: 'נדחתה', className: 'bg-red-100 text-red-800' },
-      'in_delivery': { label: 'במשלוח', className: 'bg-purple-100 text-purple-800' },
-      'completed': { label: 'הושלמה', className: 'bg-teal-100 text-teal-800' },
-      'cancelled': { label: 'בוטלה', className: 'bg-orange-100 text-orange-800' }
+      'draft': { label: 'טיוטה', variant: 'secondary' },
+      'submitted': { label: 'הוגשה', variant: 'info' },
+      'approved': { label: 'אושרה', variant: 'success' },
+      'rejected': { label: 'נדחתה', variant: 'danger' },
+      'in_delivery': { label: 'במשלוח', variant: 'warning' },
+      'completed': { label: 'הושלמה', variant: 'success' },
+      'cancelled': { label: 'בוטלה', variant: 'danger' }
     };
 
     const config = statusConfig[status] || statusConfig['submitted'];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getUrgencyBadge = (urgency) => {
     const urgencyConfig = {
-      'routine': { label: 'רגיל', className: 'bg-slate-100 text-slate-800' },
-      'urgent': { label: 'דחוף', className: 'bg-orange-100 text-orange-800' },
-      'emergency': { label: 'חירום', className: 'bg-red-100 text-red-800' }
+      'routine': { label: 'רגיל', variant: 'secondary' },
+      'urgent': { label: 'דחוף', variant: 'warning' },
+      'emergency': { label: 'חירום', variant: 'danger' }
     };
 
     const config = urgencyConfig[urgency] || urgencyConfig['routine'];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {

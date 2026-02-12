@@ -175,14 +175,14 @@ export default function DeliveriesPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'open': { label: 'פתוח', className: 'bg-blue-100 text-blue-800' },
-      'processing': { label: 'בעיבוד', className: 'bg-yellow-100 text-yellow-800' },
-      'processed': { label: 'עובד', className: 'bg-green-100 text-green-800' },
-      'closed': { label: 'סגור', className: 'bg-gray-100 text-gray-800' }
+      'open': { label: 'פתוח', variant: 'info' },
+      'processing': { label: 'בעיבוד', variant: 'warning' },
+      'processed': { label: 'עובד', variant: 'success' },
+      'closed': { label: 'סגור', variant: 'secondary' }
     };
 
     const config = statusConfig[status] || statusConfig['open'];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {

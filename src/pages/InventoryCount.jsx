@@ -1093,7 +1093,7 @@ export default function InventoryCountPage() {
                             </div>
                           </div>
                         </div>
-                        <Badge className={count.reagent_updates_completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                        <Badge variant={count.reagent_updates_completed ? 'success' : 'warning'}>
                           {count.reagent_updates_completed ? 'הושלם' : 'בעיבוד'}
                         </Badge>
                       </div>
@@ -1193,7 +1193,7 @@ export default function InventoryCountPage() {
                                 {count.reagents_updated_count || 0} / {count.reagents_total_count || 0}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <Badge className={count.reagent_updates_completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                                <Badge variant={count.reagent_updates_completed ? 'success' : 'warning'}>
                                   {count.reagent_updates_completed ? 'הושלם' : 'בעיבוד'}
                                 </Badge>
                               </td>
@@ -1333,7 +1333,7 @@ export default function InventoryCountPage() {
                   </div>
                   <div>
                     <Label className="text-xs text-gray-600">סטטוס עיבוד</Label>
-                    <Badge className={selectedCountDetails.count.reagent_updates_completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                    <Badge variant={selectedCountDetails.count.reagent_updates_completed ? 'success' : 'warning'}>
                       {selectedCountDetails.count.reagent_updates_completed ? 'הושלם' : 'בעיבוד'}
                     </Badge>
                   </div>

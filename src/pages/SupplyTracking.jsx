@@ -199,38 +199,38 @@ export default function SupplyTracking() {
 
   const getStatusBadge = (status, type) => {
     const statusMap = {
-      approved: { label: 'מאושר', class: 'bg-blue-100 text-blue-800' },
-      partially_received: { label: 'התקבל חלקי', class: 'bg-yellow-100 text-yellow-800' },
-      submitted: { label: 'נשלח', class: 'bg-purple-100 text-purple-800' },
-      in_delivery: { label: 'באספקה', class: 'bg-orange-100 text-orange-800' }
+      approved: { label: 'מאושר', variant: 'success' },
+      partially_received: { label: 'התקבל חלקי', variant: 'warning' },
+      submitted: { label: 'נשלח', variant: 'info' },
+      in_delivery: { label: 'באספקה', variant: 'warning' }
     };
-    
-    const config = statusMap[status] || { label: status, class: 'bg-gray-100 text-gray-800' };
-    return <Badge className={config.class}>{config.label}</Badge>;
+
+    const config = statusMap[status] || { label: status, variant: 'secondary' };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getUrgencyBadge = (urgency) => {
     const urgencyMap = {
-      routine: { label: 'שגרתי', class: 'bg-gray-100 text-gray-800' },
-      urgent: { label: 'דחוף', class: 'bg-orange-100 text-orange-800' },
-      emergency: { label: 'חירום', class: 'bg-red-100 text-red-800' }
+      routine: { label: 'שגרתי', variant: 'secondary' },
+      urgent: { label: 'דחוף', variant: 'warning' },
+      emergency: { label: 'חירום', variant: 'danger' }
     };
-    
+
     const config = urgencyMap[urgency] || urgencyMap.routine;
-    return <Badge className={config.class}>{config.label}</Badge>;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getTypeBadge = (type) => {
     const typeMap = {
-      order: { label: 'דרישת רכש', class: 'bg-blue-100 text-blue-800', icon: Package },
-      withdrawal: { label: 'משיכה', class: 'bg-purple-100 text-purple-800', icon: Truck }
+      order: { label: 'דרישת רכש', variant: 'info', icon: Package },
+      withdrawal: { label: 'משיכה', variant: 'default', icon: Truck }
     };
-    
+
     const config = typeMap[type];
     const Icon = config.icon;
-    
+
     return (
-      <Badge className={config.class}>
+      <Badge variant={config.variant}>
         <Icon className="h-3 w-3 ms-1" />
         {config.label}
       </Badge>
@@ -419,9 +419,12 @@ export default function SupplyTracking() {
 
           {/* Table */}
           {filteredAndSortedSupplies.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-lg text-gray-500">אין אספקות ממתינות</p>
+            <div className="text-center py-16">
+              <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <Package className="h-7 w-7 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">אין אספקות ממתינות</p>
+              <p className="text-sm text-slate-400">כל האספקות הושלמו או שאין הזמנות פתוחות</p>
             </div>
           ) : (
             <div className="hidden md:block">

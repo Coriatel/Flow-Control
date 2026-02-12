@@ -158,26 +158,26 @@ export default function EditWithdrawalRequestPage() {
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            'draft': { label: 'טיוטה', className: 'bg-gray-100 text-gray-800' },
-            'submitted': { label: 'הוגש', className: 'bg-blue-100 text-blue-800' },
-            'approved': { label: 'אושר', className: 'bg-green-100 text-green-800' },
-            'rejected': { label: 'נדחה', className: 'bg-red-100 text-red-800' },
-            'in_delivery': { label: 'במשלוח', className: 'bg-yellow-100 text-yellow-800' },
-            'completed': { label: 'הושלם', className: 'bg-purple-100 text-purple-800' },
-            'cancelled': { label: 'בוטל', className: 'bg-gray-100 text-gray-800' }
+            'draft': { label: 'טיוטה', variant: 'secondary' },
+            'submitted': { label: 'הוגש', variant: 'info' },
+            'approved': { label: 'אושר', variant: 'success' },
+            'rejected': { label: 'נדחה', variant: 'danger' },
+            'in_delivery': { label: 'במשלוח', variant: 'warning' },
+            'completed': { label: 'הושלם', variant: 'success' },
+            'cancelled': { label: 'בוטל', variant: 'danger' }
         };
         const config = statusConfig[status] || statusConfig['draft'];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     const getUrgencyBadge = (urgency) => {
         const urgencyConfig = {
-            'routine': { label: 'שגרתי', className: 'bg-gray-100 text-gray-800' },
-            'urgent': { label: 'דחוף', className: 'bg-orange-100 text-orange-800' },
-            'emergency': { label: 'חירום', className: 'bg-red-100 text-red-800' }
+            'routine': { label: 'שגרתי', variant: 'secondary' },
+            'urgent': { label: 'דחוף', variant: 'warning' },
+            'emergency': { label: 'חירום', variant: 'danger' }
         };
         const config = urgencyConfig[urgency] || urgencyConfig['routine'];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
     };
 
     if (loading) {
@@ -294,13 +294,13 @@ export default function EditWithdrawalRequestPage() {
                 {getStatusBadge(withdrawalRequest.status)}
                 {getUrgencyBadge(withdrawalRequest.urgency_level)}
                 {isEditMode && (
-                    <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
+                    <Badge variant="info" className="flex items-center gap-1">
                         <Edit className="h-3 w-3" />
                         מצב עריכה
                     </Badge>
                 )}
                 {!isEditMode && (
-                    <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1">
+                    <Badge variant="secondary" className="flex items-center gap-1">
                         <Eye className="h-3 w-3" />
                         מצב צפייה
                     </Badge>

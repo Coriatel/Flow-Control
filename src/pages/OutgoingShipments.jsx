@@ -167,16 +167,16 @@ export default function OutgoingShipmentsPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'draft': { label: 'טיוטה', className: 'bg-gray-100 text-gray-800' },
-      'prepared': { label: 'מוכן', className: 'bg-blue-100 text-blue-800' },
-      'sent': { label: 'נשלח', className: 'bg-yellow-100 text-yellow-800' },
-      'delivered': { label: 'הגיע ליעד', className: 'bg-green-100 text-green-800' },
-      'confirmed': { label: 'אושר', className: 'bg-emerald-100 text-emerald-800' },
-      'cancelled': { label: 'בוטל', className: 'bg-red-100 text-red-800' }
+      'draft': { label: 'טיוטה', variant: 'secondary' },
+      'prepared': { label: 'מוכן', variant: 'info' },
+      'sent': { label: 'נשלח', variant: 'warning' },
+      'delivered': { label: 'הגיע ליעד', variant: 'success' },
+      'confirmed': { label: 'אושר', variant: 'success' },
+      'cancelled': { label: 'בוטל', variant: 'danger' }
     };
 
     const config = statusConfig[status] || statusConfig['draft'];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {
@@ -655,8 +655,12 @@ export default function OutgoingShipmentsPage() {
             />
             
             {filteredAndSortedShipments.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">לא נמצאו משלוחים התואמים לחיפוש</p>
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <Package className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
+                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
               </div>
             )}
           </CardContent>
@@ -666,10 +670,13 @@ export default function OutgoingShipmentsPage() {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {filteredAndSortedShipments.length === 0 ? (
-          <Card className="p-6">
-            <div className="text-center text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <p>לא נמצאו משלוחים התואמים לחיפוש</p>
+          <Card className="p-8">
+            <div className="text-center">
+              <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <Package className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
+              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
             </div>
           </Card>
         ) : (
