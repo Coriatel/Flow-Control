@@ -27,12 +27,13 @@ export function AuthProvider({ children }) {
   const checkAuth = async () => {
     try {
       setLoading(true);
+      // Obtain a short-lived access token using the refresh cookie (if present).
+      await User.refresh();
       const currentUser = await User.me();
       if (currentUser) {
         setUser(currentUser);
       }
     } catch (error) {
-      // Token invalid or expired, clear it
       setUser(null);
     } finally {
       setLoading(false);

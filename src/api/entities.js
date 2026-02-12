@@ -298,9 +298,21 @@ export const User = {
     return response;
   },
 
+  async refresh() {
+    const response = await apiClient.post('/auth/refresh');
+    const token = response.data?.token || response.token;
+    if (token) {
+      apiClient.setToken(token);
+    }
+    return response;
+  },
+
   async logout() {
-    apiClient.setToken(null);
-    return apiClient.post('/auth/logout');
+    try {
+      return await apiClient.post('/auth/logout');
+    } finally {
+      apiClient.setToken(null);
+    }
   },
 
   async update(id, data) {

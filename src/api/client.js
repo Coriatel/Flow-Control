@@ -6,27 +6,52 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 class APIClient {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem('auth_token');
+    this.token = null; // access token is kept in-memory only
   }
 
   setToken(token) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('auth_token', token);
-    } else {
-      localStorage.removeItem('auth_token');
-    }
+    this.token = token || null;
   }
 
   getToken() {
-    return this.token || localStorage.getItem('auth_token');
+    return this.token;
+  }
+
+  async _refreshAccessToken() {
+    // Refresh uses httpOnly cookie. Returns true if a new token was obtained.
+    const url = `${this.baseURL}/auth/refresh`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const contentType = response.headers.get('content-type');
+    const data = contentType && contentType.includes('application/json')
+      ? await response.json()
+      : null;
+
+    const token = data?.data?.token || data?.token;
+    if (token) {
+      this.setToken(token);
+      return true;
+    }
+
+    return false;
   }
 
   async request(endpoint, options = {}) {
+    const { __attemptRefresh, __isRetry, ...fetchOptions } = options;
+
     const url = `${this.baseURL}${endpoint}`;
     const headers = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...fetchOptions.headers,
     };
 
     const token = this.getToken();
@@ -35,7 +60,8 @@ class APIClient {
     }
 
     const config = {
-      ...options,
+      credentials: 'include',
+      ...fetchOptions,
       headers,
     };
 
@@ -49,8 +75,30 @@ class APIClient {
       delete headers['Content-Type'];
     }
 
+    const attemptRefresh = __attemptRefresh !== false;
+    const isRetry = __isRetry === true;
+
     try {
       const response = await fetch(url, config);
+
+      // Attempt a single refresh+retry on 401s (token expired / first load)
+      if (
+        response.status === 401 &&
+        attemptRefresh &&
+        !isRetry &&
+        endpoint !== '/auth/refresh' &&
+        endpoint !== '/auth/login' &&
+        endpoint !== '/auth/register'
+      ) {
+        try {
+          const refreshed = await this._refreshAccessToken();
+          if (refreshed) {
+            return this.request(endpoint, { ...options, __isRetry: true });
+          }
+        } catch {
+          // Ignore refresh errors and fall through to normal error handling.
+        }
+      }
 
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');

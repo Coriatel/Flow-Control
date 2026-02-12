@@ -17,6 +17,7 @@ import expiredProductLogsRoutes from './expiredproductlogs';
 import reagentReceiptEventsRoutes from './reagentreceiptevents';
 import filesRoutes from './files';
 import usersRoutes from './users';
+import adminSessionsRoutes from './adminSessions';
 import alertsRoutes from './alerts';
 import activityRoutes from './activity';
 import functionsRoutes from './functions';
@@ -59,6 +60,7 @@ router.use('/expiredproductlogs', expiredProductLogsRoutes);
 router.use('/reagentreceiptevents', reagentReceiptEventsRoutes);
 
 // Administration routes (protected)
+router.use('/admin/sessions', adminSessionsRoutes);
 router.use('/users', usersRoutes);
 router.use('/alerts', alertsRoutes);
 router.use('/activity', activityRoutes);

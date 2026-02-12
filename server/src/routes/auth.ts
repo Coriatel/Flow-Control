@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+
 import { prisma } from '../utils/prisma';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
@@ -8,8 +9,45 @@ import { validateBody } from '../middleware/validate';
 import { authLimiter } from '../middleware/security';
 import { loginSchema, registerSchema, changePasswordSchema } from '../validation/schemas';
 import { ApiResponse } from '../types';
+import {
+  getRefreshTokenCookieOptions,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '../utils/authCookies';
+import {
+  createRefreshTokenForUser,
+  revokeRefreshToken,
+  rotateRefreshToken,
+} from '../utils/refreshTokens';
 
 const router = Router();
+
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const signAccessToken = (user: { id: string; email: string; role: string }): string => {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new AppError('JWT_SECRET not configured', 500);
+  }
+
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    jwtSecret,
+    // Short-lived access token; refresh token handles long sessions.
+    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as jwt.SignOptions
+  );
+};
+
+const setRefreshCookie = (res: Response, token: string): void => {
+  res.cookie(REFRESH_TOKEN_COOKIE_NAME, token, getRefreshTokenCookieOptions());
+};
+
+const clearRefreshCookie = (res: Response): void => {
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, getRefreshTokenCookieOptions());
+};
 
 /**
  * POST /api/auth/register
@@ -18,43 +56,35 @@ const router = Router();
 router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
 
-  // Check if user already exists
+  const normalizedEmail = normalizeEmail(email);
+
   const existingUser = await prisma.user.findUnique({
-    where: { email }
+    where: { email: normalizedEmail }
   });
 
   if (existingUser) {
     throw new AppError('User with this email already exists', 409);
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Create user
   const user = await prisma.user.create({
     data: {
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       name,
-      role: 'USER'
+      role: 'USER',
     }
   });
 
-  // Generate JWT token
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw new AppError('JWT_SECRET not configured', 500);
-  }
+  // Issue tokens
+  const accessToken = signAccessToken({ id: user.id, email: user.email, role: user.role });
 
-  const token = jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    },
-    jwtSecret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-  );
+  const refreshToken = await createRefreshTokenForUser(user.id, {
+    ip: req.ip,
+    userAgent: req.get('user-agent') || null,
+  });
+  setRefreshCookie(res, refreshToken);
 
   const response: ApiResponse = {
     success: true,
@@ -68,7 +98,7 @@ router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler
         isActive: user.isActive,
         createdAt: user.createdAt
       },
-      token
+      token: accessToken,
     }
   };
   res.status(201).json(response);
@@ -81,48 +111,37 @@ router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler
 router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  // Find user
+  const normalizedEmail = normalizeEmail(email);
+
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email: normalizedEmail }
   });
 
   if (!user) {
     throw new AppError('Invalid email or password', 401);
   }
 
-  // Check if user is active
   if (!user.isActive) {
     throw new AppError('User account is deactivated', 403);
   }
 
-  // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.password);
-
   if (!isPasswordValid) {
     throw new AppError('Invalid email or password', 401);
   }
 
-  // Update last login
   await prisma.user.update({
     where: { id: user.id },
     data: { lastLoginAt: new Date() }
   });
 
-  // Generate JWT token
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw new AppError('JWT_SECRET not configured', 500);
-  }
+  const accessToken = signAccessToken({ id: user.id, email: user.email, role: user.role });
 
-  const token = jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    },
-    jwtSecret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-  );
+  const refreshToken = await createRefreshTokenForUser(user.id, {
+    ip: req.ip,
+    userAgent: req.get('user-agent') || null,
+  });
+  setRefreshCookie(res, refreshToken);
 
   const response: ApiResponse = {
     success: true,
@@ -137,17 +156,67 @@ router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(async
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt
       },
-      token
+      token: accessToken,
     }
   };
+
+  res.json(response);
+}));
+
+/**
+ * POST /api/auth/refresh
+ * Rotate refresh token cookie and return a new access token.
+ */
+router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (!refreshToken || typeof refreshToken !== 'string') {
+    throw new AppError('No refresh token', 401);
+  }
+
+  const rotated = await rotateRefreshToken(refreshToken, {
+    ip: req.ip,
+    userAgent: req.get('user-agent') || null,
+  });
+
+  if (!rotated) {
+    clearRefreshCookie(res);
+    throw new AppError('Invalid refresh token', 401);
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: rotated.userId } });
+  if (!user || !user.isActive) {
+    // Revoke the newly-issued token and clear cookie.
+    await revokeRefreshToken(rotated.newToken);
+    clearRefreshCookie(res);
+    throw new AppError('User account is deactivated', 403);
+  }
+
+  setRefreshCookie(res, rotated.newToken);
+
+  const accessToken = signAccessToken({ id: user.id, email: user.email, role: user.role });
+
+  const response: ApiResponse = {
+    success: true,
+    data: {
+      token: accessToken,
+    }
+  };
+
   res.json(response);
 }));
 
 /**
  * POST /api/auth/logout
- * Logout (client-side token removal)
+ * Revoke refresh token cookie (best-effort) and clear it.
  */
-router.post('/logout', authenticate, asyncHandler(async (_req: Request, res: Response) => {
+router.post('/logout', asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (refreshToken && typeof refreshToken === 'string') {
+    await revokeRefreshToken(refreshToken);
+  }
+
+  clearRefreshCookie(res);
+
   const response: ApiResponse = {
     success: true,
     message: 'Logout successful'
@@ -246,17 +315,13 @@ router.put('/change-password', authenticate, validateBody(changePasswordSchema),
     throw new AppError('User not found', 404);
   }
 
-  // Verify current password
   const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-
   if (!isPasswordValid) {
     throw new AppError('Current password is incorrect', 401);
   }
 
-  // Hash new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Update password
   await prisma.user.update({
     where: { id: user.id },
     data: { password: hashedPassword }

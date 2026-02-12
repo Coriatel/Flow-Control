@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+
 import apiRoutes from './routes';
+import webAuthRoutes from './routes/webAuth';
 import { errorHandler } from './middleware/errorHandler';
 import { simpleRequestLogger, errorLogger } from './middleware/requestLogger';
 import { helmetConfig, generalLimiter, corsOptions, devCorsOptions } from './middleware/security';
@@ -25,10 +28,13 @@ app.use(cors(isProduction ? corsOptions : devCorsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Cookies (refresh tokens, OAuth state)
+app.use(cookieParser());
+
 // Request logging
 app.use(simpleRequestLogger());
 
-// Trust proxy for rate limiting behind reverse proxy (Nginx)
+// Trust proxy for rate limiting behind reverse proxy (Caddy)
 if (isProduction) {
   app.set('trust proxy', 1);
 }
@@ -43,6 +49,9 @@ app.get('/health', (_req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// OAuth entrypoints (Google) live outside /api
+app.use('/auth', webAuthRoutes);
 
 // API Routes
 app.use('/api', apiRoutes);
