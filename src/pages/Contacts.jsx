@@ -602,7 +602,7 @@ export default function ContactsPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <Users className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לا נמצאו אנשי קשר</p>
+              <p className="text-slate-600 font-medium mb-1">לא נמצאו אנשי קשר</p>
               <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
             </div>
           </Card>
