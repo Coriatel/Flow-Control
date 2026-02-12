@@ -135,24 +135,23 @@ const getExpiryColorClasses = (daysToExpiry) => {
   }
 };
 
-const getStatusBadgeClasses = (status) => {
+const getStatusBadgeVariant = (status) => {
   switch (status) {
     case 'active':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-sm';
+      return 'success';
     case 'expired':
-      return 'bg-red-100 text-red-800 border-red-300 shadow-sm';
+      return 'danger';
     case 'disposed':
-      return 'bg-slate-100 text-slate-800 border-slate-300 shadow-sm';
+      return 'secondary';
     case 'consumed':
-      return 'bg-blue-100 text-blue-800 border-blue-300 shadow-sm';
+      return 'info';
     case 'quarantine':
-      return 'bg-orange-100 text-orange-800 border-orange-300 shadow-sm';
+      return 'warning';
     case 'consumed_by_expiry':
-      return 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm';
     case 'other_use':
-      return 'bg-indigo-100 text-indigo-800 border-indigo-300 shadow-sm';
+      return 'secondary';
     default:
-      return 'bg-slate-100 text-slate-800 border-slate-300 shadow-sm';
+      return 'secondary';
   }
 };
 
@@ -2117,10 +2116,10 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
 
     if (isHandled) {
       statusDisplay = getActionTakenLabel(item?.action_taken);
-      statusBadgeClass = getStatusBadgeClasses(item?.action_taken);
+      statusBadgeClass = getStatusBadgeVariant(item?.action_taken);
     } else {
       statusDisplay = getStatusDisplay(item?.status);
-      statusBadgeClass = getStatusBadgeClasses(item?.status);
+      statusBadgeClass = getStatusBadgeVariant(item?.status);
     }
 
     return (
@@ -2174,7 +2173,7 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
 
         {visibleColumns.status && (
           <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.status}}>
-            <Badge className={`${statusBadgeClass} border text-xs px-2 py-1 transition-all duration-200 hover:scale-105`}>
+            <Badge variant={statusBadgeClass} className="text-xs px-2 py-1 transition-all duration-200 hover:scale-105">
               {statusDisplay}
             </Badge>
           </TableCell>
@@ -2243,7 +2242,7 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
               {tableHeaders.map((header) => (
                 <TableHead
                   key={header.key}
-                  className="px-3 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 last:border-r-0 relative select-none bg-gradient-to-b from-slate-100 to-slate-50"
+                  className="px-3 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider border-e border-slate-200 last:border-e-0 relative select-none bg-gradient-to-b from-slate-100 to-slate-50"
                   style={{ width: columnWidths[header.key] }}
                 >
                   {header.key === 'select' ? (
@@ -2375,7 +2374,7 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
                   {formatQuantity(item?.current_quantity)}
                 </Badge>
               ) : (
-                <Badge className={`text-xs border px-1 py-0 ${getStatusBadgeClasses(item?.action_taken)}`}>
+                <Badge variant={getStatusBadgeVariant(item?.action_taken)} className="text-xs px-1 py-0">
                   {getActionTakenLabel(item?.action_taken)}
                 </Badge>
               )}

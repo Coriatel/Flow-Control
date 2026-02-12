@@ -88,7 +88,7 @@ export default function SidebarNotifications() {
                     </DialogHeader>
                     
                     <ScrollArea className="h-96">
-                        <div className="space-y-3 pr-4">
+                        <div className="space-y-3 pe-4">
                             {safeHistory.map((notification, index) => (
                                 <div 
                                     key={`${notification.id}-${index}`}
