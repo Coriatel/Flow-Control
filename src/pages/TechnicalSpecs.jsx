@@ -150,7 +150,7 @@ export default function TechnicalSpecs() {
                 <CardTitle>APIs ופונקציות צד שרת נדרשות</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <div className="bg-blue-50 p-4 rounded-md">
                       <h3 className="font-bold text-blue-800 mb-2">🚚 API קליטת משלוחים</h3>
@@ -253,7 +253,7 @@ export default function TechnicalSpecs() {
                 <CardTitle>אלגוריתמים מרכזיים</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-6">
                     <div className="bg-blue-50 p-4 rounded-md">
                       <h3 className="font-bold text-blue-800 mb-3">🧮 אלגוריתם חישוב צריכה חודשית ממוצעת</h3>
@@ -352,7 +352,7 @@ export default function TechnicalSpecs() {
                 <CardTitle>תכנית בדיקות מקיפה</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <div className="bg-green-50 p-4 rounded-md">
                       <h3 className="font-bold text-green-800 mb-2">✅ בדיקות יחידה (Unit Tests)</h3>

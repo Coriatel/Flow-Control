@@ -458,7 +458,7 @@ export default function DeliveriesPage() {
             placeholder="חיפוש לפי מס' תעודה, ספק או הזמנה..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
+            className="pe-10"
           />
           {searchTerm && (
             <button

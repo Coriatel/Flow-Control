@@ -332,7 +332,7 @@ export default function Dashboard() {
                 <ScrollArea className="h-48">
                   <div className="space-y-2 text-right">
                     {dashboardData.dashboardNotes.length > 0 ? dashboardData.dashboardNotes.map((note) =>
-                      <div key={note.id} className={`border-r-4 ${note.noteType === 'URGENT' ? 'border-red-500 bg-red-50' : 'border-amber-400 bg-slate-50'} p-2 rounded-r-lg`}>
+                      <div key={note.id} className={`border-e-4 ${note.noteType === 'URGENT' ? 'border-red-500 bg-red-50' : 'border-amber-400 bg-slate-50'} p-2 rounded-e-lg`}>
                         {note.title && <p className="font-medium text-slate-800 text-sm mb-1">{note.title}</p>}
                         <p className="text-slate-600 text-xs line-clamp-2">{note.content}</p>
                       </div>

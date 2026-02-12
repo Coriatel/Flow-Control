@@ -608,7 +608,7 @@ export default function SystemDocumentation() {
               placeholder="חיפוש מסמכים..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
+              className="pe-10"
             />
           </div>
 
@@ -649,7 +649,7 @@ export default function SystemDocumentation() {
                           key={file.name}
                           onClick={() => setSelectedFile(file)}
                           className={`w-full text-right px-3 py-2 rounded-md transition-colors ${
-                            isSelected ? 'bg-blue-50 border-r-4 border-blue-500' : 'hover:bg-gray-50'
+                            isSelected ? 'bg-blue-50 border-e-4 border-blue-500' : 'hover:bg-gray-50'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -697,7 +697,7 @@ export default function SystemDocumentation() {
                           test: 'מסמך בדיקות'
                         };
                         return (
-                          <Card key={type} className="border-r-4 border-blue-400">
+                          <Card key={type} className="border-e-4 border-blue-400">
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-medium">{titles[type]}</h4>

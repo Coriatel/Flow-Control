@@ -746,7 +746,7 @@ export default function InventoryReplenishmentPage() {
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="relative flex-grow">
                                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <Input placeholder="חפש ריאגנט..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10" />
+                                <Input placeholder="חפש ריאגנט..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pe-10" />
                             </div>
                             <Select value={filter} onValueChange={setFilter}>
                                 <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="סנן לפי..." /></SelectTrigger>
@@ -853,7 +853,7 @@ export default function InventoryReplenishmentPage() {
                             return (
                                 <Card
                                     key={reagent.id}
-                                    className={`p-3 border-l-4 bg-white transition-all ${reagent.current_stock_status === 'out_of_stock' ? 'border-red-500' :
+                                    className={`p-3 border-s-4 bg-white transition-all ${reagent.current_stock_status === 'out_of_stock' ? 'border-red-500' :
                                             reagent.current_stock_status === 'low_stock' ? 'border-amber-500' :
                                                 'border-slate-300'
                                         } ${reagent.has_temporary_orders ? 'shadow-md ring-1 ring-purple-200' : ''}`}
@@ -1132,7 +1132,7 @@ export default function InventoryReplenishmentPage() {
                                 אך אין לה עדיין <span className="text-amber-600">מספר הזמנה קבוע</span> (מספר קבוע מה-SAP או מספר PO).
                             </p>
 
-                            <div className="bg-amber-50 border-r-4 border-amber-400 p-4 rounded">
+                            <div className="bg-amber-50 border-e-4 border-amber-400 p-4 rounded">
                                 <h4 className="font-semibold text-amber-800 mb-2">למה זה חשוב?</h4>
                                 <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside me-2">
                                     <li>מספר הזמנה קבוע דרוש למעקב ותיעוד מול הספק ומערכת ה-SAP.</li>
@@ -1141,7 +1141,7 @@ export default function InventoryReplenishmentPage() {
                                 </ul>
                             </div>
 
-                            <div className="bg-blue-50 border-r-4 border-blue-400 p-4 rounded">
+                            <div className="bg-blue-50 border-e-4 border-blue-400 p-4 rounded">
                                 <h4 className="font-semibold text-blue-800 mb-2">מה מומלץ לעשות?</h4>
                                 <p className="text-sm text-blue-700">
                                     מומלץ לעבור תחילה למסך <strong>"ניהול דרישות רכש"</strong>, למצוא את ההזמנה (מספר דרישה זמני: {pendingWithdrawalAction?.frameworkOrderNumber || 'לא זמין'}),

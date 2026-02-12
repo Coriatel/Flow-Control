@@ -397,7 +397,7 @@ export default function ManageReagentsPage() {
             </Select>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <Select value={requiresBatchFilter} onValueChange={setRequiresBatchFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="דורש אצווה" />
@@ -582,8 +582,15 @@ export default function ManageReagentsPage() {
       </Sheet>
 
       {/* Results Count */}
-      <div className="mb-4 text-sm text-slate-600">
-        מציג {filteredAndSortedReagents.length} מתוך {reagents.length} ריאגנטים
+      <div className="mb-5 flex items-center justify-between">
+        <div className="text-sm text-slate-600">
+          מציג <span className="font-semibold text-slate-900">{filteredAndSortedReagents.length}</span> מתוך <span className="font-semibold text-slate-900">{reagents.length}</span> ריאגנטים
+        </div>
+        {filteredAndSortedReagents.length === 0 && reagents.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-blue-600 hover:text-blue-700">
+            נקה מסננים
+          </Button>
+        )}
       </div>
 
       {/* Desktop Table */}

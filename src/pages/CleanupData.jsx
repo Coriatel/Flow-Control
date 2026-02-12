@@ -292,7 +292,7 @@ export default function CleanupData() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* NEW: Server-side cleanup operations Card */}
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-s-4 border-orange-500">
           <CardHeader>
             <CardTitle className="flex items-center text-orange-700">
               <Clock className="ms-2 h-5 w-5" />
@@ -443,10 +443,10 @@ export default function CleanupData() {
                 <div 
                   key={index} 
                   className={`p-3 rounded-md text-sm ${
-                    result.type === 'success' ? 'bg-green-50 text-green-800 border-l-4 border-green-400' :
-                    result.type === 'error' ? 'bg-red-50 text-red-800 border-l-4 border-red-400' :
-                    result.type === 'warning' ? 'bg-yellow-50 text-yellow-800 border-l-4 border-yellow-400' :
-                    'bg-blue-50 text-blue-800 border-l-4 border-blue-400'
+                    result.type === 'success' ? 'bg-green-50 text-green-800 border-s-4 border-green-400' :
+                    result.type === 'error' ? 'bg-red-50 text-red-800 border-s-4 border-red-400' :
+                    result.type === 'warning' ? 'bg-yellow-50 text-yellow-800 border-s-4 border-yellow-400' :
+                    'bg-blue-50 text-blue-800 border-s-4 border-blue-400'
                   }`}
                 >
                   <div className="flex items-start justify-between">

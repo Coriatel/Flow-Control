@@ -21,7 +21,7 @@ export default function CodeAnalysis() {
               <CardTitle>מבנה הקוד וקבצים מרכזיים</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[600px] pr-4 -me-4">
+              <ScrollArea className="h-[600px] pe-4 -me-4">
                 <h3 className="text-xl font-semibold mb-4">ישויות (Entities)</h3>
                 <ol className="list-decimal list-inside mb-6 space-y-4">
                   <li className="font-bold">entities/Reagent.json
@@ -125,7 +125,7 @@ export default function CodeAnalysis() {
               <CardTitle>ניתוח בעיות ספציפיות</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[600px] pr-4 -me-4">
+              <ScrollArea className="h-[600px] pe-4 -me-4">
                 <h3 className="text-xl font-semibold mb-4">1. SecurityMonitor גורם להתראות שווא</h3>
                 <div className="mb-6">
                   <div className="bg-gray-100 p-4 rounded-md mb-4 font-mono text-sm">

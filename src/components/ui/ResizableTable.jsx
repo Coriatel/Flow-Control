@@ -94,12 +94,12 @@ export default function ResizableTable({
   return (
     <div className="overflow-x-auto" ref={tableRef}>
       <table className="w-full border-collapse">
-        <thead className="bg-slate-100 sticky top-0 z-10">
+        <thead className="bg-gradient-to-b from-slate-50 to-slate-100 sticky top-0 z-10">
           <tr>
             {visibleColumnConfigs.map((column) => (
               <th
                 key={column.key}
-                className="text-right px-4 py-3.5 font-semibold text-slate-700 border-b-2 border-slate-200 relative group"
+                className="text-right px-4 py-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider border-b-2 border-slate-200 relative group"
                 style={{ minWidth: `${columnWidths[column.key]}px` }}
               >
                 <div className="flex items-center justify-between">

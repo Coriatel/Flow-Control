@@ -25,31 +25,31 @@ export default function DevelopmentStrategy() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="border-l-4 border-green-500 pl-4">
+                <div className="border-s-4 border-green-500 ps-4">
                   <h3 className="font-bold text-green-700">שלב 1 - קליטת משלוחים חדשים</h3>
                   <p className="text-sm text-gray-600">יצירת ממשק לקליטת משלוחים עם התחברות להזמנות קיימות</p>
                   <Badge className="mt-2 bg-green-100 text-green-800">עדיפות גבוהה</Badge>
                 </div>
                 
-                <div className="border-l-4 border-blue-500 pl-4">
+                <div className="border-s-4 border-blue-500 ps-4">
                   <h3 className="font-bold text-blue-700">שלב 2 - חישוב צריכה ממוצעת</h3>
                   <p className="text-sm text-gray-600">מנוע חישוב צריכה חודשית עם התחשבות במשלוחים וספירות</p>
                   <Badge className="mt-2 bg-blue-100 text-blue-800">עדיפות גבוהה</Badge>
                 </div>
                 
-                <div className="border-l-4 border-purple-500 pl-4">
+                <div className="border-s-4 border-purple-500 ps-4">
                   <h3 className="font-bold text-purple-700">שלב 3 - ניהול הזמנות מתקדם</h3>
                   <p className="text-sm text-gray-600">מערכת הזמנות עם מעקב מסגרות ויתרות פתוחות</p>
                   <Badge className="mt-2 bg-purple-100 text-purple-800">עדיפות בינונית</Badge>
                 </div>
                 
-                <div className="border-l-4 border-yellow-500 pl-4">
+                <div className="border-s-4 border-yellow-500 ps-4">
                   <h3 className="font-bold text-yellow-700">שלב 4 - OCR ו-PDF אוטומטי</h3>
                   <p className="text-sm text-gray-600">זיהוי אוטומטי של תעודות משלוח וטפסי ספירה</p>
                   <Badge className="mt-2 bg-yellow-100 text-yellow-800">פיתוח עתידי</Badge>
                 </div>
                 
-                <div className="border-l-4 border-gray-500 pl-4">
+                <div className="border-s-4 border-gray-500 ps-4">
                   <h3 className="font-bold text-gray-700">שלב 5 - התאמה אישית למשתמשים</h3>
                   <p className="text-sm text-gray-600">ממשק להגדרת קטגוריות וריאגנטים בהתאמה אישית</p>
                   <Badge className="mt-2 bg-gray-100 text-gray-800">פיתוח עתידי</Badge>
@@ -66,7 +66,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול קליטת משלוחים - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. יצירת ישויות חדשות</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -187,7 +187,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול חישוב צריכה ממוצעת - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. אלגוריתם חישוב צריכה</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -280,7 +280,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול ניהול הזמנות מתקדם - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. מחזור חיי הזמנה</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -399,7 +399,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>פיתוחים עתידיים - חזון ארוך טווח</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -me-4">
+                <ScrollArea className="h-[600px] pe-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. זיהוי אוטומטי של מסמכים (OCR)</h3>
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-md">

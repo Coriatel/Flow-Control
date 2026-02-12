@@ -347,7 +347,7 @@ export default function SupplyTracking() {
                 placeholder="חפש לפי מספר מסמך..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pe-10"
               />
             </div>
 

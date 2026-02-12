@@ -370,7 +370,7 @@ export default function ContactsPage() {
                 placeholder="חיפוש לפי שם, ספק, תפקיד, טלפון, אימייל..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pe-10"
               />
             </div>
 
@@ -449,7 +449,7 @@ export default function ContactsPage() {
                   placeholder="חיפוש..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
+                  className="pe-10"
                 />
               </div>
               <Button

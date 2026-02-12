@@ -321,7 +321,7 @@ export default function PerformanceAnalysisPage() {
           ) : (
             <div className="space-y-4">
               {recommendations.map((rec, index) => (
-                <Alert key={index} className="border-l-4 border-l-orange-500">
+                <Alert key={index} className="border-s-4 border-orange-500">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     <div className="flex items-start justify-between">

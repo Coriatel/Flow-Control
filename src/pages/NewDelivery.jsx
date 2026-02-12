@@ -1706,7 +1706,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                                       disabled={!!preFilledSourceInfo || items.length > 0}
                                       dir="rtl"
                                   >
-                                      <SelectTrigger className="text-right justify-start [&>span]:pr-0">
+                                      <SelectTrigger className="text-right justify-start [&>span]:pe-0">
                                           <SelectValue placeholder="יש לבחור ספק" />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -1772,7 +1772,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                                       disabled={!!preFilledSourceInfo}
                                       className="w-1/3"
                                     >
-                                      <SelectTrigger className="text-right justify-start [&>span]:pr-0">
+                                      <SelectTrigger className="text-right justify-start [&>span]:pe-0">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -1791,7 +1791,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                                         disabled={!!preFilledSourceInfo}
                                         className="w-2/3"
                                       >
-                                        <SelectTrigger className="text-right justify-start [&>span]:pr-0">
+                                        <SelectTrigger className="text-right justify-start [&>span]:pe-0">
                                           <SelectValue placeholder="בחר מסמך לקישור" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -1870,7 +1870,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[500px] pr-4">
+          <ScrollArea className="h-[500px] pe-4">
             <div className="p-4">
               {items.length === 0 ? (
                 <NoItemsRow onAddItem={addItem} supplierSelected={!!deliveryData.supplier} />

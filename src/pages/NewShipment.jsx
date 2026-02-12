@@ -1207,7 +1207,7 @@ export default function NewShipmentPage() {
                   placeholder="הקלד שם ריאגנט או מק״ט..."
                   value={reagentSearchTerm}
                   onChange={(e) => setReagentSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="ps-10"
                 />
               </div>
             </div>

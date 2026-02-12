@@ -44,7 +44,7 @@ const SummaryCard = ({ icon, title, count, linkTo, color, popoverItems, popoverT
   const CardBody = (
      <Card className={`${styles.bg} border ${styles.border} shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-xl`}>
         <CardContent className="p-4 text-right">
-            <div className="mx-auto my-1 pr-5 pl-8 flex items-start justify-between">
+            <div className="mx-auto my-1 pe-5 ps-8 flex items-start justify-between">
                 <div className={`p-2 rounded-lg`}>
                   {React.cloneElement(icon, { className: `h-5 w-5 ${styles.iconColor}` })}
                 </div>

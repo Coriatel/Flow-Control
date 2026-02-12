@@ -1445,7 +1445,7 @@ export default function BatchAndExpiryManagement() {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="חיפוש מהיר..."
-                className="w-full pl-4 pr-10 bg-white"
+                className="w-full ps-4 pe-10 bg-white"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -1520,7 +1520,7 @@ export default function BatchAndExpiryManagement() {
                                             placeholder="חפש לפי שם, מס' אצווה או ספק..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pr-10"
+                                            className="pe-10"
                                         />
                                     </div>
                                 </div>

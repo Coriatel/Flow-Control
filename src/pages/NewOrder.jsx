@@ -383,7 +383,7 @@ export default function NewOrderPage() {
                       placeholder="חיפוש לפי שם או מק״ט..." 
                       value={reagentFilters.searchTerm}
                       onChange={e => setReagentFilters(f => ({...f, searchTerm: e.target.value}))} 
-                      className="pr-10 bg-white/50"
+                      className="pe-10 bg-white/50"
                     />
                   </div>
                   <Select value={reagentFilters.category} onValueChange={v => setReagentFilters(f => ({...f, category: v}))}>
@@ -418,7 +418,7 @@ export default function NewOrderPage() {
                             >
                               <button
                                 onClick={() => handleReagentNameClick(reagent.id)}
-                                className="flex-1 flex flex-col text-right pr-2 sm:pr-4"
+                                className="flex-1 flex flex-col text-right pe-2 sm:pe-4"
                               >
                                 <span
                                   className={`font-medium ${

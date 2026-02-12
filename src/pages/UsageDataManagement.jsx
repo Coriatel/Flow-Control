@@ -322,7 +322,7 @@ export default function UsageDataManagement() {
                 placeholder="חיפוש ריאגנט או מקט..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pe-10"
               />
             </div>
 
@@ -535,7 +535,7 @@ export default function UsageDataManagement() {
 
             <div>
               <h4 className="font-semibold mb-2">שני מצבי צריכה:</h4>
-              <ul className="list-disc pr-5 space-y-1 text-gray-700">
+              <ul className="list-disc pe-5 space-y-1 text-gray-700">
                 <li>
                   <strong>צריכה אוטומטית:</strong> המערכת מחשבת את הצריכה על בסיס
                   היסטוריית משיכות ומשלוחים יוצאים (6 חודשים אחרונים).
@@ -549,7 +549,7 @@ export default function UsageDataManagement() {
 
             <div>
               <h4 className="font-semibold mb-2">פעולות זמינות:</h4>
-              <ul className="list-disc pr-5 space-y-1 text-gray-700">
+              <ul className="list-disc pe-5 space-y-1 text-gray-700">
                 <li>
                   <strong>עריכת צריכה:</strong> הזן ערך חדש בשדה "צריכה ידנית" ולחץ "שמור הכל".
                 </li>

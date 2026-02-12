@@ -280,7 +280,7 @@ export default function SystemManagement() {
             <div className="space-y-3">
               <div className="text-sm text-gray-600">
                 <strong>מדיניות ארכוב:</strong>
-                <ul className="list-disc list-inside mt-1 space-y-1 pr-4"> {/* Added pr-4 for RTL list */}
+                <ul className="list-disc list-inside mt-1 space-y-1 pe-4"> {/* Added pe-4 for RTL list */}
                   <li>ספירות מלאי: אחרי שנתיים</li>
                   <li>תנועות מלאי: אחרי 3 שנים</li>
                   <li>יומני פגי תוקף: אחרי 5 שנים (רגולטורי)</li>
@@ -383,7 +383,7 @@ export default function SystemManagement() {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <strong>שגיאות בתהליך:</strong>
-                  <ul className="list-disc list-inside mt-1 pr-4"> {/* Added pr-4 for RTL list */}
+                  <ul className="list-disc list-inside mt-1 pe-4"> {/* Added pe-4 for RTL list */}
                     {archiveResults.archiveResults.errors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}

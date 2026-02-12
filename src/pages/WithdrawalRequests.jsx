@@ -529,7 +529,7 @@ export default function WithdrawalRequestsPage() {
             placeholder="חיפוש לפי מס' משיכה, הזמנה, ספק..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
+            className="pe-10"
           />
           {searchTerm && (
             <button

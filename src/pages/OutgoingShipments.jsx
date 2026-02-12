@@ -421,7 +421,7 @@ export default function OutgoingShipmentsPage() {
             placeholder="חיפוש לפי מספר משלוח, נמען או איש קשר..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
+            className="pe-10"
           />
           {searchTerm && (
             <button

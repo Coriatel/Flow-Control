@@ -75,7 +75,7 @@ export default function HandledItemsList({ handledExpiredLogs, loading = false }
       
       <div className="grid gap-4">
         {handledExpiredLogs.map((log) => (
-          <Card key={log.id} className="border-l-4 border-l-green-400">
+          <Card key={log.id} className="border-s-4 border-green-400">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

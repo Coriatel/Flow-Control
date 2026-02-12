@@ -376,7 +376,7 @@ export default function ManageSuppliersPage() {
                 placeholder="חיפוש לפי שם, קוד, איש קשר, טלפון, אימייל..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pe-10"
               />
             </div>
 
@@ -437,7 +437,7 @@ export default function ManageSuppliersPage() {
                   placeholder="חיפוש..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
+                  className="pe-10"
                 />
               </div>
               <Button

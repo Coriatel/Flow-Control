@@ -644,7 +644,7 @@ export default function InventoryCountPage() {
                 placeholder="חיפוש ריאגנט..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 h-10"
+                className="pe-10 h-10"
               />
             </div>
             <Button
@@ -1065,7 +1065,7 @@ export default function InventoryCountPage() {
             <>
               <div className="sm:hidden space-y-3">
                 {historyCounts.map(count => (
-                  <Card key={count.id} className="overflow-hidden border-r-4 border-purple-400">
+                  <Card key={count.id} className="overflow-hidden border-e-4 border-purple-400">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">

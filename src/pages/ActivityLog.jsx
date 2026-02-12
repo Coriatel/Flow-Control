@@ -300,7 +300,7 @@ export default function ActivityLogPage() {
                   placeholder="חפש פעילות..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
+                  className="pe-10"
                 />
               </div>
             </div>
