@@ -104,7 +104,6 @@ export default function OrdersPage() {
     const loadOrders = useCallback(async () => {
         setLoading(true);
         try {
-            console.log('[Orders Frontend] Fetching orders from backend...');
 
             const response = await getOrdersData({
                 status: statusFilter !== 'all' ? statusFilter : null,
@@ -117,12 +116,10 @@ export default function OrdersPage() {
 
             if (success) {
                 setOrders(payload.orders || []);
-                console.log('✅ [Orders Frontend] Data loaded:', payload.orders?.length || 0);
             } else {
                 throw new Error(response?.data?.error || response?.error || 'Failed to fetch orders');
             }
         } catch (err) {
-            console.error('❌ [Orders Frontend] Error:', err);
             toast.error('שגיאה בטעינת הזמנות', {
                 description: err.message
             });

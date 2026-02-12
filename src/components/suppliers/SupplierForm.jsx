@@ -63,7 +63,6 @@ export default function SupplierForm({ supplier, onSuccess, onCancel }) {
       }
       onSuccess();
     } catch (error) {
-      console.error("Error saving supplier:", error);
       toast.error("שגיאה", { 
         description: "לא ניתן היה לשמור את הספק.",
         variant: "destructive" 

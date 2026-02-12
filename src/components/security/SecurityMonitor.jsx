@@ -10,7 +10,6 @@ export default function SecurityMonitor() {
       if (console && console[level] && typeof console[level] === 'function') {
         console[level](message);
       } else if (console && console.log && typeof console.log === 'function') {
-        console.log(`[${level.toUpperCase()}] ${message}`);
       }
     } catch (e) {
       // Silent fail if no console available

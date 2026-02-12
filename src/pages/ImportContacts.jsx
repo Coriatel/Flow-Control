@@ -72,7 +72,6 @@ export default function ImportContactsPage() {
         throw new Error(response?.error || response?.data?.error || 'שגיאה בולידציה');
       }
     } catch (error) {
-      console.error('Validation error:', error);
       toast({
         title: "שגיאה בולידציה",
         description: error.message || "אירעה שגיאה בבדיקת הקובץ",
@@ -110,7 +109,6 @@ export default function ImportContactsPage() {
         throw new Error(response?.error || response?.data?.error || 'שגיאה בייבוא');
       }
     } catch (error) {
-      console.error('Import error:', error);
       toast({
         title: "שגיאה בייבוא",
         description: error.message || "אירעה שגיאה בייבוא הקובץ",

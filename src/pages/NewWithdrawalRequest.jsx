@@ -103,7 +103,6 @@ export default function NewWithdrawalRequestPage() {
           try {
             prefilledItemsData = JSON.parse(decodeURIComponent(prefilledItemsRaw));
           } catch (e) {
-            console.error("Failed to parse prefilled items:", e);
           }
         }
 
@@ -160,7 +159,6 @@ export default function NewWithdrawalRequestPage() {
           }
         }
       } catch (err) {
-        console.error("Error initializing page:", err);
         setError("שגיאה בטעינת נתוני הדף.");
         toast({ title: "שגיאת טעינה", description: err.message, variant: "destructive" });
       } finally {
@@ -243,7 +241,6 @@ export default function NewWithdrawalRequestPage() {
       setShowPrintDialog(true);
 
     } catch (err) {
-      console.error("Error creating withdrawal request:", err);
       toast({ title: "שגיאה ביצירת הבקשה", description: err.message, variant: "destructive" });
     } finally {
       setSavingRequest(false);

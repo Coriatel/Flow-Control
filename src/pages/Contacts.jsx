@@ -101,7 +101,6 @@ export default function ContactsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log("[Contacts Frontend] Fetching from backend function...");
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getContactsData();
@@ -112,12 +111,10 @@ export default function ContactsPage() {
 
       if (success) {
         setContacts(payload.contacts || []);
-        console.log(`[Contacts Frontend] ✅ Loaded ${payload.contacts?.length || 0} contacts`);
       } else {
         throw new Error(errorMessage || 'Failed to load data');
       }
     } catch (error) {
-      console.error('[Contacts Frontend] ❌ Error:', error);
       toast.error('שגיאה בטעינת נתונים', {
         description: 'לא ניתן היה לטעון את רשימת אנשי הקשר'
       });
@@ -225,7 +222,6 @@ export default function ContactsPage() {
       await fetchData();
       setContactToDelete(null);
     } catch (error) {
-      console.error('Error deleting contact:', error);
       toast.error('שגיאה במחיקת איש קשר', {
         description: error.message
       });

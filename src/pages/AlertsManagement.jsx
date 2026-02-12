@@ -87,7 +87,6 @@ export default function AlertsManagement() {
       setScheduledReminders([]);
 
     } catch (error) {
-      console.error('Error loading alerts data:', error);
       setActiveAlerts([]);
       toast({
         title: "שגיאה בטעינת נתונים", 

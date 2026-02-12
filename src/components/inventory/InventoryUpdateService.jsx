@@ -8,7 +8,6 @@ import { updateReagentInventory } from '@/api/functions';
 export function useInventoryUpdate() {
   const updateInventory = async (reagentIds = []) => {
     try {
-      console.log(`🔄 Updating inventory for ${reagentIds.length || 'all'} reagents...`);
       
       if (reagentIds.length === 0) {
         // Update all reagents
@@ -20,11 +19,9 @@ export function useInventoryUpdate() {
         }
       }
       
-      console.log('✅ Inventory update completed');
       return { success: true };
       
     } catch (error) {
-      console.error('❌ Inventory update failed:', error);
       return { success: false, error: error.message };
     }
   };

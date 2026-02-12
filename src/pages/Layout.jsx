@@ -42,7 +42,6 @@ export default function Layout({ children, currentPageName }) {
       const storedCollapsed = localStorage.getItem('sidebarCollapsed');
       return storedCollapsed ? JSON.parse(storedCollapsed) : false;
     } catch (e) {
-      console.error("Failed to parse sidebarCollapsed from localStorage", e);
       return false;
     }
   });
@@ -56,7 +55,6 @@ export default function Layout({ children, currentPageName }) {
         return JSON.parse(storedGroups);
       }
     } catch (e) {
-      console.error("Failed to parse openAccordionGroups from localStorage", e);
     }
     // Default open groups if nothing is stored
     return ['dashboard', 'operations'];

@@ -45,7 +45,6 @@ export default function SystemManagement() {
         throw new Error(response?.error || response?.data?.error || "שגיאה לא ידועה בתהליך העדכון");
       }
     } catch (error) {
-      console.error("Error running summary updates:", error);
       toast({
         title: "שגיאה בעדכון סיכומים",
         description: error.message,
@@ -173,7 +172,6 @@ export default function SystemManagement() {
         throw new Error(response?.error || response?.data?.error || "שגיאה בתהליך הארכוב");
       }
     } catch (error) {
-      console.error("Archive process failed:", error);
       toast({
         title: "שגיאה בתהליך הארכוב",
         description: error.message,

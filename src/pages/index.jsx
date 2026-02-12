@@ -1,211 +1,113 @@
-import Layout from "./Layout.jsx";
-
-import Dashboard from "./Dashboard";
-
-import InventoryCount from "./InventoryCount";
-
-import SecuritySettings from "./SecuritySettings";
-
-import SystemDocumentation from "./SystemDocumentation";
-
-import CodeAnalysis from "./CodeAnalysis";
-
-import TestingStrategy from "./TestingStrategy";
-
-import processCompletedCount from "./processCompletedCount";
-
-import AdminPanel from "./AdminPanel";
-
-import DevelopmentStrategy from "./DevelopmentStrategy";
-
-import TechnicalSpecs from "./TechnicalSpecs";
-
-import NewDelivery from "./NewDelivery";
-
-import EditDelivery from "./EditDelivery";
-
-import Orders from "./Orders";
-
-import NewOrder from "./NewOrder";
-
-import ManageReagents from "./ManageReagents";
-
-import EditOrder from "./EditOrder";
-
-import NewShipment from "./NewShipment";
-
-import InventoryReplenishment from "./InventoryReplenishment";
-
-import NewWithdrawalRequest from "./NewWithdrawalRequest";
-
-import QualityAssurance from "./QualityAssurance";
-
-import CleanupData from "./CleanupData";
-
-import QuickCleanup from "./QuickCleanup";
-
-import BackendManagement from "./BackendManagement";
-
-import FixReagents from "./FixReagents";
-
-import NewReagent from "./NewReagent";
-
-import SystemAnalysis from "./SystemAnalysis";
-
-import WithdrawalRequests from "./WithdrawalRequests";
-
-import SupplyTracking from "./SupplyTracking";
-
-import EditWithdrawalRequest from "./EditWithdrawalRequest";
-
-import PerformanceAnalysis from "./PerformanceAnalysis";
-
-import ActivityLog from "./ActivityLog";
-
-import Contacts from "./Contacts";
-
-import DashboardNotes from "./DashboardNotes";
-
-import ImportContacts from "./ImportContacts";
-
-import SystemSettings from "./SystemSettings";
-
-import Deliveries from "./Deliveries";
-
-import BatchAndExpiryManagement from "./BatchAndExpiryManagement";
-
-import SystemManagement from "./SystemManagement";
-
-import ArchivedDataViewer from "./ArchivedDataViewer";
-
-import AlertsManagement from "./AlertsManagement";
-
-import UploadCOA from "./UploadCOA";
-
-import UsageDataManagement from "./UsageDataManagement";
-
-import OutgoingShipments from "./OutgoingShipments";
-
-import EditShipment from "./EditShipment";
-
-import ManageSuppliers from "./ManageSuppliers";
-
-import EditReagent from "./EditReagent";
-
-import BatchAndExpiryTechnicalSpec from "./BatchAndExpiryTechnicalSpec";
-
-import EditReagentBatch from "./EditReagentBatch";
-
-import Reports from "./Reports";
-
-import Login from "./Login";
-
-import Register from "./Register";
-
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth';
+import { Loader2 } from 'lucide-react';
+
+import Layout from "./Layout.jsx";
+import Login from "./Login";
+import Register from "./Register";
+
+const Dashboard = React.lazy(() => import('./Dashboard'));
+const InventoryCount = React.lazy(() => import('./InventoryCount'));
+const SecuritySettings = React.lazy(() => import('./SecuritySettings'));
+const SystemDocumentation = React.lazy(() => import('./SystemDocumentation'));
+const CodeAnalysis = React.lazy(() => import('./CodeAnalysis'));
+const TestingStrategy = React.lazy(() => import('./TestingStrategy'));
+const ProcessCompletedCount = React.lazy(() => import('./processCompletedCount'));
+const AdminPanel = React.lazy(() => import('./AdminPanel'));
+const DevelopmentStrategy = React.lazy(() => import('./DevelopmentStrategy'));
+const TechnicalSpecs = React.lazy(() => import('./TechnicalSpecs'));
+const NewDelivery = React.lazy(() => import('./NewDelivery'));
+const EditDelivery = React.lazy(() => import('./EditDelivery'));
+const Orders = React.lazy(() => import('./Orders'));
+const NewOrder = React.lazy(() => import('./NewOrder'));
+const ManageReagents = React.lazy(() => import('./ManageReagents'));
+const EditOrder = React.lazy(() => import('./EditOrder'));
+const NewShipment = React.lazy(() => import('./NewShipment'));
+const InventoryReplenishment = React.lazy(() => import('./InventoryReplenishment'));
+const NewWithdrawalRequest = React.lazy(() => import('./NewWithdrawalRequest'));
+const QualityAssurance = React.lazy(() => import('./QualityAssurance'));
+const CleanupData = React.lazy(() => import('./CleanupData'));
+const QuickCleanup = React.lazy(() => import('./QuickCleanup'));
+const BackendManagement = React.lazy(() => import('./BackendManagement'));
+const FixReagents = React.lazy(() => import('./FixReagents'));
+const NewReagent = React.lazy(() => import('./NewReagent'));
+const SystemAnalysis = React.lazy(() => import('./SystemAnalysis'));
+const WithdrawalRequests = React.lazy(() => import('./WithdrawalRequests'));
+const SupplyTracking = React.lazy(() => import('./SupplyTracking'));
+const EditWithdrawalRequest = React.lazy(() => import('./EditWithdrawalRequest'));
+const PerformanceAnalysis = React.lazy(() => import('./PerformanceAnalysis'));
+const ActivityLog = React.lazy(() => import('./ActivityLog'));
+const Contacts = React.lazy(() => import('./Contacts'));
+const DashboardNotes = React.lazy(() => import('./DashboardNotes'));
+const ImportContacts = React.lazy(() => import('./ImportContacts'));
+const SystemSettings = React.lazy(() => import('./SystemSettings'));
+const Deliveries = React.lazy(() => import('./Deliveries'));
+const BatchAndExpiryManagement = React.lazy(() => import('./BatchAndExpiryManagement'));
+const SystemManagement = React.lazy(() => import('./SystemManagement'));
+const ArchivedDataViewer = React.lazy(() => import('./ArchivedDataViewer'));
+const AlertsManagement = React.lazy(() => import('./AlertsManagement'));
+const UploadCOA = React.lazy(() => import('./UploadCOA'));
+const UsageDataManagement = React.lazy(() => import('./UsageDataManagement'));
+const OutgoingShipments = React.lazy(() => import('./OutgoingShipments'));
+const EditShipment = React.lazy(() => import('./EditShipment'));
+const ManageSuppliers = React.lazy(() => import('./ManageSuppliers'));
+const EditReagent = React.lazy(() => import('./EditReagent'));
+const BatchAndExpiryTechnicalSpec = React.lazy(() => import('./BatchAndExpiryTechnicalSpec'));
+const EditReagentBatch = React.lazy(() => import('./EditReagentBatch'));
+const Reports = React.lazy(() => import('./Reports'));
 
 const PAGES = {
-    
-    Dashboard: Dashboard,
-    
-    InventoryCount: InventoryCount,
-    
-    SecuritySettings: SecuritySettings,
-    
-    SystemDocumentation: SystemDocumentation,
-    
-    CodeAnalysis: CodeAnalysis,
-    
-    TestingStrategy: TestingStrategy,
-    
-    processCompletedCount: processCompletedCount,
-    
-    AdminPanel: AdminPanel,
-    
-    DevelopmentStrategy: DevelopmentStrategy,
-    
-    TechnicalSpecs: TechnicalSpecs,
-    
-    NewDelivery: NewDelivery,
-    
-    EditDelivery: EditDelivery,
-    
-    Orders: Orders,
-    
-    NewOrder: NewOrder,
-    
-    ManageReagents: ManageReagents,
-    
-    EditOrder: EditOrder,
-    
-    NewShipment: NewShipment,
-    
-    InventoryReplenishment: InventoryReplenishment,
-    
-    NewWithdrawalRequest: NewWithdrawalRequest,
-    
-    QualityAssurance: QualityAssurance,
-    
-    CleanupData: CleanupData,
-    
-    QuickCleanup: QuickCleanup,
-    
-    BackendManagement: BackendManagement,
-    
-    FixReagents: FixReagents,
-    
-    NewReagent: NewReagent,
-    
-    SystemAnalysis: SystemAnalysis,
-    
-    WithdrawalRequests: WithdrawalRequests,
-    
-    SupplyTracking: SupplyTracking,
-    
-    EditWithdrawalRequest: EditWithdrawalRequest,
-    
-    PerformanceAnalysis: PerformanceAnalysis,
-    
-    ActivityLog: ActivityLog,
-    
-    Contacts: Contacts,
-    
-    DashboardNotes: DashboardNotes,
-    
-    ImportContacts: ImportContacts,
-    
-    SystemSettings: SystemSettings,
-    
-    Deliveries: Deliveries,
-    
-    BatchAndExpiryManagement: BatchAndExpiryManagement,
-    
-    SystemManagement: SystemManagement,
-    
-    ArchivedDataViewer: ArchivedDataViewer,
-    
-    AlertsManagement: AlertsManagement,
-    
-    UploadCOA: UploadCOA,
-    
-    UsageDataManagement: UsageDataManagement,
-    
-    OutgoingShipments: OutgoingShipments,
-    
-    EditShipment: EditShipment,
-    
-    ManageSuppliers: ManageSuppliers,
-    
-    EditReagent: EditReagent,
-    
-    BatchAndExpiryTechnicalSpec: BatchAndExpiryTechnicalSpec,
-    
-    EditReagentBatch: EditReagentBatch,
-    
-    Reports: Reports,
-    
+    Dashboard,
+    InventoryCount,
+    SecuritySettings,
+    SystemDocumentation,
+    CodeAnalysis,
+    TestingStrategy,
+    processCompletedCount: ProcessCompletedCount,
+    AdminPanel,
+    DevelopmentStrategy,
+    TechnicalSpecs,
+    NewDelivery,
+    EditDelivery,
+    Orders,
+    NewOrder,
+    ManageReagents,
+    EditOrder,
+    NewShipment,
+    InventoryReplenishment,
+    NewWithdrawalRequest,
+    QualityAssurance,
+    CleanupData,
+    QuickCleanup,
+    BackendManagement,
+    FixReagents,
+    NewReagent,
+    SystemAnalysis,
+    WithdrawalRequests,
+    SupplyTracking,
+    EditWithdrawalRequest,
+    PerformanceAnalysis,
+    ActivityLog,
+    Contacts,
+    DashboardNotes,
+    ImportContacts,
+    SystemSettings,
+    Deliveries,
+    BatchAndExpiryManagement,
+    SystemManagement,
+    ArchivedDataViewer,
+    AlertsManagement,
+    UploadCOA,
+    UsageDataManagement,
+    OutgoingShipments,
+    EditShipment,
+    ManageSuppliers,
+    EditReagent,
+    BatchAndExpiryTechnicalSpec,
+    EditReagentBatch,
+    Reports,
 }
 
 function _getCurrentPage(url) {
@@ -221,40 +123,41 @@ function _getCurrentPage(url) {
     return pageName || Object.keys(PAGES)[0];
 }
 
-// Create a wrapper component that uses useLocation inside the Router context
+function PageLoader() {
+    return (
+        <div className="flex justify-center items-center py-24">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+    );
+}
+
 function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
-    
+
     return (
-        <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        <Suspense fallback={<PageLoader />}>
+            <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route path="/" element={
-                <ProtectedRoute>
-                    <Layout currentPageName={currentPage}>
-                        <Dashboard />
-                    </Layout>
-                </ProtectedRoute>
-            } />
+                {/* Protected routes */}
+                <Route path="/" element={
+                    <ProtectedRoute>
+                        <Layout currentPageName={currentPage}>
+                            <Dashboard />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
 
-            <Route path="/Dashboard" element={
-                <ProtectedRoute>
-                    <Layout currentPageName={currentPage}>
-                        <Dashboard />
-                    </Layout>
-                </ProtectedRoute>
-            } />
-                
+                <Route path="/Dashboard" element={<ProtectedRoute><Layout currentPageName={currentPage}><Dashboard /></Layout></ProtectedRoute>} />
                 <Route path="/InventoryCount" element={<ProtectedRoute><Layout currentPageName={currentPage}><InventoryCount /></Layout></ProtectedRoute>} />
                 <Route path="/SecuritySettings" element={<ProtectedRoute><Layout currentPageName={currentPage}><SecuritySettings /></Layout></ProtectedRoute>} />
                 <Route path="/SystemDocumentation" element={<ProtectedRoute><Layout currentPageName={currentPage}><SystemDocumentation /></Layout></ProtectedRoute>} />
                 <Route path="/CodeAnalysis" element={<ProtectedRoute><Layout currentPageName={currentPage}><CodeAnalysis /></Layout></ProtectedRoute>} />
                 <Route path="/TestingStrategy" element={<ProtectedRoute><Layout currentPageName={currentPage}><TestingStrategy /></Layout></ProtectedRoute>} />
-                <Route path="/processCompletedCount" element={<ProtectedRoute><Layout currentPageName={currentPage}><processCompletedCount /></Layout></ProtectedRoute>} />
+                <Route path="/processCompletedCount" element={<ProtectedRoute><Layout currentPageName={currentPage}><ProcessCompletedCount /></Layout></ProtectedRoute>} />
                 <Route path="/AdminPanel" element={<ProtectedRoute><Layout currentPageName={currentPage}><AdminPanel /></Layout></ProtectedRoute>} />
                 <Route path="/DevelopmentStrategy" element={<ProtectedRoute><Layout currentPageName={currentPage}><DevelopmentStrategy /></Layout></ProtectedRoute>} />
                 <Route path="/TechnicalSpecs" element={<ProtectedRoute><Layout currentPageName={currentPage}><TechnicalSpecs /></Layout></ProtectedRoute>} />
@@ -298,6 +201,7 @@ function PagesContent() {
                 <Route path="/EditReagentBatch" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditReagentBatch /></Layout></ProtectedRoute>} />
                 <Route path="/Reports" element={<ProtectedRoute><Layout currentPageName={currentPage}><Reports /></Layout></ProtectedRoute>} />
             </Routes>
+        </Suspense>
     );
 }
 

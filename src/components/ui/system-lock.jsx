@@ -39,7 +39,6 @@ export const SystemLockProvider = ({ children }) => {
             }
           }
         } catch (error) {
-          console.warn('Error parsing saved lock state:', error);
           clearSystemLock();
         }
       }

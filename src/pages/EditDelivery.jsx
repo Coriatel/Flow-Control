@@ -129,7 +129,6 @@ export default function EditDeliveryPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to load delivery data');
       }
     } catch (error) {
-      console.error('Error loading delivery:', error);
       toast.error('שגיאה בטעינת נתוני משלוח', {
         description: error.message
       });
@@ -168,7 +167,6 @@ export default function EditDeliveryPage() {
       setIsEditMode(false);
       await fetchDeliveryData(); // Reload to get fresh data
     } catch (error) {
-      console.error('Error saving delivery:', error);
       toast.error('שגיאה בשמירת המשלוח', {
         description: error.message
       });
@@ -185,7 +183,6 @@ export default function EditDeliveryPage() {
       toast.success('המשלוח נמחק בהצלחה');
       navigate(createPageUrl('Deliveries'));
     } catch (error) {
-      console.error('Error deleting delivery:', error);
       toast.error('שגיאה במחיקת המשלוח', {
         description: error.message
       });

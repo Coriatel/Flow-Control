@@ -613,7 +613,6 @@ interface TabState {
     await fetchReportsData();
     
   } catch (error) {
-    console.error('Error handling expired item:', error);
     toast({
       title: "שגיאה בביצוע הפעולה",
       description: error.message,
@@ -1410,7 +1409,6 @@ const useRateLimit = (maxRequests = 10, windowMs = 60000) => {
       
       return await lisData.json();
     } catch (error) {
-      console.warn('LIS sync failed:', error);
       return null;
     }
   },
@@ -1421,7 +1419,6 @@ const useRateLimit = (maxRequests = 10, windowMs = 60000) => {
       const response = await fetch(\`/api/lis/usage/\${batchId}?from=\${dateRange.from}&to=\${dateRange.to}\`);
       return await response.json();
     } catch (error) {
-      console.warn('LIS usage fetch failed:', error);
       return [];
     }
   }
@@ -1516,7 +1513,6 @@ const useRateLimit = (maxRequests = 10, windowMs = 60000) => {
 {`const VoiceInterface = {
   initialize: () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.warn('Speech recognition not supported');
       return null;
     }
 

@@ -13,7 +13,6 @@ export class DashboardCache {
     try {
       localStorage.setItem(this.CACHE_KEY, JSON.stringify(cacheData));
     } catch (error) {
-      console.warn('Could not save dashboard cache:', error);
     }
   }
 
@@ -31,7 +30,6 @@ export class DashboardCache {
 
       return data;
     } catch (error) {
-      console.warn('Could not load dashboard cache:', error);
       return null;
     }
   }
@@ -40,7 +38,6 @@ export class DashboardCache {
     try {
       localStorage.removeItem(this.CACHE_KEY);
     } catch (error) {
-      console.warn('Could not clear dashboard cache:', error);
     }
   }
 

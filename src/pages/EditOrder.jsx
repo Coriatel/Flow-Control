@@ -64,7 +64,6 @@ export default function EditOrderPage() {
             });
 
         } catch (error) {
-            console.error('Error loading order data:', error);
             toast({
                 title: "שגיאה בטעינת נתונים",
                 description: error.message,
@@ -104,7 +103,6 @@ export default function EditOrderPage() {
             loadData();
 
         } catch (error) {
-            console.error('Error saving order:', error);
             sonnerToast.error('שגיאה בשמירת השינויים', {
                 description: error.message
             });
@@ -131,7 +129,6 @@ export default function EditOrderPage() {
             sonnerToast.success('ההזמנה נמחקה בהצלחה');
             navigate(createPageUrl('Orders'));
         } catch (error) {
-            console.error('Error deleting order:', error);
             sonnerToast.error('שגיאה במחיקת ההזמנה', {
                 description: error.message
             });

@@ -38,7 +38,6 @@ export class DataCleanupService {
       if (error.message && error.message.includes('429')) {
         // If rate limited and we have cached data, use it
         if (cached) {
-          console.log(`Rate limited, using cached data for ${key}`);
           return cached.data;
         }
         // Wait and retry once
@@ -141,7 +140,6 @@ export class DataCleanupService {
     const issues = [];
     
     try {
-      console.log("🔍 Running comprehensive data integrity check...");
       
       // Import entities
       const { Reagent } = await import('@/api/entities');
@@ -252,7 +250,6 @@ export class DataCleanupService {
       return issues;
       
     } catch (error) {
-      console.error("Error in data integrity check:", error);
       return [{
         type: 'check_error',
         entity: 'System',

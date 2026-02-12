@@ -107,7 +107,6 @@ export default function ManageSuppliersPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log("[ManageSuppliers Frontend] Fetching from backend function...");
       
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getManageSuppliersData();
@@ -117,12 +116,10 @@ export default function ManageSuppliersPage() {
 
       if (success) {
         setSuppliers(payload.suppliers || []);
-        console.log(`[ManageSuppliers Frontend] ✅ Loaded ${payload.suppliers?.length || 0} suppliers`);
       } else {
         throw new Error(response?.error || response?.data?.error || 'Failed to load data');
       }
     } catch (error) {
-      console.error('[ManageSuppliers Frontend] ❌ Error:', error);
       toast.error('שגיאה בטעינת נתונים', {
         description: 'לא ניתן היה לטעון את רשימת הספקים'
       });
@@ -240,7 +237,6 @@ export default function ManageSuppliersPage() {
       await fetchData();
       setSupplierToDelete(null);
     } catch (error) {
-      console.error('Error deleting supplier:', error);
       toast.error('שגיאה במחיקת ספק', {
         description: error.message
       });

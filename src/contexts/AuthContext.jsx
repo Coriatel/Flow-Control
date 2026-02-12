@@ -99,7 +99,6 @@ export function AuthProvider({ children }) {
       await User.logout();
     } catch (error) {
       // Ignore logout errors, we'll clear state anyway
-      console.error('Logout error:', error);
     } finally {
       setUser(null);
       toast({

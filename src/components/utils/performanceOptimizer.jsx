@@ -58,9 +58,7 @@ export class PerformanceOptimizer {
           timestamp: Date.now(),
           ttl: 3 * 60 * 1000 // Reduced to 3 minutes
         }));
-        console.log(`✅ Preloaded ${entityName}: ${data.length} records`);
       } catch (error) {
-        console.warn(`Failed to preload ${entityName}:`, error);
       }
     });
   }
@@ -97,7 +95,6 @@ export class PerformanceOptimizer {
   // ⭐ Apply optimizations for slow devices
   static applyOptimizations() {
     if (this.needsOptimization()) {
-      console.log('🐌 Applying optimizations for slow device...');
       
       // Disable heavy animations
       document.documentElement.style.setProperty('--animation-duration', '0.1s');

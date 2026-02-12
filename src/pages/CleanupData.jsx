@@ -35,7 +35,6 @@ export default function CleanupData() {
 
   const addResult = (message, type = 'info') => {
     setResults(prev => [...prev, { message, type, timestamp: new Date() }]);
-    console.log(`[${type.toUpperCase()}] ${message}`);
   };
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -129,7 +128,6 @@ export default function CleanupData() {
                   deletedCount++;
                   await sleep(500); // Wait 500ms between each deletion
                 } catch (deleteError) {
-                  console.warn(`Failed to delete ${name} item ${item.id}:`, deleteError);
                   addResult(`⚠️ נכשל מחיקת פריט ב${name} (ID: ${item.id}): ${deleteError.message}`, 'warning');
                   // Continue with next item even if one fails
                 }
@@ -227,7 +225,6 @@ export default function CleanupData() {
 
     setServerProcessing(true);
     try {
-      console.log(`🧹 Running server cleanup: ${operation}`);
       
       const response = await cleanupOperations({
         operation,
@@ -254,7 +251,6 @@ export default function CleanupData() {
         throw new Error(response?.error || response?.data?.message || "שגיאה בפעולת הניקוי");
       }
     } catch (error) {
-      console.error("Error in server cleanup:", error);
       toast({
         title: "שגיאה בפעולת ניקוי",
         description: error.message,

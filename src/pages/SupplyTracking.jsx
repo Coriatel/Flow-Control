@@ -107,7 +107,6 @@ export default function SupplyTracking() {
   const fetchSupplies = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[SupplyTracking Frontend] Fetching supplies from backend...');
 
       const response = await getSupplyTrackingData({
         limit: '100',
@@ -120,12 +119,10 @@ export default function SupplyTracking() {
       if (success) {
         setSupplies(payload.supplies || []);
         setSummary(payload.summary || {});
-        console.log('✅ [SupplyTracking Frontend] Data loaded:', payload.supplies?.length || 0);
       } else {
         throw new Error(response?.data?.error || response?.error || 'Failed to fetch supplies');
       }
     } catch (error) {
-      console.error('❌ [SupplyTracking Frontend] Error:', error);
       toast.error('שגיאה בטעינת אספקות', {
         description: error.message
       });

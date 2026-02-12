@@ -71,7 +71,6 @@ export default function PrintDialog({
       setDocumentData(document);
       setItems(documentItems || []);
     } catch (error) {
-      console.error('Error fetching document data:', error);
       toast.error('שגיאה בטעינת המסמך', {
         description: error.message
       });
@@ -164,7 +163,6 @@ export default function PrintDialog({
       setShowSaveDialog(false);
       onClose();
     } catch (error) {
-      console.error('Error saving HTML:', error);
       toast.error('שגיאה בשמירת הקובץ', {
         description: error.message
       });
@@ -218,7 +216,6 @@ export default function PrintDialog({
       setShowSaveDialog(false);
       onClose();
     } catch (error) {
-      console.error('Error saving CSV:', error);
       toast.error('שגיאה בשמירת הקובץ', {
         description: error.message
       });

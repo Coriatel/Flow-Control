@@ -209,7 +209,6 @@ export default function InventoryReplenishmentPage() {
                 throw new Error(errorMessage || "No data returned from server function.");
             }
         } catch (err) {
-            console.error('[InventoryReplenishment] Error:', err);
             setError(`שגיאה בטעינת נתונים: ${err.message}`);
             toast({
                 title: "שגיאה בטעינת נתונים",
@@ -486,7 +485,6 @@ export default function InventoryReplenishmentPage() {
             await executeWithdrawalCreation(selectedFrameworkOrder.id, items);
 
         } catch (error) {
-            console.error('Error in handleWithdrawalCreation:', error);
             toast({
                 title: "שגיאה ביצירת משיכה",
                 description: error.message,
@@ -539,7 +537,6 @@ export default function InventoryReplenishmentPage() {
                 throw new Error(errorMessage || payload.error || 'Failed to create withdrawal');
             }
         } catch (error) {
-            console.error('Error in executeWithdrawalCreation:', error);
             toast({
                 title: "שגיאה ביצירת משיכה",
                 description: error.message,
@@ -592,7 +589,6 @@ export default function InventoryReplenishmentPage() {
                 throw new Error(errorMessage || "יצירת דרישה נכשלה");
             }
         } catch (error) {
-            console.error('Error in handleOrderCreation:', error);
             toast({
                 title: "שגיאה ביצירת דרישה",
                 description: error.message,

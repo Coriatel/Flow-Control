@@ -142,7 +142,6 @@ export default function EditShipmentPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to load shipment data');
       }
     } catch (error) {
-      console.error('Error loading shipment:', error);
       toast.error('שגיאה בטעינת נתוני משלוח', {
         description: error.message
       });
@@ -187,7 +186,6 @@ export default function EditShipmentPage() {
       setIsEditMode(false);
       await fetchShipmentData(); // Reload to get fresh data
     } catch (error) {
-      console.error('Error saving shipment:', error);
       toast.error('שגיאה בשמירת המשלוח', {
         description: error.message
       });
@@ -213,7 +211,6 @@ export default function EditShipmentPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to delete shipment');
       }
     } catch (error) {
-      console.error('Error deleting shipment:', error);
       toast.error('שגיאה במחיקת המשלוח', {
         description: error.message
       });

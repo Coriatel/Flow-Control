@@ -74,7 +74,6 @@ export default function OutgoingShipmentsPage() {
   const loadShipments = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[OutgoingShipments Frontend] Fetching shipments from backend...');
 
       const response = await getOutgoingShipmentsData({
         status: statusFilter !== 'all' ? statusFilter : null,
@@ -89,12 +88,10 @@ export default function OutgoingShipmentsPage() {
       if (success) {
         setShipments(payload.shipments || []);
         setSummary(payload.summary || {});
-        console.log('✅ [OutgoingShipments Frontend] Data loaded:', payload.shipments?.length || 0);
       } else {
         throw new Error(response?.error || response?.data?.error || 'Failed to fetch shipments');
       }
     } catch (err) {
-      console.error('❌ [OutgoingShipments Frontend] Error:', err);
       setError(`שגיאה בטעינת משלוחים: ${err.message}`);
       toast.error('שגיאה בטעינת משלוחים', {
         description: err.message

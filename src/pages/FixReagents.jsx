@@ -17,7 +17,6 @@ export default function FixReagentsPage() {
 
   const addResult = (message, type = 'info') => {
     setResults(prev => [...prev, { message, type, timestamp: new Date() }]);
-    console.log(`[${type.toUpperCase()}] ${message}`);
   };
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -125,7 +124,6 @@ export default function FixReagentsPage() {
           await sleep(200);
           
         } catch (error) {
-          console.error(`Error fixing reagent ${reagent.id}:`, error);
           addResult(`❌ שגיאה בתיקון ${reagent.name}: ${error.message}`, 'error');
           errorCount++;
         }
@@ -158,7 +156,6 @@ export default function FixReagentsPage() {
       });
       
     } catch (error) {
-      console.error("Error in fixAllReagents:", error);
       addResult(`❌ שגיאה קריטית: ${error.message}`, 'error');
       toast({
         title: "שגיאה בתיקון ריאגנטים",

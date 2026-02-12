@@ -247,7 +247,6 @@ export default function BatchAndExpiryManagement() {
         try {
           parsedFilters = JSON.parse(savedFilters);
         } catch (parseError) {
-          console.warn('Failed to parse saved filters from localStorage, using defaults:', parseError);
           parsedFilters = null;
         }
       }
@@ -257,7 +256,6 @@ export default function BatchAndExpiryManagement() {
         try {
           parsedColumns = JSON.parse(savedColumns);
         } catch (parseError) {
-          console.warn('Failed to parse visible columns from localStorage, using defaults:', parseError);
           parsedColumns = null;
         }
       }
@@ -267,7 +265,6 @@ export default function BatchAndExpiryManagement() {
         try {
           parsedColumnWidths = JSON.parse(savedColumnWidths);
         } catch (parseError) {
-          console.warn('Failed to parse saved column widths from localStorage, using defaults:', parseError);
           parsedColumnWidths = null;
         }
       }
@@ -287,7 +284,6 @@ export default function BatchAndExpiryManagement() {
         columnWidths: parsedColumnWidths ? { ...initialDefaultColumnWidths, ...parsedColumnWidths } : null // Merge with defaults
       };
     } catch (error) {
-      console.warn('Failed to load saved state from localStorage:', error);
     }
     return { filters: null, columns: null, columnWidths: null };
   }, []); // initialDefaultColumnWidths removed from dependency array as it's a constant.
@@ -395,7 +391,6 @@ export default function BatchAndExpiryManagement() {
       };
       localStorage.setItem('batchFilters', JSON.stringify(filtersToSave));
     } catch (error) {
-      console.warn('Failed to save filters to localStorage:', error);
     }
   }, [searchTerm, selectedStatuses, startDate, endDate, showHandled, showExpiredOnly, showInStockOnly, showActiveOnly]);
 
@@ -404,7 +399,6 @@ export default function BatchAndExpiryManagement() {
     try {
       localStorage.setItem('batchVisibleColumns', JSON.stringify(visibleColumns));
     } catch (error) {
-      console.warn('Failed to save visible columns to localStorage:', error);
     }
   }, [visibleColumns]);
 
@@ -413,7 +407,6 @@ export default function BatchAndExpiryManagement() {
     try {
       localStorage.setItem('batchColumnWidths', JSON.stringify(columnWidths));
     } catch (error) {
-      console.warn('Failed to save column widths to localStorage:', error);
     }
   }, [columnWidths]);
 
@@ -445,7 +438,6 @@ export default function BatchAndExpiryManagement() {
     try {
       localStorage.removeItem('batchFilters');
     } catch (error) {
-      console.warn('Failed to clear filters from localStorage:', error);
     }
   }, []);
 
@@ -590,7 +582,6 @@ export default function BatchAndExpiryManagement() {
       });
 
     } catch (error) {
-      console.error("Error fetching reports data:", error);
       const description = error.message.includes("Network")
         ? "אירעה שגיאת רשת. אנא בדוק את חיבור האינטרנט שלך ונסה שוב."
         : error.message;
@@ -880,7 +871,6 @@ export default function BatchAndExpiryManagement() {
         try {
           currentUser = await User.me();
         } catch (userError) {
-          console.warn("Could not get current user for COA upload:", userError);
         }
 
         await ReagentBatch.update(selectedBatch.id, {
@@ -905,7 +895,6 @@ export default function BatchAndExpiryManagement() {
         throw new Error('שגיאה בהעלאת הקובץ');
       }
     } catch (error) {
-      console.error('Error uploading COA:', error);
       toast({
         title: "שגיאה בהעלאת תעודת האנליזה",
         description: error.message || "אירעה שגיאה בהעלאת הקובץ.",
@@ -956,7 +945,6 @@ export default function BatchAndExpiryManagement() {
         }
       }
     } catch (error) {
-      console.error('COA view error:', error);
       toast({
         title: "שגיאה בצפייה בתעודה",
         description: "לא ניתן לפתוח את תעודת האנליזה.",
@@ -1049,7 +1037,6 @@ export default function BatchAndExpiryManagement() {
         }
 
     } catch (error) {
-        console.error('Error handling expired item:', error);
         toast({
             title: "שגיאה בביצוע הפעולה",
             description: error.message,
@@ -1114,7 +1101,6 @@ export default function BatchAndExpiryManagement() {
 
         await fetchData(); // Refresh data after update
     } catch (error) {
-        console.error('Error restoring batch:', error);
         toast({ title: "שגיאה בשחזור", description: error.message, variant: "destructive" });
     }
   };

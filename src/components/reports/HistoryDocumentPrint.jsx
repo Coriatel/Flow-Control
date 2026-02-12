@@ -130,7 +130,6 @@ export default function HistoryDocumentPrint({
     try {
       currentUser = await User.me();
     } catch (userError) {
-      console.warn("Could not fetch user for document printing:", userError);
       currentUser = { full_name: 'משתמש לא ידוע' };
     }
 
@@ -262,12 +261,10 @@ export default function HistoryDocumentPrint({
             });
             return;
           } catch (clipboardError) {
-            console.warn("Clipboard failed:", clipboardError);
           }
         }
 
         // Show content in alert as last resort
-        console.log("CSV Content:", csvContent);
         toast({
           title: "מצב פיתוח",
           description: "בסביבת הפיתוח, תוכן הקובץ מוצג ב-console. בסביבת הייצור יורד כקובץ.",
@@ -298,7 +295,6 @@ export default function HistoryDocumentPrint({
           try {
             window.URL.revokeObjectURL(url);
           } catch (e) {
-            console.warn("Could not revoke object URL:", e);
           }
         }, 100);
 
@@ -309,7 +305,6 @@ export default function HistoryDocumentPrint({
         });
 
       } catch (downloadError) {
-        console.error("Download failed:", downloadError);
 
         // Fallback: data URI download
         try {
@@ -333,7 +328,6 @@ export default function HistoryDocumentPrint({
       }
 
     } catch (error) {
-      console.error("Error generating history document:", error);
       toast({
         title: "שגיאה בהפקת מסמך",
         description: error.message || "אירעה שגיאה בהפקת המסמך",
@@ -596,7 +590,6 @@ export default function HistoryDocumentPrint({
       });
 
     } catch (error) {
-      console.error('PDF generation error:', error);
       toast({
         title: "שגיאה ביצירת PDF",
         description: error.message || "אירעה שגיאה ביצירת המסמך",

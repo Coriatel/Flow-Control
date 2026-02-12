@@ -99,7 +99,6 @@ export default function QualityAssurancePage() {
         try {
           parsedFilters = JSON.parse(savedFilters);
         } catch (e) {
-          console.warn('Failed to parse filters:', e);
         }
       }
 
@@ -107,7 +106,6 @@ export default function QualityAssurancePage() {
         try {
           parsedColumns = JSON.parse(savedColumns);
         } catch (e) {
-          console.warn('Failed to parse columns:', e);
         }
       }
 
@@ -130,7 +128,6 @@ export default function QualityAssurancePage() {
         columns: parsedColumns
       };
     } catch (error) {
-      console.warn('Failed to load saved state:', error);
       return {
         filters: {
           searchTerm: '',
@@ -191,7 +188,6 @@ export default function QualityAssurancePage() {
       };
       localStorage.setItem('qaFilters', JSON.stringify(filtersToSave));
     } catch (error) {
-      console.warn('Failed to save filters:', error);
     }
   }, [searchTerm, dateFrom, dateTo, selectedStatuses, selectedReagents, missingCOAOnly]);
 
@@ -200,7 +196,6 @@ export default function QualityAssurancePage() {
     try {
       localStorage.setItem('qaVisibleColumns', JSON.stringify(visibleColumns));
     } catch (error) {
-      console.warn('Failed to save columns:', error);
     }
   }, [visibleColumns]);
 
@@ -365,7 +360,6 @@ export default function QualityAssurancePage() {
         setCoaFile(null);
       }
     } catch (error) {
-      console.error('Error uploading COA:', error);
       toast({
         title: "❌ שגיאה בהעלאת COA",
         description: error.message,
@@ -544,7 +538,6 @@ export default function QualityAssurancePage() {
       }
 
     } catch (error) {
-      console.error('Error handling item:', error);
       toast({
         title: "שגיאה בביצוע הפעולה",
         description: error.message,

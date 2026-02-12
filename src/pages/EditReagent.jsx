@@ -133,7 +133,6 @@ export default function EditReagentPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to load reagent data');
       }
     } catch (error) {
-      console.error('Error loading reagent:', error);
       toast.error('שגיאה בטעינת נתוני ריאגנט', {
         description: error.message
       });
@@ -159,7 +158,6 @@ export default function EditReagentPage() {
       setIsEditMode(false);
       await fetchReagentData(); // Reload to get fresh data
     } catch (error) {
-      console.error('Error saving reagent:', error);
       toast.error('שגיאה בשמירת הריאגנט', {
         description: error.message
       });
@@ -182,7 +180,6 @@ export default function EditReagentPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to delete reagent');
       }
     } catch (error) {
-      console.error('Error deleting reagent:', error);
       toast.error('שגיאה במחיקת הריאגנט', {
         description: error.message
       });

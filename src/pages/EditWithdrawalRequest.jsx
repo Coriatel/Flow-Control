@@ -69,7 +69,6 @@ export default function EditWithdrawalRequestPage() {
             });
 
         } catch (error) {
-            console.error('Error loading withdrawal data:', error);
             toast({
                 title: "שגיאה בטעינת נתונים",
                 description: error.message,
@@ -120,7 +119,6 @@ export default function EditWithdrawalRequestPage() {
             loadData();
 
         } catch (error) {
-            console.error('Error saving withdrawal:', error);
             sonnerToast.error('שגיאה בשמירת השינויים', {
                 description: error.message
             });
@@ -149,7 +147,6 @@ export default function EditWithdrawalRequestPage() {
                 throw new Error(response?.error || response?.data?.error || 'Failed to delete');
             }
         } catch (error) {
-            console.error('Error deleting withdrawal:', error);
             sonnerToast.error('שגיאה במחיקת בקשת המשיכה', {
                 description: error.message
             });

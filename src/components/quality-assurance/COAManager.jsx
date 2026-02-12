@@ -91,7 +91,6 @@ export default function COAManager({
       try {
         currentUser = await User.me();
       } catch (userError) {
-        console.warn('Could not resolve current user for COA upload:', userError);
       }
 
       await ReagentBatch.update(effectiveBatchId, {
@@ -112,7 +111,6 @@ export default function COAManager({
       setShowUploadDialog(false);
       setSelectedFile(null);
     } catch (error) {
-      console.error('COA upload error:', error);
       toast({
         title: "שגיאה בהעלאת COA",
         description: error.message || "אירעה שגיאה בהעלאת התעודה",

@@ -138,7 +138,6 @@ export default function ActivityLogPage() {
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('🔍 [ActivityLog Frontend] Fetching aggregated activity log...');
 
       // העברת כל הפרמטרים לשרת
       const params = {
@@ -159,12 +158,10 @@ export default function ActivityLogPage() {
         setActivities(payload.activities || []);
         setTotalCount(payload.totalCount || 0);
         setFilteredCount(payload.filteredCount || 0);
-        console.log('✅ [ActivityLog Frontend] Activities loaded:', payload.activities?.length || 0);
       } else {
         throw new Error(response?.data?.error || response?.error || 'Failed to fetch activities');
       }
     } catch (error) {
-      console.error('❌ [ActivityLog Frontend] Error fetching activities:', error);
       toast({
         title: "שגיאה בטעינת פעילות",
         description: "לא ניתן לטעון את יומן הפעילות",

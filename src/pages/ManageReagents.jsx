@@ -129,7 +129,6 @@ export default function ManageReagentsPage() {
 
       setReagents(processedData);
     } catch (error) {
-      console.error('Error fetching reagents:', error);
       toast.error('שגיאה בטעינת ריאגנטים', {
         description: 'לא ניתן היה לטעון את רשימת הריאגנטים'
       });

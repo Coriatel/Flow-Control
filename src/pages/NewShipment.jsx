@@ -278,7 +278,6 @@ export default function NewShipmentPage() {
         return `"${stringField}"`;
       };
 
-      console.log("Generating shipment document with", itemsData.length, "items");
 
       let csvContent = "\uFEFF"; // UTF-8 BOM
       let rows = [];
@@ -523,7 +522,6 @@ export default function NewShipmentPage() {
       ].join(","));
 
       const csvString = rows.join("\n");
-      console.log(`Shipment document generated with ${totalItems} items`);
 
       const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent + csvString);
       const link = document.createElement("a");
@@ -535,7 +533,6 @@ export default function NewShipmentPage() {
 
       return { success: true, fileName: fileName };
     } catch (error) {
-      console.error("Error generating shipment document:", error);
       toast({
         title: "שגיאה בהפקת תעודת משלוח",
         description: error.message || "אירעה שגיאה לא ידועה.",
@@ -664,7 +661,6 @@ export default function NewShipmentPage() {
         try {
           await updateReagentInventory({ reagentId });
         } catch (summaryError) {
-          console.error(`Failed to update summary for reagent ${reagentId}:`, summaryError);
           toast({
             title: `אזהרה בעדכון מלאי כללי`,
             description: `לא ניתן היה לעדכן את סיכום המלאי עבור ריאגנט ${reagentId}.`,
@@ -698,7 +694,6 @@ export default function NewShipmentPage() {
 
       // Navigation will now happen via the PrintDialog's onClose handler
     } catch (error) {
-      console.error("Error saving shipment:", error);
       toast({ title: "שגיאה בשמירת המשלוח", description: error.message || "אירעה שגיאה לא ידועה.", variant: "destructive" });
     } finally {
       setSaving(false);

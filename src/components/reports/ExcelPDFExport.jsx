@@ -44,7 +44,6 @@ export default function ExcelPDFExport({
       try {
         currentUser = await User.me();
       } catch (userError) {
-        console.warn("Could not fetch user for export:", userError);
       }
 
       // UTF-8 BOM for proper Hebrew support in Excel
@@ -95,7 +94,6 @@ export default function ExcelPDFExport({
                 try {
                   cellValue = col.render(row);
                 } catch (renderError) {
-                  console.warn('Error in column render function:', renderError);
                   cellValue = '';
                 }
               }
@@ -134,7 +132,6 @@ export default function ExcelPDFExport({
               try {
                 cellValue = col.render(row);
               } catch (renderError) {
-                console.warn('Error in column render function:', renderError);
                 cellValue = '';
               }
             }
@@ -181,7 +178,6 @@ export default function ExcelPDFExport({
       });
 
     } catch (error) {
-      console.error('Error generating Excel export:', error);
       toast({
         title: "שגיאה בהפקת קובץ Excel",
         description: error.message || "אירעה שגיאה בהפקת הקובץ",
@@ -215,7 +211,6 @@ export default function ExcelPDFExport({
       try {
         currentUser = await User.me();
       } catch (userError) {
-        console.warn("Could not fetch user for PDF export:", userError);
       }
 
       let tableContent = '';
@@ -256,7 +251,6 @@ export default function ExcelPDFExport({
                           cellValue = col.render(row);
                         }
                       } catch (renderError) {
-                        console.warn('Error rendering cell value:', renderError);
                         cellValue = '';
                       }
 
@@ -292,7 +286,6 @@ export default function ExcelPDFExport({
                         cellValue = col.render(row);
                       }
                     } catch (renderError) {
-                      console.warn('Error rendering cell value:', renderError);
                       cellValue = '';
                     }
 
@@ -478,7 +471,6 @@ export default function ExcelPDFExport({
       });
 
     } catch (error) {
-      console.error('Error generating PDF:', error);
       toast({
         title: "שגיאה בהפקת PDF",
         description: error.message || "אירעה שגיאה בהפקת הקובץ",

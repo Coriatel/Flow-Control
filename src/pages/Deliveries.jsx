@@ -75,7 +75,6 @@ export default function DeliveriesPage() {
   const loadDeliveries = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[Deliveries Frontend] Fetching deliveries from backend...');
 
       const response = await getDeliveriesData({
         status: statusFilter !== 'all' ? statusFilter : null,
@@ -89,12 +88,10 @@ export default function DeliveriesPage() {
       if (success) {
         setDeliveries(payload.deliveries || []);
         setSummary(payload.summary || {});
-        console.log('✅ [Deliveries Frontend] Data loaded:', payload.deliveries?.length || 0);
       } else {
         throw new Error(response?.error || response?.data?.error || 'Failed to fetch deliveries');
       }
     } catch (err) {
-      console.error('❌ [Deliveries Frontend] Error:', err);
       toast.error('שגיאה בטעינת משלוחים', {
         description: err.message
       });

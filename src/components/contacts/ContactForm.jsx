@@ -37,7 +37,6 @@ export default function ContactForm({ contact, onSuccess, onCancel }) {
         const activeSuppliers = data.filter(s => s.is_active);
         setSuppliers(activeSuppliers);
       } catch (error) {
-        console.error('Error fetching suppliers:', error);
         toast.error('שגיאה בטעינת ספקים', {
           description: 'לא ניתן לטעון את רשימת הספקים'
         });
@@ -103,7 +102,6 @@ export default function ContactForm({ contact, onSuccess, onCancel }) {
       }
       onSuccess();
     } catch (error) {
-      console.error("Error saving contact:", error);
       toast.error("שגיאה", { 
         description: "לא ניתן היה לשמור את איש הקשר.", 
         variant: "destructive" 

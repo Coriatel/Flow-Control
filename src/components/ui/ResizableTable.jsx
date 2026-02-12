@@ -43,7 +43,6 @@ export default function ResizableTable({
         const parsed = JSON.parse(savedWidths);
         setColumnWidths(prev => ({ ...prev, ...parsed }));
       } catch (e) {
-        console.warn('Failed to parse saved column widths');
       }
     }
   }, []);

@@ -66,7 +66,6 @@ export default function UsageDataManagement() {
       const data = await Reagent.list();
       setReagents(data || []);
     } catch (error) {
-      console.error('Error fetching reagents:', error);
       toast.error('שגיאה בטעינת ריאגנטים');
     } finally {
       setLoading(false);
@@ -124,7 +123,6 @@ export default function UsageDataManagement() {
       setEditedUsages({});
       await fetchReagents();
     } catch (error) {
-      console.error('Error saving usage data:', error);
       toast.error('שגיאה בשמירת נתוני צריכה');
     } finally {
       setSaving(false);
@@ -153,7 +151,6 @@ export default function UsageDataManagement() {
         throw new Error(response?.error || response?.data?.error || 'Failed to calculate usage');
       }
     } catch (error) {
-      console.error('Error calculating usage:', error);
       toast.error('שגיאה בחישוב צריכה אוטומטית');
     }
   };

@@ -120,7 +120,6 @@ export default function InventoryCountPage() {
   const fetchSmartInventoryData = async () => {
     setLoading(true);
     try {
-      console.log('[InventoryCount] Fetching smart inventory data...');
 
       const response = await getInventoryCountDraftData();
 
@@ -130,7 +129,6 @@ export default function InventoryCountPage() {
       if (success) {
         const { reagents: smartReagents, lastCompletedCount, summary } = payload;
 
-        console.log('[InventoryCount] ✅ Smart data loaded:', summary);
 
         setReagents(smartReagents || []);
         setSmartDataSummary(summary);
@@ -151,7 +149,6 @@ export default function InventoryCountPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to load smart data');
       }
     } catch (error) {
-      console.error('[InventoryCount] Error loading smart data:', error);
       toast.error('שגיאה בטעינת נתונים חכמים');
       await fetchReagentsAndDraftFallback();
     } finally {
@@ -174,7 +171,6 @@ export default function InventoryCountPage() {
         loadDraftData(draftsData[0], reagentsData);
       }
     } catch (error) {
-      console.error('Error in fallback fetch:', error);
       toast.error('שגיאה בטעינת נתונים');
     }
   };
@@ -235,7 +231,6 @@ export default function InventoryCountPage() {
       setLastUpdate(now);
       toast.success('הטיוטה נשמרה בהצלחה');
     } catch (error) {
-      console.error('Error saving draft:', error);
       toast.error('שגיאה בשמירת הטיוטה');
     } finally {
       setSavingDraft(false);
@@ -256,7 +251,6 @@ export default function InventoryCountPage() {
       await fetchSmartInventoryData();
       toast.success('הטיוטה נוקתה');
     } catch (error) {
-      console.error('Error clearing draft:', error);
       toast.error('שגיאה בניקוי הטיוטה');
     }
   };
@@ -298,7 +292,6 @@ export default function InventoryCountPage() {
         throw new Error(response?.error || response?.data?.error || 'Processing failed');
       }
     } catch (error) {
-      console.error('Error submitting count:', error);
       toast.error('שגיאה בשליחת הספירה', {
         description: error.message
       });
@@ -328,7 +321,6 @@ export default function InventoryCountPage() {
         setHistoryPagination(payload.pagination);
       }
     } catch (error) {
-      console.error('Error fetching history:', error);
       toast.error('שגיאה בטעינת היסטוריה');
     } finally {
       setHistoryLoading(false);
@@ -354,7 +346,6 @@ export default function InventoryCountPage() {
         setSelectedCountDetails(payload);
       }
     } catch (error) {
-      console.error('Error loading count details:', error);
       toast.error('שגיאה בטעינת פרטי ספירה');
     } finally {
       setLoadingCountDetails(false);

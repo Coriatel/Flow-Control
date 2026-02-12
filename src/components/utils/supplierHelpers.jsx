@@ -14,7 +14,6 @@ export const useActiveSuppliers = async () => {
     const suppliers = await Supplier.filter({ is_active: true });
     return Array.isArray(suppliers) ? suppliers.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he')) : [];
   } catch (error) {
-    console.error('Error fetching active suppliers:', error);
     return [];
   }
 };
@@ -27,7 +26,6 @@ export const useAllSuppliers = async () => {
     const suppliers = await Supplier.list();
     return Array.isArray(suppliers) ? suppliers.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he')) : [];
   } catch (error) {
-    console.error('Error fetching all suppliers:', error);
     return [];
   }
 };
@@ -75,7 +73,6 @@ export const getRelevantSuppliers = async (context, items = []) => {
         return await useActiveSuppliers();
     }
   } catch (error) {
-    console.error(`Error getting relevant suppliers for context ${context}:`, error);
     return [];
   }
 };
@@ -102,7 +99,6 @@ export const canDeactivateSupplier = async (supplierId) => {
       }
     };
   } catch (error) {
-    console.error('Error checking supplier deactivation:', error);
     return { canDeactivate: false, error: error.message };
   }
 };
@@ -144,7 +140,6 @@ export const reactivateSupplier = async (supplierId) => {
  */
 export const createSupplierMap = (suppliers) => {
   if (!Array.isArray(suppliers)) {
-    console.warn('createSupplierMap received invalid suppliers array:', suppliers);
     return new Map();
   }
   

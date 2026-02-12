@@ -119,7 +119,6 @@ class APIClient {
 
       return data;
     } catch (error) {
-      console.error('API Request failed:', error);
       throw error;
     }
   }

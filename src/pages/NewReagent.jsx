@@ -70,7 +70,6 @@ export default function NewReagentPage() {
       if (existingNumbers.length === 0) return 10001;
       return Math.max(...existingNumbers) + 1;
     } catch (error) {
-      console.error("Error getting next item number:", error);
       return 10001;
     }
   };
@@ -147,7 +146,6 @@ export default function NewReagentPage() {
       navigate(createPageUrl('ManageReagents'));
       
     } catch (error) {
-      console.error("Error saving reagent:", error);
       toast({ 
         title: "שגיאה בשמירה", 
         description: error.message || "אירעה שגיאה בשמירת הריאגנט.", 
@@ -166,7 +164,6 @@ export default function NewReagentPage() {
     setUploadingFile(true);
     try {
       const uploadResult = await UploadFile({ file });
-      console.log("File uploaded:", uploadResult.file_url);
 
       setProcessingFile(true);
       
@@ -175,7 +172,6 @@ export default function NewReagentPage() {
       await handleSupportedFile(uploadResult.file_url, file.name);
       
     } catch (error) {
-      console.error("Error processing file:", error);
       toast({
         title: "שגיאה בעיבוד הקובץ",
         description: "לא ניתן לעבד את הקובץ. נסה קובץ PDF או תמונה, או צור ריאגנטים ידנית.",
@@ -276,7 +272,6 @@ export default function NewReagentPage() {
 
       if (extractResult.status === 'success' && extractResult.output?.reagents && extractResult.output.reagents.length > 0) {
         const reagentsData = extractResult.output.reagents;
-        console.log(`Extracted ${reagentsData.length} reagents from file`);
         
         const processedReagents = processExtractedItems(reagentsData);
         
@@ -293,7 +288,6 @@ export default function NewReagentPage() {
         throw new Error(extractResult.details || "לא ניתן לחלץ נתוני ריאגנטים מהקובץ או שלא נמצאו נתונים רלוונטיים.");
       }
     } catch (error) {
-      console.error("File processing failed:", error);
       
       // Fallback: Show manual input dialog
       await showManualInputDialog(fileName);
@@ -478,7 +472,6 @@ export default function NewReagentPage() {
           await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to prevent rate limiting issues
           
         } catch (error) {
-          console.error(`Error creating reagent ${reagent.name}:`, error);
           results.errors.push({
             name: reagent.name,
             error: error.message
@@ -497,7 +490,6 @@ export default function NewReagentPage() {
       setShowPreviewDialog(false);
       
     } catch (error) {
-      console.error("Error in bulk creation:", error);
       toast({
         title: "שגיאה בייבוא",
         description: error.message || "אירעה שגיאה בתהליך יצירת הריאגנטים",

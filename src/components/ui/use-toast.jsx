@@ -40,7 +40,6 @@ export function toast({ title, description, variant = 'default', duration = 3500
   );
 
   if (isDuplicate) {
-    console.log('Duplicate toast prevented:', { title, description });
     return;
   }
 

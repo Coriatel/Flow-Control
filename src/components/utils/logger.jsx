@@ -24,25 +24,19 @@ class Logger {
     
     switch (level) {
       case 'info':
-        console.log(`${prefix} ${message}`, ...args);
         break;
       case 'warn':
-        console.warn(`${prefix} ${message}`, ...args);
         break;
       case 'error':
         console.error(`${prefix} ${message}`, ...args);
         break;
       case 'debug':
-        console.log(`${prefix} 🐛 ${message}`, ...args);
         break;
       case 'api':
-        console.log(`${prefix} 🌐 ${message}`, ...args);
         break;
       case 'performance':
-        console.log(`${prefix} ⚡ ${message}`, ...args);
         break;
       default:
-        console.log(`${prefix} ${message}`, ...args);
     }
   }
 

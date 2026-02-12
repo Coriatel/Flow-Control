@@ -56,7 +56,6 @@ export default function SecuritySettings() {
           }));
         }
       } catch (error) {
-        console.error("Error loading user data:", error);
         setError("אירעה שגיאה בטעינת נתוני המשתמש. נא לנסות שוב.");
         
         // Check if we should retry
@@ -90,7 +89,6 @@ export default function SecuritySettings() {
       const userData = await User.me();
       setUser(userData);
     } catch (error) {
-      console.error("Error saving security settings:", error);
       setError("אירעה שגיאה בשמירת ההגדרות. נא לנסות שוב.");
     } finally {
       setSaving(false);

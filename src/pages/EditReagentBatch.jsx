@@ -131,7 +131,6 @@ export default function EditReagentBatchPage() {
   useEffect(() => {
     if (!batchId) {
       // Silent redirect without error toast - this happens on normal back navigation
-      console.log('[EditReagentBatch] No batch ID in URL, redirecting to BatchAndExpiryManagement');
       navigate(createPageUrl('BatchAndExpiryManagement'), { replace: true });
       return;
     }
@@ -174,7 +173,6 @@ export default function EditReagentBatchPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to load batch data');
       }
     } catch (error) {
-      console.error('Error loading batch:', error);
       toast.error('שגיאה בטעינת נתוני אצווה', {
         description: error.message
       });
@@ -215,7 +213,6 @@ export default function EditReagentBatchPage() {
       setIsEditMode(false);
       await fetchBatchData(); // Reload fresh data
     } catch (error) {
-      console.error('Error saving batch:', error);
       toast.error('שגיאה בשמירת האצווה', {
         description: error.message
       });

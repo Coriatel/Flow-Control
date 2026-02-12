@@ -2,7 +2,6 @@
 export class AppOptimizer {
 
   static initializeApp() {
-    console.log('🚀 Initializing app optimizations...');
 
     // Preconnect to external resources
     this.preconnectResources();
@@ -58,7 +57,6 @@ export class AppOptimizer {
         }
       });
     } catch (error) {
-      console.warn('Could not clean cache:', error);
     }
   }
 
@@ -67,10 +65,8 @@ export class AppOptimizer {
       const perfData = window.performance.navigation;
       const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
 
-      console.log(`📊 App load time: ${loadTime}ms`);
 
       if (loadTime > 5000) {
-        console.warn('⚠️ Slow app load detected');
       }
     }
   }

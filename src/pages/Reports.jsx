@@ -98,7 +98,6 @@ export default function ReportsPage() {
         });
       }
     } catch (error) {
-      console.error('Error loading analytics:', error);
       toast({
         title: "שגיאה בטעינת סטטיסטיקות",
         description: error.message,
@@ -141,7 +140,6 @@ export default function ReportsPage() {
         throw new Error(response?.error || response?.data?.message || 'שגיאה לא ידועה');
       }
     } catch (error) {
-      console.error('Error generating report:', error);
       toast({
         title: "שגיאה ביצירת דוח",
         description: error.message,

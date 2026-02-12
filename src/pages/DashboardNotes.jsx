@@ -109,7 +109,6 @@ export default function DashboardNotesPage() {
       const notesData = await DashboardNote.list('-created_date');
       setNotes(Array.isArray(notesData) ? notesData : []);
     } catch (error) {
-      console.error('Error fetching notes:', error);
       toast({
         title: "שגיאה בטעינת הערות",
         description: "לא ניתן היה לטעון את רשימת ההערות",
@@ -192,7 +191,6 @@ export default function DashboardNotesPage() {
       resetForm();
       fetchNotes();
     } catch (error) {
-      console.error('Error saving note:', error);
       toast({
         title: "שגיאה בשמירה",
         description: "אירעה שגיאה בשמירת ההערה",
@@ -239,7 +237,6 @@ export default function DashboardNotesPage() {
       
       fetchNotes();
     } catch (error) {
-      console.error('Error updating note status:', error);
       toast({
         title: "שגיאה בעדכון",
         description: "אירעה שגיאה בעדכון הסטטוס",
@@ -261,7 +258,6 @@ export default function DashboardNotesPage() {
       
       fetchNotes();
     } catch (error) {
-      console.error('Error toggling pin:', error);
       toast({
         title: "שגיאה בעדכון",
         description: "אירעה שגיאה בעדכון הנעיצה",
@@ -285,7 +281,6 @@ export default function DashboardNotesPage() {
       
       fetchNotes();
     } catch (error) {
-      console.error('Error deleting note:', error);
       toast({
         title: "שגיאה במחיקה",
         description: "אירעה שגיאה במחיקת ההערה",

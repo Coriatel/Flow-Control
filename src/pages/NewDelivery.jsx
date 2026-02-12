@@ -56,14 +56,10 @@ import PrintDialog from '@/components/ui/PrintDialog'; // Import the new PrintDi
 const safeFetch = async (fetchFunction, name, retries = 2) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`[NewDelivery] Fetching ${name} (attempt ${attempt}/${retries})`);
       const result = await fetchFunction();
-      console.log(`[NewDelivery] Successfully fetched ${name}:`, Array.isArray(result) ? result.length : 'non-array');
       return Array.isArray(result) ? result : [];
     } catch (error) {
-      console.warn(`[NewDelivery] Failed to fetch ${name} on attempt ${attempt}:`, error.message);
       if (attempt === retries) {
-        console.error(`[NewDelivery] All attempts failed for ${name}`);
         return [];
       }
       // Wait before retry
@@ -441,7 +437,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       let prefilledItemsMapped = [];
 
       if (withdrawalId) {
-        console.log(`[NewDelivery] Processing prefill for withdrawal: ${withdrawalId}`);
         const withdrawal = withdrawalsData.find(w => w.id === withdrawalId);
 
         if (withdrawal) {
@@ -489,7 +484,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
             });
         }
       } else if (orderId) {
-        console.log(`[NewDelivery] Processing prefill for order: ${orderId}`);
         const order = ordersData.find(o => o.id === orderId);
 
         if (order) {
@@ -559,7 +553,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       }
 
     } catch (prefillError) {
-      console.error('[NewDelivery] Error handling prefill data:', prefillError);
       toast({
         title: "שגיאה בטעינת נתונים מקדימים",
         description: "לא ניתן היה לטעון נתונים מהמקור המקושר.",
@@ -574,12 +567,10 @@ export default function NewDeliveryPage() { // Renamed component as per outline
     setError('');
 
     try {
-      console.log('[NewDelivery] Starting to load page data directly from entities...');
 
       // Get current user
       const user = await User.me();
       setCurrentUser(user);
-      console.log('[NewDelivery] Current user loaded:', user?.email);
 
       // Fetch all required data in parallel with retry logic
       const [
@@ -604,7 +595,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       setAvailableOrders(ordersData);
       setActiveWithdrawals(withdrawalsData);
 
-      console.log(`[NewDelivery] Loaded data: ${reagentsData.length} reagents, ${suppliersData.length} suppliers, ${ordersData.length} orders, ${withdrawalsData.length} withdrawals`);
 
       // Handle prefill data if URL parameters are provided
       if (withdrawalId || orderId) {
@@ -621,7 +611,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       }
 
     } catch (err) {
-      console.error('[NewDelivery] Critical error loading page data:', err);
       setError('שגיאה בטעינת נתוני הדף. נסה לרענן.');
       toast({
         title: "שגיאה בטעינה",
@@ -808,7 +797,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
               setItems([]);
             }
           } catch (itemFetchError) {
-            console.error("Error fetching order items for manual link:", itemFetchError);
             toast({
               title: "שגיאה בטעינת פריטי הזמנה",
               description: `לא ניתן לטעון פריטים עבור הזמנה זו.`,
@@ -874,7 +862,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
               setItems([]);
             }
           } catch (itemFetchError) {
-            console.error("Error fetching withdrawal items for manual link:", itemFetchError);
             toast({
               title: "שגיאה בטעינת פריטי משיכה",
               description: `לא ניתן לטעון פריטים עבור בקשת משיכה זו.`,
@@ -992,7 +979,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
 
           if (newWithdrawalStatus !== linkedWithdrawal.status) {
             await WithdrawalRequest.update(linkedWithdrawal.id, { status: newWithdrawalStatus });
-            console.log(`[NewDelivery] Updated withdrawal request status to: ${newWithdrawalStatus}`);
           }
 
           if (linkedWithdrawal.framework_order_id) {
@@ -1027,7 +1013,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                       quantity_remaining: newFrameworkQuantityRemaining,
                       line_status: newFrameworkLineStatus
                     });
-                    console.log(`[NewDelivery] Updated framework order item ${foi.id}: received=${newFrameworkQuantityReceived}, remaining=${newFrameworkQuantityRemaining}`);
                   }
                 }
 
@@ -1049,7 +1034,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
 
                 if (newFrameworkOrderStatus !== frameworkOrder.status) {
                   await Order.update(frameworkOrder.id, { status: newFrameworkOrderStatus });
-                  console.log(`[NewDelivery] Updated framework order status to: ${newFrameworkOrderStatus}`);
                 }
               }
             } catch (frameworkError) {
@@ -1086,7 +1070,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
 
           if (newOrderStatus !== linkedOrder.status) {
             await Order.update(linkedOrder.id, { status: newOrderStatus });
-            console.log(`[NewDelivery] Updated order status to: ${newOrderStatus}`);
           }
         }
       }
@@ -1175,7 +1158,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
     }
 
     try {
-      console.log('[handleSave] Starting delivery save process...');
       updateLockProgress(5, 'יוצר רשומת משלוח ראשית...');
 
       if (!currentUser) {
@@ -1199,7 +1181,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
           documentUrl = file_url;
           toast({ title: "תעודת משלוח הועלתה בהצלחה", variant: "default" });
         } catch (uploadError) {
-          console.error("Error uploading certificate:", uploadError);
           toast({
             title: "שגיאה בהעלאת תעודת משלוח",
             description: `לא ניתן היה להעלות את התעודה עבור ${deliveryCertificate.name}. המשלוח יישמר ללא התעודה: ${uploadError.message}`,
@@ -1247,9 +1228,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
         isRecurringSupply: false,
       };
 
-      console.log('[handleSave] Creating delivery document:', deliveryDocData);
       const newDelivery = await Delivery.create(deliveryDocData);
-      console.log('[handleSave] Created delivery:', newDelivery.id);
       updateLockProgress(20, 'מעבד פריטי משלוח...');
 
       let processedItemsCount = 0;
@@ -1264,15 +1243,12 @@ export default function NewDeliveryPage() { // Renamed component as per outline
           const progressStep = (80 - 20) / itemsToProcess.length;
           updateLockProgress(20 + (index * progressStep), `מעבד פריט ${index + 1}/${itemsToProcess.length}: ${item.reagent_name}`);
 
-          console.log(`[handleSave] Processing item ${index + 1}/${itemsToProcess.length}:`, item.reagent_name);
 
           let reagentData = reagents.find(r => r.id === item.reagent_id);
           if (!reagentData) {
-            console.warn(`[handleSave] Reagent not found in cache, fetching from server for ID: ${item.reagent_id}`);
             try {
               reagentData = await Reagent.get(item.reagent_id);
             } catch (fetchError) {
-              console.error(`[handleSave] Failed to fetch reagent ${item.reagent_id}:`, fetchError);
               throw new Error(`לא ניתן למצוא נתוני ריאגנט עבור ${item.reagent_name}`);
             }
           }
@@ -1281,22 +1257,17 @@ export default function NewDeliveryPage() { // Renamed component as per outline
           const requiresExpiry = reagentData.requires_expiry_date !== false;
           const requiresCoa = reagentData.requires_coa !== false;
 
-          console.log(`[handleSave] Reagent data for ${item.reagent_name}:`, reagentData);
 
           if (!reagentData.catalog_item_id) {
-            console.warn(`[handleSave] Missing catalog_item_id for ${item.reagent_name}, setting fallback for batch creation.`);
             reagentData.catalog_item_id = reagentData.id || `fallback_${item.reagent_id}`;
           }
 
           let coaUrl = null;
           if (requiresCoa && item.coaFile) {
-            console.log(`[handleSave] Uploading COA for ${item.reagent_name}...`);
             try {
               const { file_url } = await UploadFile({ file: item.coaFile });
               coaUrl = file_url;
-              console.log(`[handleSave] COA uploaded: ${coaUrl}`);
             } catch (uploadError) {
-              console.warn(`[handleSave] Failed to upload COA for ${item.reagent_name}:`, uploadError);
               toast({
                 title: "שגיאה בהעלאת תעודת אנליזה",
                 description: `לא ניתן היה להעלות את התעודה עבור ${item.reagent_name}. הפריט יישמר ללא תעודה זו.`,
@@ -1326,7 +1297,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
               })
             });
 
-            console.log(`[handleSave] Updated existing batch ${reagentBatch.id} with quantity ${newQuantity}`);
             reagentBatch = { ...reagentBatch, current_quantity: newQuantity }; // Update local copy for use in other records
           } else {
             const batchData = {
@@ -1348,10 +1318,8 @@ export default function NewDeliveryPage() { // Renamed component as per outline
               })
             };
 
-            console.log(`[handleSave] Creating new batch with data:`, batchData);
 
             reagentBatch = await ReagentBatch.create(batchData);
-            console.log(`[handleSave] Created new batch ${reagentBatch.id}`);
           }
 
           deliveryItemsToCreate.push({
@@ -1408,7 +1376,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                 quantity_received: newQuantityReceived,
                 line_status: isFullyReceived ? 'delivered' : 'partially_delivered'
               });
-              console.log(`[NewDelivery] Updated withdrawal item ${item.linked_item_id}`);
             }
           } else if (actualLinkedOrderId) { // Only update if it's actually linked to an order
             const orderItem = await OrderItem.get(item.linked_item_id);
@@ -1421,14 +1388,12 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                 quantity_remaining: Math.max(0, (orderItem.quantity_ordered || 0) - newQuantityReceived),
                 line_status: isFullyReceived ? 'fully_received' : 'partially_received'
               });
-              console.log(`[NewDelivery] Updated order item ${item.linked_item_id}`);
             }
           }
 
           affectedReagentIds.add(item.reagent_id);
 
         } catch (itemError) {
-          console.error(`Error processing delivery item ${item.reagent_name}:`, itemError);
           errors.push(`שגיאה בעיבוד ${item.reagent_name}: ${itemError.message}`);
         }
       }
@@ -1436,15 +1401,12 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       // Bulk create collected records after the loop
       if (deliveryItemsToCreate.length > 0) {
         await DeliveryItem.bulkCreate(deliveryItemsToCreate);
-        console.log(`[handleSave] Bulk created ${deliveryItemsToCreate.length} Delivery Items`);
       }
       if (inventoryTransactionsToCreate.length > 0) {
         await InventoryTransaction.bulkCreate(inventoryTransactionsToCreate);
-        console.log(`[handleSave] Bulk created ${inventoryTransactionsToCreate.length} Inventory Transactions`);
       }
       if (receiptEventsToCreate.length > 0) {
         await ReagentReceiptEvent.bulkCreate(receiptEventsToCreate);
-        console.log(`[handleSave] Bulk created ${receiptEventsToCreate.length} Reagent Receipt Events`);
       }
 
       updateLockProgress(85, 'מעדכן סטטוסים ומלאי...');
@@ -1460,21 +1422,16 @@ export default function NewDeliveryPage() { // Renamed component as per outline
         await updateOrderStatus(actualLinkedOrderId);
       }
 
-      console.log(`🔄 Updating inventory for ${affectedReagentIds.size} affected reagents...`);
       try {
         for (const reagentId of affectedReagentIds) {
           const response = await updateReagentInventory({ reagentId, supplierName: deliveryData.supplier });
           if (response?.data?.success) {
-            console.log(`✅ Updated inventory for reagent ${reagentId}`);
           }
         }
-        console.log(`✅ Inventory updated for all affected reagents`);
       } catch (inventoryError) {
-        console.warn(`⚠️ Could not update inventory automatically:`, inventoryError);
       }
 
       updateLockProgress(100, 'השלמת תהליך...');
-      console.log('[handleSave] Delivery process completed successfully');
 
       if (errors.length > 0) {
         toast({
@@ -1496,7 +1453,6 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       setShowPrintDialog(true);
 
     } catch (error) {
-      console.error('Error completing delivery:', error);
       toast({
         title: "שגיאה בשמירת המשלוח",
         description: error.message,

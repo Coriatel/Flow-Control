@@ -94,7 +94,6 @@ export default function WithdrawalRequestsPage() {
   const loadWithdrawals = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[WithdrawalRequests Frontend] Fetching withdrawals from backend...');
 
       const response = await getWithdrawalRequestsData({
         status: statusFilter !== 'all' ? statusFilter : null,
@@ -108,12 +107,10 @@ export default function WithdrawalRequestsPage() {
       if (success) {
         setWithdrawals(payload.withdrawals || []);
         setSummary(payload.summary || {});
-        console.log('✅ [WithdrawalRequests Frontend] Data loaded:', payload.withdrawals?.length || 0);
       } else {
         throw new Error(response?.data?.error || response?.error || 'Failed to fetch withdrawals');
       }
     } catch (err) {
-      console.error('❌ [WithdrawalRequests Frontend] Error:', err);
       toast.error('שגיאה בטעינת בקשות משיכה', {
         description: err.message
       });
@@ -211,7 +208,6 @@ export default function WithdrawalRequestsPage() {
         throw new Error(response?.error || response?.data?.error || 'Failed to delete withdrawal');
       }
     } catch (error) {
-      console.error('Error deleting withdrawal:', error);
       toast.error('שגיאה במחיקת בקשת המשיכה', {
         description: error.message
       });

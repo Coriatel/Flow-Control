@@ -260,7 +260,6 @@ export default function DocumentPrint({ order, children, iconOnly = false }) {
       });
 
     } catch (error) {
-      console.error("Failed to generate print:", error);
       toast({ 
         title: "שגיאה בהכנת ההדפסה", 
         description: error.message || "אירעה שגיאה בהכנת המסמך להדפסה", 

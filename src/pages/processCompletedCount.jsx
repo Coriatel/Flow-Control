@@ -18,7 +18,6 @@ import { InventoryCountDraft } from '@/api/entities';
  *                            and reagentEntriesSnapshot for the completed count record.
  */
 const processReagentEntry = async (reagent, entries, userId) => {
-  console.log(`Processing reagent ${reagent.name} (ID: ${reagent.id}) with ${entries.length} entries`);
 
   // This will hold the data needed for completedCountData.entries[reagent.id]
   const reagentEntrySnapshot = {
@@ -48,7 +47,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
       const countedQuantity = parseInt(entry.quantity) || 0;
 
       if (!batchNumber) {
-        console.warn(`Skipping entry with empty batch number for reagent ${reagent.id}`);
         continue;
       }
 
@@ -69,7 +67,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
           expiry_date: expiryDate || existingBatch.expiry_date, // Preserve existing expiry if new one is not provided
           status: countedQuantity > 0 ? 'active' : 'consumed'
         });
-        console.log(`Updated batch ${existingBatch.id} (${batchNumber}) with quantity ${countedQuantity}`);
 
       } else if (countedQuantity > 0) {
         // Create new batch - CRITICAL FIX: Include reagent_id
@@ -86,7 +83,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
         };
 
         const newBatch = await ReagentBatch.create(newBatchData);
-        console.log(`Created new batch ${newBatch.id} (${batchNumber})`);
       }
 
       // Populate snapshot data for this entry regardless of update or creation
@@ -103,7 +99,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
     // These should be set to zero quantity and 'consumed' status if they were active
     for (const batch of currentBatches) {
       if (!processedBatchNumbers.has(batch.batch_number)) {
-        console.log(`Batch ${batch.batch_number} (${batch.id}) was not counted, setting quantity to 0`);
         if (batch.current_quantity > 0) { // Only update if it had a positive quantity
           await ReagentBatch.update(batch.id, {
             current_quantity: 0,
@@ -138,7 +133,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
       notes: `ספירת מלאי: עודכן מלאי כולל ל-${updatedReagent.total_quantity_all_batches} יחידות ב-${updatedReagent.active_batches_count} אצוות פעילות`
     };
     await InventoryTransaction.create(transactionData);
-    console.log(`Created summary inventory transaction for reagent ${reagent.id}`);
 
     return {
       success: true,
@@ -146,7 +140,6 @@ const processReagentEntry = async (reagent, entries, userId) => {
     };
 
   } catch (error) {
-    console.error(`Error processing reagent ${reagent.id}:`, error);
     return {
       success: false,
       error: error.message,
@@ -159,17 +152,9 @@ const processReagentEntry = async (reagent, entries, userId) => {
 export async function processCompletedCount(payload, { runOnServer = true } = {}) {
   const { meaningfulEntries, currentDraftId, userId } = payload;
 
-  console.log("processCompletedCount: Starting server-side processing", {
-    meaningfulEntriesCount: Object.keys(meaningfulEntries || {}).length,
-    currentDraftId,
-    userId,
-    runOnServer
-  });
-
   try {
     // Get all reagents in the system
     const allReagents = await Reagent.list();
-    console.log(`Found ${allReagents.length} reagents in system`);
 
     if (!Array.isArray(allReagents) || allReagents.length === 0) {
       throw new Error("No reagents found in system");
@@ -179,12 +164,10 @@ export async function processCompletedCount(payload, { runOnServer = true } = {}
     const validReagents = allReagents.filter(reagent => {
       const isValid = reagent.catalog_item_id && reagent.catalog_number && reagent.name;
       if (!isValid) {
-        console.warn(`Skipping invalid reagent ${reagent.id}: missing required fields`);
       }
       return isValid;
     });
 
-    console.log(`Processing ${validReagents.length} valid reagents out of ${allReagents.length} total`);
 
     // Create completed count record first
     const completedCountData = {
@@ -223,14 +206,12 @@ export async function processCompletedCount(payload, { runOnServer = true } = {}
         }
 
       } catch (reagentError) {
-        console.error(`Error processing reagent ${reagent.id}:`, reagentError);
         errors.push(`Failed to process ${reagent.name}: ${reagentError.message}`);
       }
     }
 
     // Create the completed count record with the accumulated entries
     const completedCount = await CompletedInventoryCount.create(completedCountData);
-    console.log(`Created completed count record: ${completedCount.id}`);
 
     // Update completion status
     await CompletedInventoryCount.update(completedCount.id, {
@@ -243,9 +224,7 @@ export async function processCompletedCount(payload, { runOnServer = true } = {}
     if (currentDraftId) {
       try {
         await InventoryCountDraft.delete(currentDraftId);
-        console.log(`Deleted draft: ${currentDraftId}`);
       } catch (draftError) {
-        console.warn("Error cleaning up draft:", draftError);
       }
     }
 
@@ -263,7 +242,6 @@ export async function processCompletedCount(payload, { runOnServer = true } = {}
     };
 
   } catch (error) {
-    console.error("Critical error in processCompletedCount:", error);
     return {
       success: false,
       message: `שגיאה קריטית בעיבוד ספירת המלאי: ${error.message}`,
@@ -344,10 +322,8 @@ async function updateReagentTotals(reagent) {
     };
 
     await Reagent.update(reagent.id, updateData);
-    console.log(`Updated reagent totals for ${reagent.name}: ${totalQuantity} units in ${activeBatchesCount} batches`);
 
   } catch (error) {
-    console.error(`Error updating totals for reagent ${reagent.id}:`, error);
     throw error;
   }
 }
@@ -358,7 +334,6 @@ export async function retryProcessCompletedCount(payload) {
   const { completedCountId, userId } = payload;
 
   try {
-    console.log(`Retrying inventory count processing for completed count: ${completedCountId}`);
 
     // Get the completed count data
     const completedCount = await CompletedInventoryCount.get(completedCountId);
@@ -407,7 +382,6 @@ export async function retryProcessCompletedCount(payload) {
         }
 
       } catch (reagentError) {
-        console.error(`Error retrying reagent ${reagent.id}:`, reagentError);
         errors.push(`Failed to retry ${reagent.name}: ${reagentError.message}`);
       }
     }
@@ -428,7 +402,6 @@ export async function retryProcessCompletedCount(payload) {
     };
 
   } catch (error) {
-    console.error("Error in retryProcessCompletedCount:", error);
     return {
       success: false,
       message: `שגיאה בעדכון חוזר: ${error.message}`,

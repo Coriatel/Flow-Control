@@ -340,14 +340,11 @@ export default function SystemDocumentation() {
 
   // Load documentation
   const loadDocs = useCallback(async () => {
-    console.log("[SystemDoc] Loading documentation...");
     setLoadingDocs(true);
     try {
       const docsData = await FeatureDocumentation.list();
-      console.log("[SystemDoc] ✅ Loaded docs:", docsData.length, "documents");
       setDocs(Array.isArray(docsData) ? docsData : []);
     } catch (error) {
-      console.error('[SystemDoc] ❌ Error loading docs:', error);
       toast.error('שגיאה בטעינת מסמכים');
     } finally {
       setLoadingDocs(false);
@@ -531,7 +528,6 @@ export default function SystemDocumentation() {
       setDocContent('');
       await loadDocs();
     } catch (error) {
-      console.error('[SystemDoc] Error saving doc:', error);
       toast.error('שגיאה בשמירת מסמך');
     }
   };

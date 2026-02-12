@@ -29,7 +29,6 @@ export default function QuickCleanupPage() {
 
   const addResult = (message, type = 'info') => {
     setResults(prev => [...prev, { message, type, timestamp: new Date() }]);
-    console.log(`[${type.toUpperCase()}] ${message}`);
   };
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -74,7 +73,6 @@ export default function QuickCleanupPage() {
                 await entity.delete(item.id);
                 await sleep(100);
               } catch (deleteError) {
-                console.warn(`Failed to delete ${name} item:`, deleteError);
               }
             }
             addResult(`🗑️ נמחקו ${items.length} פריטים מ${name}`, 'success');

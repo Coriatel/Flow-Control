@@ -507,7 +507,6 @@ export default function TestingStrategyPage() {
       });
 
     } catch (error) {
-      console.error('Error running test suite:', error);
       toast({
         title: "שגיאה בביצוע בדיקות",
         description: error.message,
@@ -562,7 +561,6 @@ export default function TestingStrategyPage() {
       });
 
     } catch (error) {
-      console.error('Error running all tests:', error);
       toast({
         title: "שגיאה בביצוע כל הבדיקות",
         description: error.message,

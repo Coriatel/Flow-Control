@@ -112,7 +112,6 @@ export default function Dashboard() {
       });
 
     } catch (err) {
-      console.error('[Dashboard] Error loading:', err);
       setError(`שגיאה בטעינת הדשבורד: ${err.message}`);
       toast.error('שגיאה בטעינת הדשבורד', { description: err.message });
     } finally {
