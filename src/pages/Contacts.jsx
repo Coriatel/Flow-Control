@@ -340,11 +340,11 @@ export default function ContactsPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <BackButton />
-          <h1 className="text-2xl font-bold mr-3">אנשי קשר</h1>
+          <h1 className="text-2xl font-bold me-3">אנשי קשר</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={exportToCSV} variant="outline" size="sm">
-            <FileDown className="h-4 w-4 ml-2" />
+            <FileDown className="h-4 w-4 ms-2" />
             ייצוא
           </Button>
           <Button onClick={fetchData} variant="outline" size="icon">
@@ -354,7 +354,7 @@ export default function ContactsPage() {
             setEditingContact(null);
             setShowContactForm(true);
           }}>
-            <Plus className="h-4 w-4 ml-2" />
+            <Plus className="h-4 w-4 ms-2" />
             איש קשר חדש
           </Button>
         </div>
@@ -410,7 +410,7 @@ export default function ContactsPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline">
-                    <Columns3 className="h-4 w-4 ml-2" />
+                    <Columns3 className="h-4 w-4 ms-2" />
                     עמודות
                   </Button>
                 </PopoverTrigger>
@@ -640,7 +640,7 @@ export default function ContactsPage() {
             >
               {deletingContact ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  <Loader2 className="h-4 w-4 animate-spin ms-2" />
                   מוחק...
                 </>
               ) : (

@@ -7,37 +7,41 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const colorSchemes = {
   red: {
-    headerBg: 'bg-red-50',
+    headerBg: 'bg-gradient-to-l from-red-50 to-red-100/50',
     headerBorder: 'border-red-200',
     countColor: 'text-red-700',
     iconColor: 'text-red-600',
+    iconBg: 'bg-red-100',
     titleColor: 'text-red-800',
     rowHover: 'hover:bg-red-50/60',
     badge: 'bg-red-100 text-red-700',
   },
   orange: {
-    headerBg: 'bg-amber-50',
+    headerBg: 'bg-gradient-to-l from-amber-50 to-amber-100/50',
     headerBorder: 'border-amber-200',
     countColor: 'text-amber-700',
     iconColor: 'text-amber-600',
+    iconBg: 'bg-amber-100',
     titleColor: 'text-amber-800',
     rowHover: 'hover:bg-amber-50/60',
     badge: 'bg-amber-100 text-amber-700',
   },
   blue: {
-    headerBg: 'bg-blue-50',
+    headerBg: 'bg-gradient-to-l from-blue-50 to-blue-100/50',
     headerBorder: 'border-blue-200',
     countColor: 'text-blue-700',
     iconColor: 'text-blue-600',
+    iconBg: 'bg-blue-100',
     titleColor: 'text-blue-800',
     rowHover: 'hover:bg-blue-50/60',
     badge: 'bg-blue-100 text-blue-700',
   },
   purple: {
-    headerBg: 'bg-purple-50',
+    headerBg: 'bg-gradient-to-l from-purple-50 to-purple-100/50',
     headerBorder: 'border-purple-200',
     countColor: 'text-purple-700',
     iconColor: 'text-purple-600',
+    iconBg: 'bg-purple-100',
     titleColor: 'text-purple-800',
     rowHover: 'hover:bg-purple-50/60',
     badge: 'bg-purple-100 text-purple-700',
@@ -68,7 +72,7 @@ const InfoCard = ({
   const IconElement = icon ? React.cloneElement(icon, { className: `h-5 w-5 ${scheme.iconColor}` }) : null;
 
   return (
-    <Card className={`bg-white shadow-sm border ${scheme.headerBorder} rounded-xl overflow-hidden`}>
+    <Card className={`bg-white shadow-sm border ${scheme.headerBorder} rounded-xl overflow-hidden hover:shadow-lg transition-shadow`}>
       {/* Header - always visible */}
       <button
         type="button"
@@ -77,11 +81,11 @@ const InfoCard = ({
       >
         <div className="flex items-center gap-3">
           {IconElement && (
-            <div className="flex-shrink-0">
+            <div className={`flex-shrink-0 p-2 rounded-lg ${scheme.iconBg}`}>
               {IconElement}
             </div>
           )}
-          <span className={`text-3xl font-bold ${scheme.countColor} leading-none`}>{count}</span>
+          <span className={`text-3xl font-extrabold tabular-nums ${scheme.countColor} leading-none`}>{count}</span>
           {titleLinkTo ? (
             <Link
               to={titleLinkTo}

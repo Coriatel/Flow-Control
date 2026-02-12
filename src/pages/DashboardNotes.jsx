@@ -364,7 +364,7 @@ export default function DashboardNotesPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-        <p className="ml-3 text-lg text-gray-600">טוען הערות...</p>
+        <p className="ms-3 text-lg text-gray-600">טוען הערות...</p>
       </div>
     );
   }
@@ -376,7 +376,7 @@ export default function DashboardNotesPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('Dashboard'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -387,7 +387,7 @@ export default function DashboardNotesPage() {
           </div>
         </div>
         <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 me-2" />
           הוסף הערה
         </Button>
       </div>
@@ -661,7 +661,7 @@ export default function DashboardNotesPage() {
                   setShowViewDialog(false);
                   handleEdit(viewingNote);
                 }}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 me-2" />
                   ערוך
                 </Button>
               </div>
@@ -743,7 +743,7 @@ function NoteCard({ note, onStatusChange, onTogglePin, onEdit, onDelete, onView 
           <div className="text-xs text-gray-500">
             נוצר: {format(parseISO(note.created_date), 'dd/MM HH:mm', { locale: he })}
             {note.reminder_date && (
-              <span className="ml-3">
+              <span className="ms-3">
                 תזכורת: {format(parseISO(note.reminder_date), 'dd/MM HH:mm', { locale: he })}
               </span>
             )}
@@ -752,24 +752,24 @@ function NoteCard({ note, onStatusChange, onTogglePin, onEdit, onDelete, onView 
             {note.status === 'active' && (
               <>
                 <Button size="sm" variant="outline" onClick={() => onStatusChange(note, 'acknowledged')}>
-                  <Check className="h-4 w-4 mr-1" />
+                  <Check className="h-4 w-4 me-1" />
                   סמן כנקרא
                 </Button>
                 <Button size="sm" onClick={() => onStatusChange(note, 'completed')}>
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <CheckCircle className="h-4 w-4 me-1" />
                   סמן כהושלם
                 </Button>
               </>
             )}
             {note.status === 'acknowledged' && (
               <Button size="sm" onClick={() => onStatusChange(note, 'completed')}>
-                <CheckCircle className="h-4 w-4 mr-1" />
+                <CheckCircle className="h-4 w-4 me-1" />
                 סמן כהושלם
               </Button>
             )}
             {(note.status === 'completed' || note.status === 'acknowledged') && (
               <Button size="sm" variant="outline" onClick={() => onStatusChange(note, 'archived')}>
-                <Archive className="h-4 w-4 mr-1" />
+                <Archive className="h-4 w-4 me-1" />
                 העבר לארכיון
               </Button>
             )}

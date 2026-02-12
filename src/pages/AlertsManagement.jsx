@@ -371,7 +371,7 @@ export default function AlertsManagement() {
             <Dialog open={showCreateRuleDialog} onOpenChange={setShowCreateRuleDialog}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   צור כלל חדש
                 </Button>
               </DialogTrigger>
@@ -433,7 +433,7 @@ export default function AlertsManagement() {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">אין כללי התראה מוגדרים</h3>
               <p className="text-gray-500 mb-4">צור כללי התראה אוטומטיים למעקב פרואקטיבי אחר המלאי</p>
               <Button onClick={() => setShowCreateRuleDialog(true)}>
-                <Plus className="h-4 w-4 ml-2" />
+                <Plus className="h-4 w-4 ms-2" />
                 צור כלל ראשון
               </Button>
             </CardContent>

@@ -220,7 +220,7 @@ export default function UsageDataManagement() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-        <p className="ml-3 text-lg text-gray-600">טוען נתוני צריכה...</p>
+        <p className="ms-3 text-lg text-gray-600">טוען נתוני צריכה...</p>
       </div>
     );
   }
@@ -243,7 +243,7 @@ export default function UsageDataManagement() {
             variant="ghost"
             size="sm"
             onClick={() => setShowInfoDialog(true)}
-            className="mr-auto sm:mr-2"
+            className="me-auto sm:me-2"
           >
             <Info className="h-5 w-5 text-blue-600" />
           </Button>
@@ -256,7 +256,7 @@ export default function UsageDataManagement() {
             size="sm"
             className="flex-1 sm:flex-none"
           >
-            <Calculator className="h-4 w-4 sm:ml-2" />
+            <Calculator className="h-4 w-4 sm:ms-2" />
             <span className="hidden sm:inline">חישוב אוטומטי</span>
           </Button>
           <Button
@@ -266,9 +266,9 @@ export default function UsageDataManagement() {
             className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
           >
             {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin sm:ml-2" />
+              <Loader2 className="h-4 w-4 animate-spin sm:ms-2" />
             ) : (
-              <Save className="h-4 w-4 sm:ml-2" />
+              <Save className="h-4 w-4 sm:ms-2" />
             )}
             <span className="hidden sm:inline">שמור הכל</span>
           </Button>
@@ -332,7 +332,7 @@ export default function UsageDataManagement() {
               onClick={() => setMobileFilterOpen(true)}
               className="md:hidden relative"
             >
-              <Filter className="h-4 w-4 ml-2" />
+              <Filter className="h-4 w-4 ms-2" />
               סינון
               {activeFiltersCount > 0 && (
                 <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 bg-blue-600">
@@ -369,7 +369,7 @@ export default function UsageDataManagement() {
 
               {activeFiltersCount > 0 && (
                 <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                  <X className="h-4 w-4 ml-1" />
+                  <X className="h-4 w-4 ms-1" />
                   נקה
                 </Button>
               )}
@@ -497,14 +497,14 @@ export default function UsageDataManagement() {
                 className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white"
                 onClick={handleClearFilters}
               >
-                <X className="h-4 w-4 ml-2" />
+                <X className="h-4 w-4 ms-2" />
                 נקה
               </Button>
               <Button
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 onClick={handleApplyFilters}
               >
-                <Check className="h-4 w-4 ml-2" />
+                <Check className="h-4 w-4 ms-2" />
                 החל
               </Button>
             </div>

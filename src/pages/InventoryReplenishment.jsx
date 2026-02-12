@@ -699,7 +699,7 @@ export default function InventoryReplenishmentPage() {
     };
 
     if (loading && !refreshing) return <div className="flex items-center justify-center h-screen"><Loader2 className="h-10 w-10 animate-spin text-amber-500" /></div>;
-    if (error) return <div className="p-6 text-center"><AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" /><h2 className="text-xl font-semibold text-red-700">שגיאה בטעינת הנתונים</h2><p className="text-gray-600 mt-2">{error}</p><Button onClick={handleRefresh} className="mt-4 bg-amber-500 hover:bg-amber-600"><RefreshCw className="h-4 w-4 ml-2" />נסה שוב</Button></div>;
+    if (error) return <div className="p-6 text-center"><AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" /><h2 className="text-xl font-semibold text-red-700">שגיאה בטעינת הנתונים</h2><p className="text-gray-600 mt-2">{error}</p><Button onClick={handleRefresh} className="mt-4 bg-amber-500 hover:bg-amber-600"><RefreshCw className="h-4 w-4 ms-2" />נסה שוב</Button></div>;
 
     return (
         <>
@@ -737,8 +737,8 @@ export default function InventoryReplenishmentPage() {
                         </div>
                         <div className="hidden md:flex items-center gap-2">
                             <Button onClick={handleRefresh} variant="outline" size="sm" className="h-9" disabled={refreshing}><RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /></Button>
-                            <Button onClick={() => createDocument('withdrawal')} disabled={selectedReagents.size === 0} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white h-9"><ArrowDownToLine className="h-4 w-4 ml-2" /> צור משיכה</Button>
-                            <Button onClick={() => createDocument('order')} disabled={selectedReagents.size === 0} className="bg-amber-500 hover:bg-amber-600 h-9"><FileDown className="h-4 w-4 ml-2" /> צור דרישה</Button>
+                            <Button onClick={() => createDocument('withdrawal')} disabled={selectedReagents.size === 0} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white h-9"><ArrowDownToLine className="h-4 w-4 ms-2" /> צור משיכה</Button>
+                            <Button onClick={() => createDocument('order')} disabled={selectedReagents.size === 0} className="bg-amber-500 hover:bg-amber-600 h-9"><FileDown className="h-4 w-4 ms-2" /> צור דרישה</Button>
                         </div>
                     </div>
 
@@ -760,7 +760,7 @@ export default function InventoryReplenishmentPage() {
                             <Popover open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline">
-                                        <SlidersHorizontal className="h-4 w-4 ml-2" />
+                                        <SlidersHorizontal className="h-4 w-4 ms-2" />
                                         סינון מתקדם
                                     </Button>
                                 </PopoverTrigger>
@@ -839,7 +839,7 @@ export default function InventoryReplenishmentPage() {
                                 </PopoverContent>
                             </Popover>
                             <Button onClick={clearSelection} variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" disabled={selectedReagents.size === 0}>
-                                <Trash2 className="h-4 w-4 ml-2" />
+                                <Trash2 className="h-4 w-4 ms-2" />
                                 נקה בחירה
                             </Button>
                         </div>
@@ -1097,8 +1097,8 @@ export default function InventoryReplenishmentPage() {
                 )}
 
                 <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-3 border-t grid grid-cols-2 gap-3 z-20">
-                    <Button onClick={() => createDocument('withdrawal')} disabled={selectedReagents.size === 0} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white h-12"><ArrowDownToLine className="h-4 w-4 ml-2" /> צור משיכה</Button>
-                    <Button onClick={() => createDocument('order')} disabled={selectedReagents.size === 0} className="bg-amber-500 hover:bg-amber-600 h-12"><FileDown className="h-4 w-4 ml-2" /> צור דרישה</Button>
+                    <Button onClick={() => createDocument('withdrawal')} disabled={selectedReagents.size === 0} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white h-12"><ArrowDownToLine className="h-4 w-4 ms-2" /> צור משיכה</Button>
+                    <Button onClick={() => createDocument('order')} disabled={selectedReagents.size === 0} className="bg-amber-500 hover:bg-amber-600 h-12"><FileDown className="h-4 w-4 ms-2" /> צור דרישה</Button>
                 </div>
             </div>
 
@@ -1134,7 +1134,7 @@ export default function InventoryReplenishmentPage() {
 
                             <div className="bg-amber-50 border-r-4 border-amber-400 p-4 rounded">
                                 <h4 className="font-semibold text-amber-800 mb-2">למה זה חשוב?</h4>
-                                <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside mr-2">
+                                <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside me-2">
                                     <li>מספר הזמנה קבוע דרוש למעקב ותיעוד מול הספק ומערכת ה-SAP.</li>
                                     <li>ללא מספר קבוע, עלול להיווצר קושי בזיהוי וטיפול בהזמנה בעתיד.</li>
                                     <li>יתכנו עיכובים באספקה אם הספק לא יקבל מספר PO רשמי.</li>

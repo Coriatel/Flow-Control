@@ -810,7 +810,7 @@ export default function NewShipmentPage() {
                     onClick={() => openReagentDialog(index)}
                     disabled={loadingInitialData}
                 >
-                    {loadingInitialData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : item.reagent_name_snapshot || "בחר ריאגנט..."}
+                    {loadingInitialData ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : item.reagent_name_snapshot || "בחר ריאגנט..."}
                 </Button>
             </div>
             <div className="md:col-span-3">
@@ -821,7 +821,7 @@ export default function NewShipmentPage() {
                     onClick={() => openBatchDialog(index)}
                     disabled={!item.reagent_id || loadingInitialData}
                 >
-                    {loadingInitialData && item.reagent_id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : item.batch_number || "בחר אצווה..."}
+                    {loadingInitialData && item.reagent_id ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : item.batch_number || "בחר אצווה..."}
                 </Button>
             </div>
             <div className="md:col-span-3">
@@ -912,7 +912,7 @@ export default function NewShipmentPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('OutgoingShipments'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -932,7 +932,7 @@ export default function NewShipmentPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Package className="h-5 w-5 mr-2" />
+                  <Package className="h-5 w-5 me-2" />
                   פרטי משלוח יוצא
                 </CardTitle>
               </CardHeader>
@@ -1159,7 +1159,7 @@ export default function NewShipmentPage() {
                 )}
                 <div className="flex justify-end mt-4">
                   <Button onClick={addItem} className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4 mr-2" /> הוסף פריט חדש
+                    <Plus className="h-4 w-4 me-2" /> הוסף פריט חדש
                   </Button>
                 </div>
               </CardContent>
@@ -1177,7 +1177,7 @@ export default function NewShipmentPage() {
             disabled={saving || items.length === 0 || !shipmentDetails.recipient_name.trim()}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+            {saving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Send className="h-4 w-4 me-2" />}
             שליחה
           </Button>
           <Button
@@ -1185,7 +1185,7 @@ export default function NewShipmentPage() {
             disabled={saving || items.length === 0 || !shipmentDetails.recipient_name.trim()}
             className="bg-green-600 hover:bg-green-700"
           >
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {saving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
             שליחה והפק תעודה
           </Button>
         </div>
@@ -1305,7 +1305,7 @@ export default function NewShipmentPage() {
                           </div>
                           {isExpiringSoon && (
                             <Badge className="bg-orange-100 text-orange-800">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              <AlertTriangle className="h-3 w-3 me-1" />
                               פג תוקף בקרוב
                             </Badge>
                           )}

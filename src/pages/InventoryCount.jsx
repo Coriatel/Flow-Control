@@ -526,7 +526,7 @@ export default function InventoryCountPage() {
             ספירה נוכחית
           </TabsTrigger>
           <TabsTrigger value="history" className="text-xs sm:text-sm">
-            <History className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <History className="h-3 w-3 sm:h-4 sm:w-4 ms-1" />
             היסטוריה
           </TabsTrigger>
         </TabsList>
@@ -592,14 +592,14 @@ export default function InventoryCountPage() {
                     variant="outline"
                     className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                   >
-                    <X className="h-4 w-4 ml-1" />
+                    <X className="h-4 w-4 ms-1" />
                     נקה
                   </Button>
                   <Button
                     onClick={applyCurrentCountFilters}
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                   >
-                    <SlidersHorizontal className="h-4 w-4 ml-1" />
+                    <SlidersHorizontal className="h-4 w-4 ms-1" />
                     החל
                   </Button>
                 </div>
@@ -708,7 +708,7 @@ export default function InventoryCountPage() {
                     className="w-full h-9"
                     disabled={activeFiltersCount === 0}
                   >
-                    <X className="h-4 w-4 ml-2" />
+                    <X className="h-4 w-4 ms-2" />
                     נקה פילטרים ({activeFiltersCount})
                   </Button>
                 </div>
@@ -786,7 +786,7 @@ export default function InventoryCountPage() {
                     onClick={clearCurrentCountFilters}
                     className="mt-4"
                   >
-                    <X className="h-4 w-4 ml-2" />
+                    <X className="h-4 w-4 ms-2" />
                     נקה פילטרים
                   </Button>
                 )}
@@ -818,14 +818,14 @@ export default function InventoryCountPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <Save className="h-4 w-4 ml-1" />
+                      <Save className="h-4 w-4 ms-1" />
                       <span className="text-xs">שמור</span>
                     </>
                   )}
                 </Button>
 
                 <ExcelExport reagents={reagents} size="sm" className="h-10">
-                  <FileDown className="h-4 w-4 ml-1" />
+                  <FileDown className="h-4 w-4 ms-1" />
                   <span className="text-xs">ייצא</span>
                 </ExcelExport>
 
@@ -835,7 +835,7 @@ export default function InventoryCountPage() {
                   size="sm"
                   className="h-10"
                 >
-                  <Trash2 className="h-4 w-4 ml-1" />
+                  <Trash2 className="h-4 w-4 ms-1" />
                   <span className="text-xs">נקה</span>
                 </Button>
 
@@ -849,7 +849,7 @@ export default function InventoryCountPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <FileDown className="h-4 w-4 ml-1" />
+                      <FileDown className="h-4 w-4 ms-1" />
                       <span className="text-xs font-semibold">שלח</span>
                     </>
                   )}
@@ -863,12 +863,12 @@ export default function InventoryCountPage() {
                   variant="outline"
                   className="flex-1"
                 >
-                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Save className="h-4 w-4 ml-2" />}
+                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <Save className="h-4 w-4 ms-2" />}
                   שמור טיוטה
                 </Button>
 
                 <ExcelExport reagents={reagents} className="flex-1">
-                  <FileDown className="h-4 w-4 ml-2" />
+                  <FileDown className="h-4 w-4 ms-2" />
                   ייצא ל-Excel
                 </ExcelExport>
 
@@ -877,7 +877,7 @@ export default function InventoryCountPage() {
                   variant="outline"
                   className="flex-1"
                 >
-                  <Trash2 className="h-4 w-4 ml-2" />
+                  <Trash2 className="h-4 w-4 ms-2" />
                   נקה טיוטה
                 </Button>
 
@@ -886,7 +886,7 @@ export default function InventoryCountPage() {
                   disabled={submitting || totalBatchesEntered === 0}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <FileDown className="h-4 w-4 ml-2" />}
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <FileDown className="h-4 w-4 ms-2" />}
                   שלח ספירה
                 </Button>
               </div>
@@ -966,14 +966,14 @@ export default function InventoryCountPage() {
                     variant="outline"
                     className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                   >
-                    <X className="h-4 w-4 ml-1" />
+                    <X className="h-4 w-4 ms-1" />
                     נקה
                   </Button>
                   <Button
                     onClick={applyHistoryFilters}
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                   >
-                    <Filter className="h-4 w-4 ml-1" />
+                    <Filter className="h-4 w-4 ms-1" />
                     החל
                   </Button>
                 </div>
@@ -1023,15 +1023,15 @@ export default function InventoryCountPage() {
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <Button onClick={clearHistoryFilters} variant="outline" size="sm" className="h-9">
-                  <X className="h-4 w-4 ml-2" />
+                  <X className="h-4 w-4 ms-2" />
                   נקה
                 </Button>
                 <Button onClick={applyHistoryFilters} size="sm" className="h-9">
-                  <Filter className="h-4 w-4 ml-2" />
+                  <Filter className="h-4 w-4 ms-2" />
                   סנן
                 </Button>
                 <Button onClick={() => fetchHistory(1)} variant="outline" size="sm" className="h-9">
-                  <RefreshCw className="h-4 w-4 ml-2" />
+                  <RefreshCw className="h-4 w-4 ms-2" />
                   רענן
                 </Button>
               </div>
@@ -1045,7 +1045,7 @@ export default function InventoryCountPage() {
               variant="outline"
               size="sm"
             >
-              <Filter className="h-4 w-4 ml-2" />
+              <Filter className="h-4 w-4 ms-2" />
               סינון
             </Button>
             <Button
@@ -1079,13 +1079,13 @@ export default function InventoryCountPage() {
                           </h3>
                           <div className="space-y-1 text-sm">
                             <div className="flex items-center text-gray-600">
-                              <Calendar className="h-3 w-3 ml-1 flex-shrink-0" />
+                              <Calendar className="h-3 w-3 ms-1 flex-shrink-0" />
                               {isValid(parseISO(count.count_date))
                                 ? format(parseISO(count.count_date), 'dd/MM/yyyy', { locale: he })
                                 : 'תאריך לא זמין'}
                             </div>
                             <div className="flex items-center text-gray-600">
-                              <User className="h-3 w-3 ml-1 flex-shrink-0" />
+                              <User className="h-3 w-3 ms-1 flex-shrink-0" />
                               {count.created_by_name || count.created_by || 'לא ידוע'}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
@@ -1105,7 +1105,7 @@ export default function InventoryCountPage() {
                           onClick={() => handleViewCountDetails(count.id)}
                           className="flex-1"
                         >
-                          <Eye className="h-4 w-4 ml-1" />
+                          <Eye className="h-4 w-4 ms-1" />
                           צפה
                         </Button>
                         <Button
@@ -1149,7 +1149,7 @@ export default function InventoryCountPage() {
                               <div className="flex items-center justify-end">
                                 מספר ספירה
                                 {historySortField === 'count_number' && (
-                                  historySortDirection === 'asc' ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />
+                                  historySortDirection === 'asc' ? <ChevronUp className="h-4 w-4 me-1" /> : <ChevronDown className="h-4 w-4 me-1" />
                                 )}
                               </div>
                             </th>
@@ -1160,7 +1160,7 @@ export default function InventoryCountPage() {
                               <div className="flex items-center justify-end">
                                 תאריך
                                 {historySortField === 'count_date' && (
-                                  historySortDirection === 'asc' ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />
+                                  historySortDirection === 'asc' ? <ChevronUp className="h-4 w-4 me-1" /> : <ChevronDown className="h-4 w-4 me-1" />
                                 )}
                               </div>
                             </th>
@@ -1271,7 +1271,7 @@ export default function InventoryCountPage() {
               ביטול
             </Button>
             <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-              <FileDown className="h-4 w-4 ml-2" />
+              <FileDown className="h-4 w-4 ms-2" />
               אישור ושליחה
             </Button>
           </DialogFooter>
@@ -1299,7 +1299,7 @@ export default function InventoryCountPage() {
                       variant="outline"
                       size="sm"
                     >
-                      <Printer className="h-4 w-4 ml-2" />
+                      <Printer className="h-4 w-4 ms-2" />
                       הדפס
                     </Button>
                   </CardTitle>

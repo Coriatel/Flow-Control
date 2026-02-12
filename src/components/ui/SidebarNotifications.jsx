@@ -113,7 +113,7 @@ export default function SidebarNotifications() {
                                                     {notification.createdAt && format(new Date(notification.createdAt), 'dd/MM HH:mm', { locale: he })}
                                                 </span>
                                                 {index === 0 && (
-                                                    <Badge variant="outline" className="mr-2 text-xs">
+                                                    <Badge variant="outline" className="me-2 text-xs">
                                                         אחרונה
                                                     </Badge>
                                                 )}

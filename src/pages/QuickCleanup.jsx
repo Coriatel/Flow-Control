@@ -199,7 +199,7 @@ export default function QuickCleanupPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Zap className="h-6 w-6 mr-3 text-orange-600" />
+            <Zap className="h-6 w-6 me-3 text-orange-600" />
             ניקוי מהיר ויצירת קטלוג נקי
           </CardTitle>
         </CardHeader>
@@ -228,12 +228,12 @@ export default function QuickCleanupPage() {
           >
             {cleaning ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 מבצע איפוס מהיר...
               </>
             ) : (
               <>
-                <Zap className="h-4 w-4 mr-2" />
+                <Zap className="h-4 w-4 me-2" />
                 התחל איפוס מהיר ויצירת קטלוג חדש
               </>
             )}

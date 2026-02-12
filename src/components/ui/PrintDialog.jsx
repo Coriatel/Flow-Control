@@ -423,7 +423,7 @@ export default function PrintDialog({
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="mr-2">טוען מסמך...</span>
+                <span className="me-2">טוען מסמך...</span>
               </div>
             ) : documentData ? (
               <div className="space-y-4 p-4" style={{ direction: 'rtl' }}>
@@ -497,15 +497,15 @@ export default function PrintDialog({
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 me-2" />
               סגור
             </Button>
             <Button variant="outline" onClick={() => setShowSaveDialog(true)} disabled={loading || !documentData}>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 me-2" />
               שמור וסגור
             </Button>
             <Button onClick={handlePrint} disabled={loading || !documentData}>
-              <Printer className="h-4 w-4 mr-2" />
+              <Printer className="h-4 w-4 me-2" />
               הדפס וסגור
             </Button>
           </DialogFooter>

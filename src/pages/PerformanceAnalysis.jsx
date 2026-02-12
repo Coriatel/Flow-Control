@@ -194,7 +194,7 @@ export default function PerformanceAnalysisPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-blue-600" />
+            <Activity className="h-5 w-5 me-2 text-blue-600" />
             סטטוס כללי
           </CardTitle>
         </CardHeader>
@@ -226,7 +226,7 @@ export default function PerformanceAnalysisPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-green-600" />
+            <Clock className="h-5 w-5 me-2 text-green-600" />
             זמני טעינה
           </CardTitle>
         </CardHeader>
@@ -258,7 +258,7 @@ export default function PerformanceAnalysisPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Database className="h-5 w-5 mr-2 text-purple-600" />
+            <Database className="h-5 w-5 me-2 text-purple-600" />
             נפח נתונים
           </CardTitle>
         </CardHeader>
@@ -279,7 +279,7 @@ export default function PerformanceAnalysisPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Server className="h-5 w-5 mr-2 text-blue-600" />
+              <Server className="h-5 w-5 me-2 text-blue-600" />
               שימוש בזיכרון
             </CardTitle>
           </CardHeader>
@@ -307,7 +307,7 @@ export default function PerformanceAnalysisPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+            <TrendingUp className="h-5 w-5 me-2 text-green-600" />
             המלצות לשיפור
           </CardTitle>
         </CardHeader>

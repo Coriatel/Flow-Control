@@ -237,7 +237,7 @@ export default function EditShipmentPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-        <p className="ml-3 text-lg text-gray-600">טוען נתוני משלוח...</p>
+        <p className="ms-3 text-lg text-gray-600">טוען נתוני משלוח...</p>
       </div>
     );
   }
@@ -567,7 +567,7 @@ export default function EditShipmentPage() {
                           <td className="px-4 py-3 text-xs text-slate-500">
                             {item.storage_requirements || '-'}
                             {(item.storage_requirements?.includes('cold') || item.storage_requirements?.includes('קור')) && (
-                              <Snowflake className="h-3 w-3 inline ml-1 text-blue-500" />
+                              <Snowflake className="h-3 w-3 inline ms-1 text-blue-500" />
                             )}
                           </td>
                         </tr>
@@ -766,7 +766,7 @@ export default function EditShipmentPage() {
               disabled={saving}
               className="bg-amber-500 hover:bg-amber-600 text-white"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : null}
               אישור שינוי
             </Button>
           </DialogFooter>

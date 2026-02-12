@@ -264,7 +264,7 @@ export default function NewWithdrawalRequestPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-        <p className="mr-3 text-lg">טוען נתונים...</p>
+        <p className="me-3 text-lg">טוען נתונים...</p>
       </div>
     );
   }
@@ -373,10 +373,10 @@ export default function NewWithdrawalRequestPage() {
           <div className="mt-8 flex justify-between items-center">
             <div>
               <Button type="submit" disabled={savingRequest || totalItemsSelected === 0}>
-                {savingRequest ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Send className="h-4 w-4 ml-2" />}
+                {savingRequest ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <Send className="h-4 w-4 ms-2" />}
                 שלח לאישור
               </Button>
-              <Button type="button" variant="outline" className="mr-3" onClick={() => navigate(createPageUrl('WithdrawalRequests'))}>
+              <Button type="button" variant="outline" className="me-3" onClick={() => navigate(createPageUrl('WithdrawalRequests'))}>
                 ביטול
               </Button>
             </div>

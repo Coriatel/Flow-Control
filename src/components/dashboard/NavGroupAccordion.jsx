@@ -95,7 +95,7 @@ export const NavGroupAccordion = ({ navItems, adminNavItems, userRole }) => {
         className="flex items-center justify-between p-2.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group"
       >
         <div className="flex items-center">
-            <div className={`p-1.5 rounded-lg ml-2 ${getIconBgColor(item)} group-hover:scale-105 transition-transform duration-200`}>
+            <div className={`p-1.5 rounded-lg ms-2 ${getIconBgColor(item)} group-hover:scale-105 transition-transform duration-200`}>
               <item.icon className={`h-4 w-4 ${getIconColor(item)}`} />
             </div>
             <span className="font-medium text-sm">{item.name}</span>
@@ -113,7 +113,7 @@ export const NavGroupAccordion = ({ navItems, adminNavItems, userRole }) => {
             <AccordionItem key={groupName} value={groupName} className={`bg-white border-0 shadow-sm rounded-lg overflow-hidden`}>
               <AccordionTrigger className={`p-3 text-sm font-semibold hover:no-underline ${groupInfo.bg} ${groupInfo.color}`}>
                 <div className="flex items-center">
-                  <span className="text-base ml-2">{groupInfo.emoji}</span>
+                  <span className="text-base ms-2">{groupInfo.emoji}</span>
                   <span>{groupInfo.title}</span>
                 </div>
               </AccordionTrigger>
@@ -129,7 +129,7 @@ export const NavGroupAccordion = ({ navItems, adminNavItems, userRole }) => {
              <AccordionItem value="admin" className={`bg-white border-0 shadow-sm rounded-lg overflow-hidden`}>
                 <AccordionTrigger className={`p-3 text-sm font-semibold hover:no-underline ${adminGrouped.admin.bg} ${adminGrouped.admin.color}`}>
                   <div className="flex items-center">
-                    <span className="text-base ml-2">{adminGrouped.admin.emoji}</span>
+                    <span className="text-base ms-2">{adminGrouped.admin.emoji}</span>
                     <span>{adminGrouped.admin.title}</span>
                   </div>
                 </AccordionTrigger>

@@ -612,7 +612,7 @@ export default function OrdersPage() {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="mr-2">טוען הזמנות...</span>
+                <span className="me-2">טוען הזמנות...</span>
             </div>
         );
     }
@@ -626,7 +626,7 @@ export default function OrdersPage() {
                         <BackButton />
                         <div className="min-w-0">
                             <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center truncate">
-                                <FileText className="h-5 w-5 sm:h-6 sm:w-6 ml-2 text-blue-600 flex-shrink-0" />
+                                <FileText className="h-5 w-5 sm:h-6 sm:w-6 ms-2 text-blue-600 flex-shrink-0" />
                                 <span className="truncate">ניהול דרישות רכש</span>
                             </h1>
                         </div>
@@ -635,7 +635,7 @@ export default function OrdersPage() {
                     {/* Desktop: Full Button */}
                     <Link to={createPageUrl('NewOrder')} className="hidden sm:block flex-shrink-0">
                         <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="h-4 w-4 me-2" />
                             דרישת רכש חדשה
                         </Button>
                     </Link>
@@ -718,7 +718,7 @@ export default function OrdersPage() {
                         onClick={() => startPrintQueue(selectedIds)}
                         disabled={selectionCount === 0}
                     >
-                        <Printer className="h-4 w-4 ml-2" />
+                        <Printer className="h-4 w-4 ms-2" />
                         הדפס נבחרים{selectionCount > 0 ? ` (${selectionCount})` : ''}
                     </Button>
 
@@ -729,24 +729,24 @@ export default function OrdersPage() {
                         onClick={() => requestDelete(selectedIds)}
                         disabled={selectionCount === 0}
                     >
-                        <Trash2 className="h-4 w-4 ml-2" />
+                        <Trash2 className="h-4 w-4 ms-2" />
                         מחק נבחרים{selectionCount > 0 ? ` (${selectionCount})` : ''}
                     </Button>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm">
-                                <MoreHorizontal className="h-4 w-4 mr-2" />
+                                <MoreHorizontal className="h-4 w-4 me-2" />
                                 פעולות
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                                 רענון
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={handlePrint}>
-                                <Printer className="h-4 w-4 ml-2" />
+                                <Printer className="h-4 w-4 ms-2" />
                                 הדפס
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -755,7 +755,7 @@ export default function OrdersPage() {
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="sm">
-                                <Columns className="h-4 w-4 mr-2" />
+                                <Columns className="h-4 w-4 me-2" />
                                 עמודות
                             </Button>
                         </PopoverTrigger>
@@ -788,7 +788,7 @@ export default function OrdersPage() {
                         onClick={() => setMobileFilterOpen(true)}
                         className="flex-1 relative"
                     >
-                        <Filter className="h-4 w-4 mr-2" />
+                        <Filter className="h-4 w-4 me-2" />
                         סינון
                         {activeFiltersCount > 0 && (
                             <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 bg-amber-500 text-white text-xs">
@@ -805,19 +805,19 @@ export default function OrdersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                                 רענון
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={handlePrint}>
-                                <Printer className="h-4 w-4 ml-2" />
+                                <Printer className="h-4 w-4 ms-2" />
                                 הדפס
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => startPrintQueue(selectedIds)} disabled={selectionCount === 0}>
-                                <Printer className="h-4 w-4 ml-2" />
+                                <Printer className="h-4 w-4 ms-2" />
                                 הדפס נבחרים
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => requestDelete(selectedIds)} disabled={selectionCount === 0}>
-                                <Trash2 className="h-4 w-4 ml-2" />
+                                <Trash2 className="h-4 w-4 ms-2" />
                                 מחק נבחרים
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -930,8 +930,12 @@ export default function OrdersPage() {
                         />
 
                         {filteredAndSortedOrders.length === 0 && (
-                            <div className="text-center py-12">
-                                <p className="text-gray-500">לא נמצאו הזמנות התואמות לחיפוש</p>
+                            <div className="text-center py-16">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                                    <FileText className="h-7 w-7 text-slate-400" />
+                                </div>
+                                <p className="text-slate-600 font-medium mb-1">לא נמצאו הזמנות</p>
+                                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
                             </div>
                         )}
                     </CardContent>
@@ -941,10 +945,13 @@ export default function OrdersPage() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-3">
                 {filteredAndSortedOrders.length === 0 ? (
-                    <Card className="p-6">
-                        <div className="text-center text-gray-500">
-                            <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                            <p>לא נמצאו הזמנות התואמות לחיפוש</p>
+                    <Card className="p-8">
+                        <div className="text-center">
+                            <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                <FileText className="h-6 w-6 text-slate-400" />
+                            </div>
+                            <p className="text-slate-600 font-medium mb-1">לא נמצאו הזמנות</p>
+                            <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
                         </div>
                     </Card>
                 ) : (
@@ -974,15 +981,15 @@ export default function OrdersPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="start">
                                             <DropdownMenuItem onClick={() => navigate(createPageUrl(`EditOrder?id=${order.id}`))}>
-                                                <Edit className="h-4 w-4 ml-2" />
+                                                <Edit className="h-4 w-4 ms-2" />
                                                 עריכה
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => startPrintQueue([order.id])}>
-                                                <Printer className="h-4 w-4 ml-2" />
+                                                <Printer className="h-4 w-4 ms-2" />
                                                 הדפס
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => requestDelete([order.id])} className="text-red-600">
-                                                <Trash2 className="h-4 w-4 ml-2" />
+                                                <Trash2 className="h-4 w-4 ms-2" />
                                                 מחיקה
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>

@@ -350,7 +350,7 @@ export default function ManageSuppliersPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <BackButton />
-          <h1 className="text-2xl font-bold mr-3">ניהול ספקים</h1>
+          <h1 className="text-2xl font-bold me-3">ניהול ספקים</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={fetchData} variant="outline" size="icon">
@@ -360,7 +360,7 @@ export default function ManageSuppliersPage() {
             setEditingSupplier(null);
             setShowSupplierForm(true);
           }}>
-            <Plus className="h-4 w-4 ml-2" />
+            <Plus className="h-4 w-4 ms-2" />
             ספק חדש
           </Button>
         </div>
@@ -398,7 +398,7 @@ export default function ManageSuppliersPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline">
-                    <Columns3 className="h-4 w-4 ml-2" />
+                    <Columns3 className="h-4 w-4 ms-2" />
                     עמודות
                   </Button>
                 </PopoverTrigger>
@@ -619,7 +619,7 @@ export default function ManageSuppliersPage() {
             >
               {deletingSupplier ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  <Loader2 className="h-4 w-4 animate-spin ms-2" />
                   {supplierToDelete?.has_associated_data ? 'משבית...' : 'מוחק...'}
                 </>
               ) : (

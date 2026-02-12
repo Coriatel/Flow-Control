@@ -700,7 +700,7 @@ export default function QualityAssurancePage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
-        <span className="mr-3 text-lg text-gray-600">טוען דשבורד...</span>
+        <span className="me-3 text-lg text-gray-600">טוען דשבורד...</span>
       </div>
     );
   }
@@ -711,7 +711,7 @@ export default function QualityAssurancePage() {
         <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
         <p className="text-red-600 text-lg">{error}</p>
         <Button onClick={fetchData} className="mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="h-4 w-4 me-2" />
           נסה שוב
         </Button>
       </div>
@@ -807,7 +807,7 @@ export default function QualityAssurancePage() {
                                 !dateFrom && "text-muted-foreground"
                               )}
                             >
-                              <CalendarIcon className="ml-2 h-4 w-4" />
+                              <CalendarIcon className="ms-2 h-4 w-4" />
                               {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
                             </Button>
                           </PopoverTrigger>
@@ -833,7 +833,7 @@ export default function QualityAssurancePage() {
                                 !dateTo && "text-muted-foreground"
                               )}
                             >
-                              <CalendarIcon className="ml-2 h-4 w-4" />
+                              <CalendarIcon className="ms-2 h-4 w-4" />
                               {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
                             </Button>
                           </PopoverTrigger>
@@ -895,7 +895,7 @@ export default function QualityAssurancePage() {
                     </div>
 
                     <Button variant="outline" size="sm" onClick={clearAllFilters} className="w-full text-red-600 border-red-300 hover:bg-red-50">
-                      <X className="h-4 w-4 ml-2" />
+                      <X className="h-4 w-4 ms-2" />
                       נקה את כל הסינונים
                     </Button>
                   </div>
@@ -999,7 +999,7 @@ export default function QualityAssurancePage() {
                               !dateFrom && "text-muted-foreground"
                             )}
                           >
-                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            <CalendarIcon className="ms-2 h-4 w-4" />
                             {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
                           </Button>
                         </PopoverTrigger>
@@ -1025,7 +1025,7 @@ export default function QualityAssurancePage() {
                               !dateTo && "text-muted-foreground"
                             )}
                           >
-                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            <CalendarIcon className="ms-2 h-4 w-4" />
                             {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
                           </Button>
                         </PopoverTrigger>
@@ -1135,7 +1135,7 @@ export default function QualityAssurancePage() {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-            <p className="mr-3 text-lg text-gray-600">טוען נתונים...</p>
+            <p className="me-3 text-lg text-gray-600">טוען נתונים...</p>
           </div>
         ) : error ? (
           <div className="text-center py-8">
@@ -1212,7 +1212,7 @@ export default function QualityAssurancePage() {
                           accept=".pdf,image/*"
                           onChange={(e) => setCoaFile(e.target.files[0])}
                           className="block w-full text-sm text-slate-500 
-                            file:mr-4 file:py-2 file:px-4 
+                            file:me-4 file:py-2 file:px-4 
                             file:rounded-full file:border-0 
                             file:text-sm file:font-semibold 
                             file:bg-purple-50 file:text-purple-700 
@@ -1246,7 +1246,7 @@ export default function QualityAssurancePage() {
                         >
                           {uploadingCOA ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                              <Loader2 className="h-4 w-4 animate-spin ms-2" />
                               מעלה...
                             </>
                           ) : (
@@ -1389,7 +1389,7 @@ export default function QualityAssurancePage() {
                         >
                           {isHandlingAction ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                              <Loader2 className="h-4 w-4 animate-spin ms-2" />
                               מעבד...
                             </>
                           ) : (

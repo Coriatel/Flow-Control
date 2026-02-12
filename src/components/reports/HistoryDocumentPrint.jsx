@@ -615,7 +615,7 @@ export default function HistoryDocumentPrint({
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" size="sm" disabled={!canPrint}>
-            <Printer className="h-4 w-4 mr-2" />
+            <Printer className="h-4 w-4 me-2" />
             {canPrint ? "הדפס מההיסטוריה" : "הדפסה זמינה בייצור"}
           </Button>
         )}
@@ -634,7 +634,7 @@ export default function HistoryDocumentPrint({
           {!canPrint && (
             <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
               <div className="flex items-center">
-                <AlertTriangle className="h-4 w-4 mr-2 text-blue-600" />
+                <AlertTriangle className="h-4 w-4 me-2 text-blue-600" />
                 <p className="text-sm text-blue-800">
                   <strong>מצב פיתוח:</strong> בסביבת הפיתוח, תוכן הקובץ יועתק ללוח או יוצג ב-console.
                 </p>
@@ -657,12 +657,12 @@ export default function HistoryDocumentPrint({
             >
               {generating ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                   מפיק CSV...
                 </>
               ) : (
                 <>
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 me-2" />
                   {canPrint ? "הפק והורד CSV" : "הפק תוכן CSV"}
                 </>
               )}
@@ -674,12 +674,12 @@ export default function HistoryDocumentPrint({
             >
               {generating ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                   מפיק PDF...
                 </>
               ) : (
                 <>
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 me-2" />
                   הפק והורד PDF
                 </>
               )}

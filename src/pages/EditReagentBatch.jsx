@@ -255,7 +255,7 @@ export default function EditReagentBatchPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-        <span className="mr-3 text-lg">טוען נתוני אצווה...</span>
+        <span className="me-3 text-lg">טוען נתוני אצווה...</span>
       </div>
     );
   }
@@ -297,7 +297,7 @@ export default function EditReagentBatchPage() {
               onClick={() => setIsEditMode(true)}
               className="bg-amber-500 hover:bg-amber-600 text-white"
             >
-              <Edit3 className="h-4 w-4 ml-2" />
+              <Edit3 className="h-4 w-4 ms-2" />
               עריכה
             </Button>
           ) : (
@@ -307,7 +307,7 @@ export default function EditReagentBatchPage() {
                 variant="outline"
                 disabled={saving}
               >
-                <X className="h-4 w-4 ml-2" />
+                <X className="h-4 w-4 ms-2" />
                 ביטול
               </Button>
               <Button
@@ -317,12 +317,12 @@ export default function EditReagentBatchPage() {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                     שומר...
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 ml-2" />
+                    <Save className="h-4 w-4 ms-2" />
                     שמירה
                   </>
                 )}
@@ -355,7 +355,7 @@ export default function EditReagentBatchPage() {
           <Card className="border-2 border-amber-200">
             <CardHeader className="bg-gradient-to-l from-amber-50 to-white border-b-2 border-amber-200">
               <CardTitle className="flex items-center text-lg">
-                <Package className="h-5 w-5 ml-2 text-amber-600" />
+                <Package className="h-5 w-5 ms-2 text-amber-600" />
                 מידע בסיסי
               </CardTitle>
             </CardHeader>
@@ -380,7 +380,7 @@ export default function EditReagentBatchPage() {
                       >
                         <Beaker className="h-4 w-4 text-blue-600" />
                         <span className="font-medium text-blue-900">{reagentData.name}</span>
-                        <ExternalLink className="h-3 w-3 text-blue-600 mr-auto" />
+                        <ExternalLink className="h-3 w-3 text-blue-600 me-auto" />
                       </Link>
                     ) : (
                       <p className="p-3 bg-gray-50 rounded-lg border border-gray-200">טוען...</p>
@@ -478,7 +478,7 @@ export default function EditReagentBatchPage() {
           <Card>
             <CardHeader className="bg-gradient-to-l from-blue-50 to-white">
               <CardTitle className="flex items-center text-lg">
-                <MapPin className="h-5 w-5 ml-2 text-blue-600" />
+                <MapPin className="h-5 w-5 ms-2 text-blue-600" />
                 אחסון וטיפול
               </CardTitle>
             </CardHeader>
@@ -551,7 +551,7 @@ export default function EditReagentBatchPage() {
           <Card>
             <CardHeader className="bg-gradient-to-l from-green-50 to-white">
               <CardTitle className="flex items-center text-lg">
-                <ShieldCheck className="h-5 w-5 ml-2 text-green-600" />
+                <ShieldCheck className="h-5 w-5 ms-2 text-green-600" />
                 בקרת איכות
               </CardTitle>
             </CardHeader>
@@ -594,7 +594,7 @@ export default function EditReagentBatchPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <FileText className="h-5 w-5 ml-2 text-gray-600" />
+                <FileText className="h-5 w-5 ms-2 text-gray-600" />
                 הערות כלליות
               </CardTitle>
             </CardHeader>
@@ -619,7 +619,7 @@ export default function EditReagentBatchPage() {
             <Card>
               <CardHeader className="bg-gradient-to-l from-purple-50 to-white">
                 <CardTitle className="flex items-center text-lg">
-                  <Activity className="h-5 w-5 ml-2 text-purple-600" />
+                  <Activity className="h-5 w-5 ms-2 text-purple-600" />
                   היסטוריית תנועות ({relatedTransactions.length})
                 </CardTitle>
               </CardHeader>
@@ -667,7 +667,7 @@ export default function EditReagentBatchPage() {
           <Card>
             <CardHeader className="bg-gradient-to-l from-indigo-50 to-white">
               <CardTitle className="flex items-center text-lg">
-                <FileText className="h-5 w-5 ml-2 text-indigo-600" />
+                <FileText className="h-5 w-5 ms-2 text-indigo-600" />
                 תעודת אנליזה (COA)
               </CardTitle>
             </CardHeader>
@@ -685,7 +685,7 @@ export default function EditReagentBatchPage() {
             <Card>
               <CardHeader className="bg-gradient-to-l from-green-50 to-white">
                 <CardTitle className="flex items-center text-lg">
-                  <Package className="h-5 w-5 ml-2 text-green-600" />
+                  <Package className="h-5 w-5 ms-2 text-green-600" />
                   משלוח מקושר
                 </CardTitle>
               </CardHeader>
@@ -712,7 +712,7 @@ export default function EditReagentBatchPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-sm">
-                  <Package className="h-4 w-4 ml-2 text-gray-600" />
+                  <Package className="h-4 w-4 ms-2 text-gray-600" />
                   משלוחים ({deliveryItems.length})
                 </CardTitle>
               </CardHeader>
@@ -734,7 +734,7 @@ export default function EditReagentBatchPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-sm">
-                  <Activity className="h-4 w-4 ml-2 text-gray-600" />
+                  <Activity className="h-4 w-4 ms-2 text-gray-600" />
                   שליחות ({shipmentItems.length})
                 </CardTitle>
               </CardHeader>

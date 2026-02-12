@@ -150,7 +150,7 @@ export default function TechnicalSpecs() {
                 <CardTitle>APIs ופונקציות צד שרת נדרשות</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <div className="bg-blue-50 p-4 rounded-md">
                       <h3 className="font-bold text-blue-800 mb-2">🚚 API קליטת משלוחים</h3>
@@ -253,7 +253,7 @@ export default function TechnicalSpecs() {
                 <CardTitle>אלגוריתמים מרכזיים</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-6">
                     <div className="bg-blue-50 p-4 rounded-md">
                       <h3 className="font-bold text-blue-800 mb-3">🧮 אלגוריתם חישוב צריכה חודשית ממוצעת</h3>
@@ -352,20 +352,20 @@ export default function TechnicalSpecs() {
                 <CardTitle>תכנית בדיקות מקיפה</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <div className="bg-green-50 p-4 rounded-md">
                       <h3 className="font-bold text-green-800 mb-2">✅ בדיקות יחידה (Unit Tests)</h3>
                       <div className="space-y-2 text-sm">
                         <div><strong>פונקציות חישוב:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>calculateMonthlyConsumption() - עם נתונים מדומים</li>
                           <li>calculateOrderQuantities() - תרחישים שונים</li>
                           <li>updateRemainingQuantities() - מקרי קצה</li>
                         </ul>
                         
                         <div><strong>פונקציות עזר:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>findClosestInventoryCount() - תאריכים</li>
                           <li>validateDeliveryData() - ולידציה</li>
                           <li>formatConsumptionReport() - פורמט יצוא</li>
@@ -377,14 +377,14 @@ export default function TechnicalSpecs() {
                       <h3 className="font-bold text-blue-800 mb-2">🔗 בדיקות אינטגרציה</h3>
                       <div className="space-y-2 text-sm">
                         <div><strong>זרימות עבודה מלאות:</strong></div>
-                        <ol className="list-decimal list-inside mr-4 space-y-1">
+                        <ol className="list-decimal list-inside me-4 space-y-1">
                           <li>יצירת הזמנה → קליטת משלוח → עדכון יתרות</li>
                           <li>ספירת מלאי → חישוב צריכה → יצירת הזמנה</li>
                           <li>משלוח חירום (ללא הזמנה) → עדכון מלאי</li>
                         </ol>
                         
                         <div><strong>אינטגרציה בין מודולים:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>InventoryCount ↔ ConsumptionCalculation</li>
                           <li>Orders ↔ Deliveries ↔ Reagent updates</li>
                           <li>Reports ↔ All data sources</li>
@@ -396,7 +396,7 @@ export default function TechnicalSpecs() {
                       <h3 className="font-bold text-yellow-800 mb-2">👤 בדיקות ממשק משתמש</h3>
                       <div className="space-y-2 text-sm">
                         <div><strong>תרחישי משתמש:</strong></div>
-                        <ol className="list-decimal list-inside mr-4 space-y-1">
+                        <ol className="list-decimal list-inside me-4 space-y-1">
                           <li>קליטת משלוח מלא - חיפוש, הזנה, שמירה</li>
                           <li>יצירת הזמנה מותאמת - בחירת פריטים, עריכת כמויות</li>
                           <li>חישוב צריכה לתקופות שונות - טפסים, דוחות</li>
@@ -404,7 +404,7 @@ export default function TechnicalSpecs() {
                         </ol>
                         
                         <div><strong>בדיקות נגישות:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>עבודה במכשירים ניידים</li>
                           <li>מהירות טעינה וביצועים</li>
                           <li>עבודה במצב לא מקוון חלקי</li>
@@ -416,7 +416,7 @@ export default function TechnicalSpecs() {
                       <h3 className="font-bold text-red-800 mb-2">🚨 בדיקות מקרי קצה</h3>
                       <div className="space-y-2 text-sm">
                         <div><strong>מצבים חריגים:</strong></div>
-                        <ul className="list-disc list-inside mr-4 space-y-1">
+                        <ul className="list-disc list-inside me-4 space-y-1">
                           <li>כמויות שליליות במלאי</li>
                           <li>תאריכי תפוגה שעברו</li>
                           <li>משלוחים ללא הזמנה תואמת</li>
@@ -425,7 +425,7 @@ export default function TechnicalSpecs() {
                         </ul>
                         
                         <div><strong>בדיקות עומס:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>1000+ ריאגנטים בספירה</li>
                           <li>100+ משלוחים בחודש</li>
                           <li>חישוב צריכה על נתוני 5 שנים</li>
@@ -437,7 +437,7 @@ export default function TechnicalSpecs() {
                       <h3 className="font-bold text-purple-800 mb-2">📊 בדיקות ביצועים</h3>
                       <div className="space-y-2 text-sm">
                         <div><strong>מדדי ביצועים:</strong></div>
-                        <ul className="list-disc list-inside mr-4 space-y-1">
+                        <ul className="list-disc list-inside me-4 space-y-1">
                           <li>זמן חישוב צריכה פחות מ-5 שניות</li>
                           <li>טעינת דף קליטת משלוח פחות מ-2 שניות</li>
                           <li>שמירת הזמנה חדשה פחות מ-3 שניות</li>
@@ -445,7 +445,7 @@ export default function TechnicalSpecs() {
                         </ul>
                         
                         <div><strong>בדיקות זיכרון:</strong></div>
-                        <ul className="list-disc list-inside mr-4">
+                        <ul className="list-disc list-inside me-4">
                           <li>ניהול זיכרון בחישובים כבדים</li>
                           <li>מניעת דליפות זיכרון</li>
                           <li>אופטימיזציה של שאילתות DB</li>

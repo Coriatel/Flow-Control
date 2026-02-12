@@ -14,7 +14,7 @@ const CriticalActions = ({ actions }) => {
                             <h3 className="font-semibold text-slate-800">הכל מעודכן!</h3>
                             <p className="text-sm text-slate-600">אין פעולות קריטיות הדורשות טיפול מיידי.</p>
                         </div>
-                        <div className="bg-green-100 p-3 rounded-lg mr-4">
+                        <div className="bg-green-100 p-3 rounded-lg me-4">
                             <Lightbulb className="h-5 w-5 text-green-600" />
                         </div>
                     </div>
@@ -52,7 +52,7 @@ const CriticalActions = ({ actions }) => {
             <CardHeader className="py-3 px-4">
                 <CardTitle className="text-base font-semibold text-slate-800 flex items-center justify-end">
                     <span>המלצות ופעולות קריטיות</span>
-                    <div className="bg-amber-100 p-1.5 rounded-lg mr-2">
+                    <div className="bg-amber-100 p-1.5 rounded-lg me-2">
                         <Lightbulb className="h-4 w-4 text-amber-600" />
                     </div>
                 </CardTitle>
@@ -70,7 +70,7 @@ const CriticalActions = ({ actions }) => {
                                             <p className={`text-sm font-medium text-right w-full ${styles.text} group-hover:font-semibold`}>
                                                 {action.title}{action.description ? ` - ${action.description}` : ''}
                                             </p>
-                                            <AlertTriangle className={`h-4 w-4 ml-2 flex-shrink-0 ${styles.icon}`} />
+                                            <AlertTriangle className={`h-4 w-4 ms-2 flex-shrink-0 ${styles.icon}`} />
                                         </div>
                                     </div>
                                 </div>

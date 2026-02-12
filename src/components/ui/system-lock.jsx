@@ -182,7 +182,7 @@ const SystemLockOverlay = () => {
             {/* צעד נוכחי */}
             <div className="bg-blue-50 rounded-lg p-4 mb-4">
               <div className="flex items-center">
-                <RefreshCw className="h-5 w-5 text-blue-600 animate-spin ml-3" />
+                <RefreshCw className="h-5 w-5 text-blue-600 animate-spin ms-3" />
                 <div>
                   <div className="font-medium text-blue-900">פעולה נוכחית:</div>
                   <div className="text-blue-700">{lockDetails.currentStep || 'מעבד נתונים...'}</div>
@@ -194,7 +194,7 @@ const SystemLockOverlay = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="flex items-center">
-                  <Clock className="h-4 w-4 text-gray-600 ml-2" />
+                  <Clock className="h-4 w-4 text-gray-600 ms-2" />
                   <div>
                     <div className="font-medium text-gray-700">זמן שחלף</div>
                     <div className="text-gray-900 font-mono">{formatTime(elapsedTime)}</div>
@@ -203,7 +203,7 @@ const SystemLockOverlay = () => {
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="flex items-center">
-                  <AlertCircle className="h-4 w-4 text-orange-600 ml-2" />
+                  <AlertCircle className="h-4 w-4 text-orange-600 ms-2" />
                   <div>
                     <div className="font-medium text-gray-700">זמן נותר (משוער)</div>
                     <div className="text-gray-900 font-mono">
@@ -219,13 +219,13 @@ const SystemLockOverlay = () => {
           {lockDetails.affectedScreens.length > 0 && (
             <div className="mb-6">
               <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                <Database className="h-5 w-5 ml-2" />
+                <Database className="h-5 w-5 ms-2" />
                 מסכים המתעדכנים:
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {lockDetails.affectedScreens.map((screen, index) => (
                   <div key={index} className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-yellow-600 inline ml-1" />
+                    <CheckCircle className="h-4 w-4 text-yellow-600 inline ms-1" />
                     {screen}
                   </div>
                 ))}

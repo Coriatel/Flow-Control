@@ -26,7 +26,7 @@ const ContextMenuSubTrigger = React.forwardRef(({ className, inset, children, ..
     )}
     {...props}>
     {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
+    <ChevronRight className="ms-auto h-4 w-4" />
   </ContextMenuPrimitive.SubTrigger>
 ))
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName
@@ -131,7 +131,7 @@ const ContextMenuShortcut = ({
 }) => {
   return (
     (<span
-      className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}
+      className={cn("ms-auto text-xs tracking-widest text-muted-foreground", className)}
       {...props} />)
   );
 }

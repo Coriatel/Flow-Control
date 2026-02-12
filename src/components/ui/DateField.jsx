@@ -31,7 +31,7 @@ export default function DateField({ value, onChange, placeholder = "dd/MM/yyyy",
           <span className={`truncate ${display ? "text-gray-900" : "text-gray-400"}`}>
             {display || placeholder}
           </span>
-          <CalendarIcon className="ml-2 h-4 w-4 opacity-70" />
+          <CalendarIcon className="ms-2 h-4 w-4 opacity-70" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">

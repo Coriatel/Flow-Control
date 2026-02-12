@@ -86,7 +86,7 @@ export default function WithdrawalItemRow({
           <p className="text-xs text-slate-500">מק"ט: {item.catalog_number_snapshot || 'לא ידוע'}</p>
         </div>
         {editing ? (
-          <div className="w-24 ml-4">
+          <div className="w-24 ms-4">
             <Label htmlFor={`item-${item.id}`} className="sr-only">כמות</Label>
             <Input
               id={`item-${item.id}`}
@@ -99,7 +99,7 @@ export default function WithdrawalItemRow({
             />
           </div>
         ) : (
-          <div className="text-left ml-4">
+          <div className="text-left ms-4">
             <p className="text-sm text-slate-500">כמות מבוקשת</p>
             <p className="font-bold text-lg text-slate-800">{item.requested_quantity}</p>
           </div>
@@ -125,7 +125,7 @@ export default function WithdrawalItemRow({
             </div>
             {hasWarning && (
                 <div className="flex items-center text-red-600">
-                    <AlertCircle className="h-3 w-3 ml-1" />
+                    <AlertCircle className="h-3 w-3 ms-1" />
                     <span>{isOverMax ? 'חריגה מיתרת ההזמנה' : 'חריגה מיתרת המלאי'}</span>
                 </div>
             )}

@@ -15,7 +15,7 @@ export default function UploadCOA() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="mr-2" 
+            className="me-2" 
             onClick={() => navigate(createPageUrl('Dashboard'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -46,7 +46,7 @@ export default function UploadCOA() {
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={() => navigate(createPageUrl('Deliveries'))}
               >
-                <Truck className="h-4 w-4 mr-2" />
+                <Truck className="h-4 w-4 me-2" />
                 בחר תעודת משלוח
               </Button>
             </CardContent>
@@ -71,7 +71,7 @@ export default function UploadCOA() {
                 className="w-full bg-orange-600 hover:bg-orange-700"
                 onClick={() => navigate(createPageUrl('BatchAndExpiryManagement'))}
               >
-                <Package className="h-4 w-4 mr-2" />
+                <Package className="h-4 w-4 me-2" />
                 נהל אצוות
               </Button>
             </CardContent>
@@ -82,14 +82,14 @@ export default function UploadCOA() {
         <Card className="mt-8 bg-gray-50">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <FileText className="h-5 w-5 mr-2" />
+              <FileText className="h-5 w-5 me-2" />
               עזרה - איך להעלות תעודות אנליזה?
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm text-gray-700">
               <strong>דרך 1 - לפי תעודת משלוח:</strong>
-              <ol className="list-decimal list-inside mt-1 space-y-1 mr-4">
+              <ol className="list-decimal list-inside mt-1 space-y-1 me-4">
                 <li>לחץ על "בחר תעודת משלוח" למעלה</li>
                 <li>מצא את תעודת המשלוח הרלוונטית ברשימה</li>
                 <li>לחץ על "ערוך" או "הצג פרטים"</li>
@@ -100,7 +100,7 @@ export default function UploadCOA() {
             
             <div className="text-sm text-gray-700">
               <strong>דרך 2 - לפי ניהול אצוות:</strong>
-              <ol className="list-decimal list-inside mt-1 space-y-1 mr-4">
+              <ol className="list-decimal list-inside mt-1 space-y-1 me-4">
                 <li>לחץ על "נהל אצוות" למעלה</li>
                 <li>חפש את האצווה הרצויה ברשימת האצוות</li>
                 <li>לחץ על כפתור ההעלאה ליד האצווה</li>
@@ -110,7 +110,7 @@ export default function UploadCOA() {
 
             <div className="bg-blue-50 p-3 rounded-lg">
               <div className="flex items-start">
-                <Upload className="h-5 w-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                <Upload className="h-5 w-5 text-blue-600 me-2 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
                   <strong>טיפ למובייל:</strong> המערכת תומכת בצילום ישיר של תעודות אנליזה. 
                   פשוט לחץ על כפתור בחירת הקובץ והמצלמה תיפתח אוטומטית לצילום.

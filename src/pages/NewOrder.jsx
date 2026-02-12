@@ -293,7 +293,7 @@ export default function NewOrderPage() {
               disabled={saving} 
               className="bg-amber-500 hover:bg-amber-600 text-white shadow-lg disabled:bg-amber-300"
             >
-              {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
+              {saving ? <Loader2 className="ms-2 h-4 w-4 animate-spin" /> : <Save className="ms-2 h-4 w-4" />}
               צור דרישה ({selectedItems.length})
             </Button>
           </div>

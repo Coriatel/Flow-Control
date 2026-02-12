@@ -528,7 +528,7 @@ export default function NewReagentPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('ManageReagents'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -636,12 +636,12 @@ export default function NewReagentPage() {
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
                         שומר...
                       </>
                     ) : (
                       <>
-                        <Save className="h-4 w-4 mr-2" />
+                        <Save className="h-4 w-4 me-2" />
                         שמור ריאגנט
                       </>
                     )}
@@ -691,17 +691,17 @@ export default function NewReagentPage() {
                       >
                         {uploadingFile ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 me-2 animate-spin" />
                             מעלה קובץ...
                           </>
                         ) : processingFile ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 me-2 animate-spin" />
                             מעבד קובץ...
                           </>
                         ) : (
                           <>
-                            <FileText className="h-4 w-4 mr-2" />
+                            <FileText className="h-4 w-4 me-2" />
                             בחר קובץ
                           </>
                         )}
@@ -950,12 +950,12 @@ export default function NewReagentPage() {
             >
               {creatingReagents ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                   יוצר ריאגנטים...
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   צור {extractedData.length} ריאגנטים
                 </>
               )}

@@ -231,7 +231,7 @@ export default function SupplyTracking() {
     
     return (
       <Badge className={config.class}>
-        <Icon className="h-3 w-3 ml-1" />
+        <Icon className="h-3 w-3 ms-1" />
         {config.label}
       </Badge>
     );
@@ -299,7 +299,7 @@ export default function SupplyTracking() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="mr-3 text-lg text-gray-600">טוען אספקות...</p>
+        <p className="me-3 text-lg text-gray-600">טוען אספקות...</p>
       </div>
     );
   }
@@ -313,7 +313,7 @@ export default function SupplyTracking() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
-                <Clock className="h-6 w-6 ml-2 text-blue-600" />
+                <Clock className="h-6 w-6 ms-2 text-blue-600" />
                 מעקב אספקות ({filteredAndSortedSupplies.length})
               </CardTitle>
               {summary && (
@@ -333,7 +333,7 @@ export default function SupplyTracking() {
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              <span className="mr-2">רענן</span>
+              <span className="me-2">רענן</span>
             </Button>
           </div>
         </CardHeader>
@@ -389,7 +389,7 @@ export default function SupplyTracking() {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full">
-                  <Columns3 className="h-4 w-4 ml-2" />
+                  <Columns3 className="h-4 w-4 ms-2" />
                   עמודות
                 </Button>
               </PopoverTrigger>

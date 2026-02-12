@@ -141,7 +141,7 @@ export default function SystemSettingsPage() {
                             )}
                             <Button asChild variant="outline">
                                 <Label htmlFor="logoUrl" className="cursor-pointer flex items-center">
-                                    <Paperclip className="h-4 w-4 ml-2" />
+                                    <Paperclip className="h-4 w-4 ms-2" />
                                     {logoFile ? 'החלף קובץ' : 'בחר קובץ'}
                                 </Label>
                             </Button>
@@ -158,7 +158,7 @@ export default function SystemSettingsPage() {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+                        {isSaving && <Loader2 className="h-4 w-4 ms-2 animate-spin" />}
                         שמור שינויים
                     </Button>
                 </CardFooter>

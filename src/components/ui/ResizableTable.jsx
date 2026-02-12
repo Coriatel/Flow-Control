@@ -99,7 +99,7 @@ export default function ResizableTable({
             {visibleColumnConfigs.map((column) => (
               <th
                 key={column.key}
-                className="text-right px-4 py-3 font-semibold text-slate-700 border-b-2 border-slate-300 relative group"
+                className="text-right px-4 py-3.5 font-semibold text-slate-700 border-b-2 border-slate-200 relative group"
                 style={{ minWidth: `${columnWidths[column.key]}px` }}
               >
                 <div className="flex items-center justify-between">
@@ -158,7 +158,7 @@ export default function ResizableTable({
           {data.map((item, index) => (
             <tr
               key={item.id || index}
-              className="border-b border-slate-200 hover:bg-slate-50 transition-colors"
+              className="border-b border-slate-200 hover:bg-slate-50/80 transition-colors duration-150"
             >
               {visibleColumnConfigs.map((column) => (
                 <td

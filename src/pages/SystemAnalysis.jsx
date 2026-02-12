@@ -199,7 +199,7 @@ export default function SystemAnalysis() {
                           {issue.severity === 'high' ? 'גבוה' : 
                            issue.severity === 'medium' ? 'בינוני' : 'נמוך'}
                         </Badge>
-                        <span className="mr-2 font-medium">{issue.file}:{issue.line}</span>
+                        <span className="me-2 font-medium">{issue.file}:{issue.line}</span>
                       </div>
                       <p className="mb-2">{issue.description}</p>
                       <p className="text-sm text-green-700"><strong>הצעה:</strong> {issue.suggestion}</p>
@@ -281,7 +281,7 @@ export default function SystemAnalysis() {
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                         <div>
                           <span className="font-medium">{func.name}</span>
-                          <Badge className="mr-2" variant={func.status === 'active' ? 'default' : 'secondary'}>
+                          <Badge className="me-2" variant={func.status === 'active' ? 'default' : 'secondary'}>
                             {func.status === 'active' ? 'פעיל' : 'לא בשימוש'}
                           </Badge>
                         </div>
@@ -298,7 +298,7 @@ export default function SystemAnalysis() {
                   <ul className="space-y-1">
                     {analysisResults.serverSide.recommendations.map((rec, index) => (
                       <li key={index} className="text-sm text-gray-700 flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-600 ml-2" />
+                        <CheckCircle className="h-4 w-4 text-green-600 ms-2" />
                         {rec}
                       </li>
                     ))}

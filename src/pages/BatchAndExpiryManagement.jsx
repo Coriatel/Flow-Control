@@ -177,7 +177,7 @@ const DatePicker = ({ selected, onChange, placeholderText }) => {
           )}
         >
           {selected ? format(selected, "PPP", { locale: he }) : <span>{placeholderText}</span>}
-          <CalendarIcon className="mr-auto ml-2 h-4 w-4 opacity-50" />
+          <CalendarIcon className="me-auto ms-2 h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end" dir="rtl">
@@ -1854,7 +1854,7 @@ export default function BatchAndExpiryManagement() {
                   >
                     {isHandlingAction ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                        <Loader2 className="h-4 w-4 animate-spin ms-2" />
                         מעבד...
                       </>
                     ) : (
@@ -1903,7 +1903,7 @@ export default function BatchAndExpiryManagement() {
                   accept="application/pdf,image/*"
                   capture="environment"
                   onChange={handleCOAFileSelect}
-                  className="block w-full text-base text-slate-800 file:mr-4 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-base file:font-semibold file:bg-amber-500 file:text-white hover:file:bg-amber-600 border border-slate-300 rounded-lg p-2"
+                  className="block w-full text-base text-slate-800 file:me-4 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-base file:font-semibold file:bg-amber-500 file:text-white hover:file:bg-amber-600 border border-slate-300 rounded-lg p-2"
                 />
                 {coaFileName && (
                   <div className="flex items-center gap-2 text-base font-medium text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
@@ -1928,7 +1928,7 @@ export default function BatchAndExpiryManagement() {
                     onClick={() => handleCOAView(selectedBatch)}
                     className="bg-white border-blue-300 text-blue-700 hover:bg-blue-50"
                   >
-                    <FileText className="h-4 w-4 ml-2" />
+                    <FileText className="h-4 w-4 ms-2" />
                     הצג תעודה קיימת
                   </Button>
                   <div className="text-sm text-blue-700 mt-2">
@@ -1954,12 +1954,12 @@ export default function BatchAndExpiryManagement() {
             >
               {uploadingCOA ? (
                 <>
-                  <Loader2 className="h-5 w-5 ml-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 ms-2 animate-spin" />
                   מעלה תעודה...
                 </>
               ) : (
                 <>
-                  <Upload className="h-5 w-5 ml-2" />
+                  <Upload className="h-5 w-5 ms-2" />
                   העלה תעודה
                 </>
               )}
@@ -1981,7 +1981,7 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
       onClick={() => onSort(field)}
     >
       <span className="text-sm font-medium">{label}</span>
-      <div className="flex flex-col items-center ml-1">
+      <div className="flex flex-col items-center ms-1">
         <ChevronUp
           className={`h-3 w-3 ${
             sortConfig.key === field && sortConfig.direction === 'asc'
@@ -2361,14 +2361,14 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
     <div className={`bg-white/80 backdrop-blur-sm border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-200 ${isSelected ? 'border-blue-500 bg-blue-50/20' : 'border-slate-200'}`}>
       <div className="flex items-start justify-between mb-1">
         {/* Checkbox */}
-        <div className="flex-shrink-0 ml-2 pt-1">
+        <div className="flex-shrink-0 ms-2 pt-1">
           <Checkbox checked={isSelected} onCheckedChange={() => onSelect(item.id)} />
         </div>
 
         {/* Left side - Main info in horizontal layout */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <div className="font-semibold text-sm text-slate-800 truncate mr-2">{item?.reagent_name || item?.reagent_name_snapshot}</div>
+            <div className="font-semibold text-sm text-slate-800 truncate me-2">{item?.reagent_name || item?.reagent_name_snapshot}</div>
             <div className="flex items-center gap-1 flex-shrink-0">
               {!isHandled ? (
                 <Badge variant="outline" className="font-mono text-xs px-1 py-0">

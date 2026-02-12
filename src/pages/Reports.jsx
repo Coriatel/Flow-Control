@@ -171,7 +171,7 @@ export default function ReportsPage() {
             <div className="flex items-center">
               <p className="text-2xl font-bold text-slate-900">{value}</p>
               {trend && (
-                <div className={`flex items-center mr-2 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`flex items-center me-2 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {trend > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                   <span className="text-xs font-medium">{Math.abs(trend)}%</span>
                 </div>
@@ -191,7 +191,7 @@ export default function ReportsPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="mr-3 text-lg text-gray-600">טוען נתונים סטטיסטיים...</p>
+        <p className="me-3 text-lg text-gray-600">טוען נתונים סטטיסטיים...</p>
       </div>
     );
   }
@@ -204,7 +204,7 @@ export default function ReportsPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('Dashboard'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -217,7 +217,7 @@ export default function ReportsPage() {
           disabled={analyticsLoading}
           className="bg-white/40 backdrop-blur-lg border border-white/30"
         >
-          {analyticsLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+          {analyticsLoading ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <RefreshCw className="h-4 w-4 ms-2" />}
           רענן נתונים
         </Button>
       </div>
@@ -235,7 +235,7 @@ export default function ReportsPage() {
               <Card className="mb-6 bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Calendar className="h-5 w-5 ml-2" />
+                    <Calendar className="h-5 w-5 ms-2" />
                     בחירת תקופת ניתוח
                   </CardTitle>
                 </CardHeader>
@@ -295,7 +295,7 @@ export default function ReportsPage() {
                 <Card className="bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <TrendingUp className="h-5 w-5 ml-2" />
+                      <TrendingUp className="h-5 w-5 ms-2" />
                       טרנד צריכה חודשי
                     </CardTitle>
                   </CardHeader>
@@ -322,7 +322,7 @@ export default function ReportsPage() {
                 <Card className="bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Package className="h-5 w-5 ml-2" />
+                      <Package className="h-5 w-5 ms-2" />
                       התפלגות סטטוס מלאי
                     </CardTitle>
                   </CardHeader>
@@ -360,7 +360,7 @@ export default function ReportsPage() {
               <Card className="mb-6 bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <BarChart3 className="h-5 w-5 ml-2" />
+                    <BarChart3 className="h-5 w-5 ms-2" />
                     השוואת הזמנות מול משלוחים
                   </CardTitle>
                 </CardHeader>
@@ -383,7 +383,7 @@ export default function ReportsPage() {
               <Card className="mb-6 bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Activity className="h-5 w-5 ml-2" />
+                    <Activity className="h-5 w-5 ms-2" />
                     ריאגנטים מובילים בצריכה
                   </CardTitle>
                 </CardHeader>
@@ -422,7 +422,7 @@ export default function ReportsPage() {
                 <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200">
                   <CardHeader>
                     <CardTitle className="flex items-center text-blue-800">
-                      <Zap className="h-5 w-5 ml-2" />
+                      <Zap className="h-5 w-5 ms-2" />
                       תחזיות חכמות
                     </CardTitle>
                   </CardHeader>
@@ -454,7 +454,7 @@ export default function ReportsPage() {
                 <Card className="bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200">
                   <CardHeader>
                     <CardTitle className="flex items-center text-amber-800">
-                      <AlertTriangle className="h-5 w-5 ml-2" />
+                      <AlertTriangle className="h-5 w-5 ms-2" />
                       ניתוח פגי תוקף
                     </CardTitle>
                   </CardHeader>
@@ -497,7 +497,7 @@ export default function ReportsPage() {
           <Card className="bg-white/40 backdrop-blur-lg border border-white/30 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 ml-2" />
+                <FileText className="h-5 w-5 ms-2" />
                 יצירת דוחות מסורתיים
               </CardTitle>
             </CardHeader>
@@ -539,7 +539,7 @@ export default function ReportsPage() {
                     disabled={loading}
                     className="w-full"
                   >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Download className="h-4 w-4 ml-2" />}
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <Download className="h-4 w-4 ms-2" />}
                     יצר דוח
                   </Button>
                 </div>

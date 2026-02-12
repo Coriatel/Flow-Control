@@ -547,15 +547,15 @@ async function enhancedProcessInventoryCount(context, payload) {
       <Tabs defaultValue="initializeCatalog" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="initializeCatalog" className="text-sm">
-            <Code className="h-4 w-4 mr-2" />
+            <Code className="h-4 w-4 me-2" />
             קטלוג מלא
           </TabsTrigger>
           <TabsTrigger value="cleanupDatabase" className="text-sm">
-            <Code className="h-4 w-4 mr-2" />
+            <Code className="h-4 w-4 me-2" />
             ניקוי מסד נתונים
           </TabsTrigger>
           <TabsTrigger value="enhancedProcessInventoryCount" className="text-sm">
-            <Code className="h-4 w-4 mr-2" />
+            <Code className="h-4 w-4 me-2" />
             עיבוד ספירות
           </TabsTrigger>
         </TabsList>
@@ -565,7 +565,7 @@ async function enhancedProcessInventoryCount(context, payload) {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Server className="h-6 w-6 mr-2 text-green-600" />
+                  <Server className="h-6 w-6 me-2 text-green-600" />
                   initializeCatalog - יצירת קטלוג מלא
                 </div>
                 <div className="flex items-center gap-2">
@@ -611,7 +611,7 @@ async function enhancedProcessInventoryCount(context, payload) {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Server className="h-6 w-6 mr-2 text-red-600" />
+                  <Server className="h-6 w-6 me-2 text-red-600" />
                   cleanupDatabase - ניקוי מסד נתונים
                 </div>
                 <Button
@@ -660,7 +660,7 @@ async function enhancedProcessInventoryCount(context, payload) {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Server className="h-6 w-6 mr-2 text-blue-600" />
+                  <Server className="h-6 w-6 me-2 text-blue-600" />
                   enhancedProcessInventoryCount - עיבוד ספירות משופר
                 </div>
                 <Button

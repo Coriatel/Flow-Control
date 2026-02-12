@@ -23,7 +23,7 @@ export default function AdminPanel() {
             <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                     <CardTitle className="flex items-center text-base">
-                        <Users className="ml-2 h-5 w-5"/>
+                        <Users className="ms-2 h-5 w-5"/>
                         ניהול משתמשים
                     </CardTitle>
                 </CardHeader>
@@ -34,7 +34,7 @@ export default function AdminPanel() {
             <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
                     <CardTitle className="flex items-center text-base">
-                        <Lock className="ml-2 h-5 w-5"/>
+                        <Lock className="ms-2 h-5 w-5"/>
                         הגדרות אבטחה
                     </CardTitle>
                 </CardHeader>

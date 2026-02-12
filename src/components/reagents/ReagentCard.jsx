@@ -73,13 +73,13 @@ export default function ReagentCard({ reagent }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="text-gray-500">מק"ט:</span>
-              <span className="mr-1 font-medium">
+              <span className="me-1 font-medium">
                 {reagent.catalog_number || <span className="text-amber-500">חסר</span>}
               </span>
             </div>
             <div>
               <span className="text-gray-500">ספק:</span>
-              <span className="mr-1 font-medium">{reagent.supplier?.name || <span className="text-amber-500">לא צוין</span>}</span>
+              <span className="me-1 font-medium">{reagent.supplier?.name || <span className="text-amber-500">לא צוין</span>}</span>
             </div>
           </div>
 
@@ -87,11 +87,11 @@ export default function ReagentCard({ reagent }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="text-gray-500">קטגוריה:</span>
-              <span className="mr-1">{categoryLabels[reagent.category] || reagent.category}</span>
+              <span className="me-1">{categoryLabels[reagent.category] || reagent.category}</span>
             </div>
             <div>
               <span className="text-gray-500">כמות:</span>
-              <span className={`mr-1 font-semibold ${reagent.total_quantity_all_batches === 0 ? 'text-red-600' : ''}`}>
+              <span className={`me-1 font-semibold ${reagent.total_quantity_all_batches === 0 ? 'text-red-600' : ''}`}>
                 {formatQuantity(reagent.total_quantity_all_batches || 0)}
               </span>
             </div>
@@ -102,12 +102,12 @@ export default function ReagentCard({ reagent }) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-gray-500">אצוות:</span>
-                <span className="mr-1">{reagent.active_batches_count || 0}</span>
+                <span className="me-1">{reagent.active_batches_count || 0}</span>
               </div>
               {expiryInfo && (
                 <div>
                   <span className="text-gray-500">תפוגה:</span>
-                  <span className={`mr-1 ${expiryInfo.isExpired ? 'text-red-600 font-semibold' : expiryInfo.isExpiringSoon ? 'text-amber-600 font-medium' : ''}`}>
+                  <span className={`me-1 ${expiryInfo.isExpired ? 'text-red-600 font-semibold' : expiryInfo.isExpiringSoon ? 'text-amber-600 font-medium' : ''}`}>
                     {expiryInfo.formatted}
                   </span>
                 </div>
@@ -157,7 +157,7 @@ export default function ReagentCard({ reagent }) {
         <div className="mt-3 pt-3 border-t flex justify-end">
           <Link to={createPageUrl(`EditReagent?id=${reagent.id}`)}>
             <Button variant="outline" size="sm" className="w-full">
-              <Eye className="h-4 w-4 ml-2" />
+              <Eye className="h-4 w-4 ms-2" />
               צפייה ועריכה
             </Button>
           </Link>

@@ -286,9 +286,9 @@ export default function DocumentPrint({ order, children, iconOnly = false }) {
   return (
     <Button variant="outline" size="sm" onClick={handlePrint} disabled={isGenerating}>
       {isGenerating ? (
-        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+        <Loader2 className="h-4 w-4 me-1 animate-spin" />
       ) : (
-        <Printer className="h-4 w-4 mr-1" />
+        <Printer className="h-4 w-4 me-1" />
       )}
       הדפס
     </Button>

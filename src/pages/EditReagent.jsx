@@ -212,7 +212,7 @@ export default function EditReagentPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-        <p className="ml-3 text-lg text-gray-600">טוען נתוני ריאגנט...</p>
+        <p className="ms-3 text-lg text-gray-600">טוען נתוני ריאגנט...</p>
       </div>
     );
   }

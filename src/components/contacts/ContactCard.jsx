@@ -129,7 +129,7 @@ export default function ContactCard({ contact, onEdit }) {
             size="sm"
             onClick={() => onEdit(contact)}
           >
-            <Edit2 className="h-4 w-4 ml-1" />
+            <Edit2 className="h-4 w-4 ms-1" />
             עריכה
           </Button>
         </div>

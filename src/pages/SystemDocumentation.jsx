@@ -563,8 +563,8 @@ export default function SystemDocumentation() {
     if (!doc) return <Badge className="bg-gray-100 text-gray-600">ללא תיעוד</Badge>;
     const hasAll = doc.functional_spec && doc.technical_spec && doc.test_plan && doc.developer_request;
     const hasSome = doc.functional_spec || doc.technical_spec || doc.test_plan || doc.developer_request;
-    if (hasAll) return <Badge className="bg-green-100 text-green-700"><Check className="h-3 w-3 ml-1" />מלא</Badge>;
-    if (hasSome) return <Badge className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />חלקי</Badge>;
+    if (hasAll) return <Badge className="bg-green-100 text-green-700"><Check className="h-3 w-3 ms-1" />מלא</Badge>;
+    if (hasSome) return <Badge className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ms-1" />חלקי</Badge>;
     return <Badge className="bg-gray-100 text-gray-600">ריק</Badge>;
   };
 
@@ -734,7 +734,7 @@ export default function SystemDocumentation() {
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">הערות אישיות</h2>
             <Button onClick={() => { setEditingNote(null); setNewNoteTitle(''); setNewNoteContent(''); setShowNoteDialog(true); }}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 ms-2" />
               הערה חדשה
             </Button>
           </div>
@@ -786,15 +786,15 @@ export default function SystemDocumentation() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => copyToClipboard(systemSpecification)}>
-                    <Copy className="h-4 w-4 ml-2" />
+                    <Copy className="h-4 w-4 ms-2" />
                     העתק
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => downloadAsMarkdown(systemSpecification, 'system-specification')}>
-                    <FileDown className="h-4 w-4 ml-2" />
+                    <FileDown className="h-4 w-4 ms-2" />
                     MD
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => downloadAsHTML(systemSpecification, 'system-specification')}>
-                    <FileDown className="h-4 w-4 ml-2" />
+                    <FileDown className="h-4 w-4 ms-2" />
                     HTML
                   </Button>
                 </div>
@@ -819,15 +819,15 @@ export default function SystemDocumentation() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => copyToClipboard(developmentHistory)}>
-                    <Copy className="h-4 w-4 ml-2" />
+                    <Copy className="h-4 w-4 ms-2" />
                     העתק
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => downloadAsMarkdown(developmentHistory, 'development-history')}>
-                    <FileDown className="h-4 w-4 ml-2" />
+                    <FileDown className="h-4 w-4 ms-2" />
                     MD
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => downloadAsHTML(developmentHistory, 'development-history')}>
-                    <FileDown className="h-4 w-4 ml-2" />
+                    <FileDown className="h-4 w-4 ms-2" />
                     HTML
                   </Button>
                 </div>
@@ -870,7 +870,7 @@ export default function SystemDocumentation() {
             </Button>
             {editingDocType && (
               <Button onClick={handleSaveDoc}>
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-4 w-4 ms-2" />
                 שמור
               </Button>
             )}
@@ -906,7 +906,7 @@ export default function SystemDocumentation() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNoteDialog(false)}>ביטול</Button>
             <Button onClick={editingNote ? handleUpdateNote : handleAddNote}>
-              <Save className="h-4 w-4 ml-2" />
+              <Save className="h-4 w-4 ms-2" />
               {editingNote ? 'עדכן' : 'שמור'}
             </Button>
           </DialogFooter>

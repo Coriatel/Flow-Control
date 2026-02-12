@@ -182,7 +182,7 @@ export default function ArchivedDataViewer() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Search className="h-5 w-5 ml-2" />
+            <Search className="h-5 w-5 ms-2" />
             חיפוש וסינון
           </CardTitle>
         </CardHeader>
@@ -235,7 +235,7 @@ export default function ArchivedDataViewer() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
-              <Archive className="h-5 w-5 ml-2" />
+              <Archive className="h-5 w-5 ms-2" />
               רשומות ארכיוניות ({filteredData.length})
             </div>
             <Button onClick={fetchArchivedData} disabled={loading}>
@@ -276,7 +276,7 @@ export default function ArchivedDataViewer() {
                       <p className="text-sm text-gray-600 mb-1">{item.archive_reason}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center">
-                          <Calendar className="h-3 w-3 ml-1" />
+                          <Calendar className="h-3 w-3 ms-1" />
                           ארכב: {format(parseISO(item.archived_date), 'dd/MM/yyyy HH:mm', { locale: he })}
                         </span>
                         {item.retention_period && (
@@ -343,7 +343,7 @@ export default function ArchivedDataViewer() {
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Database className="h-5 w-5 ml-2" />
+              <Database className="h-5 w-5 ms-2" />
               סטטיסטיקות ארכיון
             </CardTitle>
           </CardHeader>

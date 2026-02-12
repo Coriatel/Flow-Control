@@ -124,7 +124,7 @@ export default function HandledItemsList({ handledExpiredLogs, loading = false }
                   )}
                 </div>
                 
-                <div className="mr-4 flex flex-col items-end gap-2">
+                <div className="me-4 flex flex-col items-end gap-2">
                   <Badge className={`${getActionColor(log.action_taken)} flex items-center gap-1`}>
                     {getActionIcon(log.action_taken)}
                     {getActionLabel(log.action_taken)}

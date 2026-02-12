@@ -212,7 +212,7 @@ export default function SystemManagement() {
           </CardContent>
           <CardFooter>
             <Button onClick={handleRunSummaryUpdates} disabled={loadingUpdates} className="bg-blue-600 hover:bg-blue-700">
-              {loadingUpdates ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <PlayCircle className="h-4 w-4 ml-2" />}
+              {loadingUpdates ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <PlayCircle className="h-4 w-4 ms-2" />}
               הפעל עדכון סיכומים
             </Button>
           </CardFooter>
@@ -233,11 +233,11 @@ export default function SystemManagement() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button onClick={handleCoaExport} disabled={coaExportLoading} className="bg-green-600 hover:bg-green-700">
-                {coaExportLoading ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Download className="h-4 w-4 ml-2" />}
+                {coaExportLoading ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <Download className="h-4 w-4 ms-2" />}
                 ייצוא COA שנתי
               </Button>
               <Button onClick={handleCreateAnnualReminder} disabled={reminderLoading} variant="outline">
-                {reminderLoading ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Bell className="h-4 w-4 ml-2" />}
+                {reminderLoading ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <Bell className="h-4 w-4 ms-2" />}
                 צור תזכורת שנתית
               </Button>
             </div>
@@ -261,7 +261,7 @@ export default function SystemManagement() {
         <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center text-purple-800">
-              <Database className="h-6 w-6 ml-3" />
+              <Database className="h-6 w-6 ms-3" />
               ניהול ארכיון ואחסון קר
             </CardTitle>
             <CardDescription>
@@ -299,19 +299,19 @@ export default function SystemManagement() {
             >
               {loadingArchive ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  <Loader2 className="h-4 w-4 animate-spin ms-2" />
                   מבצע ארכוב...
                 </>
               ) : (
                 <>
-                  <Database className="h-4 w-4 ml-2" />
+                  <Database className="h-4 w-4 ms-2" />
                   בצע ארכוב נתונים
                 </>
               )}
             </Button>
             <Button asChild variant="outline" className="border-purple-400 text-purple-700 hover:bg-purple-50">
               <Link to="/archived-data"> {/* Using a placeholder path */}
-                <Eye className="h-4 w-4 ml-2" />
+                <Eye className="h-4 w-4 ms-2" />
                 צפה בארכיון
               </Link>
             </Button>
@@ -422,7 +422,7 @@ export default function SystemManagement() {
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button variant="destructive" onClick={() => setShowConfirmDialog(true)} disabled={loadingReset}>
-            {loadingReset ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : "התחל איפוס"}
+            {loadingReset ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : "התחל איפוס"}
           </Button>
         </CardFooter>
       </Card>

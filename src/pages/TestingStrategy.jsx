@@ -580,7 +580,7 @@ export default function TestingStrategyPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('AdminPanel'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -593,7 +593,7 @@ export default function TestingStrategyPage() {
             disabled={runningTests}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {runningTests ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+            {runningTests ? <RefreshCw className="h-4 w-4 me-2 animate-spin" /> : <Play className="h-4 w-4 me-2" />}
             הרץ את כל הבדיקות
           </Button>
         </div>
@@ -620,7 +620,7 @@ export default function TestingStrategyPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
+                  <Shield className="h-5 w-5 me-2" />
                   עקרונות אבטחת איכות
                 </CardTitle>
               </CardHeader>
@@ -661,7 +661,7 @@ export default function TestingStrategyPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Bug className="h-5 w-5 mr-2" />
+                  <Bug className="h-5 w-5 me-2" />
                   תיקוני באגים ושיפורים
                 </CardTitle>
               </CardHeader>

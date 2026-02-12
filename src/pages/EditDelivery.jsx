@@ -208,7 +208,7 @@ export default function EditDeliveryPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-        <p className="ml-3 text-lg text-gray-600">טוען נתוני משלוח...</p>
+        <p className="ms-3 text-lg text-gray-600">טוען נתוני משלוח...</p>
       </div>
     );
   }
@@ -690,7 +690,7 @@ export default function EditDeliveryPage() {
               disabled={saving}
               className="bg-amber-500 hover:bg-amber-600 text-white"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : null}
               אישור שינוי
             </Button>
           </DialogFooter>

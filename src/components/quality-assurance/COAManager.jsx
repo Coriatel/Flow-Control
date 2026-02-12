@@ -161,7 +161,7 @@ export default function COAManager({
         )}
         
         {/* Status Indicator */}
-        <div className="ml-1">
+        <div className="ms-1">
           {hasCOA ? (
             <CheckCircle className="h-3 w-3 text-green-500" title="COA קיים" />
           ) : (

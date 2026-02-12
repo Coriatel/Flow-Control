@@ -295,7 +295,7 @@ export default function CleanupData() {
         <Card className="border-l-4 border-l-orange-500">
           <CardHeader>
             <CardTitle className="flex items-center text-orange-700">
-              <Clock className="ml-2 h-5 w-5" />
+              <Clock className="ms-2 h-5 w-5" />
               פעולות ניקוי אוטומטיות (שרת)
             </CardTitle>
             <CardDescription>
@@ -311,9 +311,9 @@ export default function CleanupData() {
                 className="w-full justify-start"
               >
                 {serverProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 me-2" />
                 )}
                 מחיקת טיוטות ישנות (30+ ימים)
               </Button>
@@ -325,9 +325,9 @@ export default function CleanupData() {
                 className="w-full justify-start"
               >
                 {serverProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <AlertTriangle className="h-4 w-4 me-2" />
                 )}
                 ניקוי אצוות פגות תוקף (90+ ימים)
               </Button>
@@ -339,9 +339,9 @@ export default function CleanupData() {
                 className="w-full justify-start"
               >
                 {serverProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Database className="h-4 w-4 mr-2" />
+                  <Database className="h-4 w-4 me-2" />
                 )}
                 ניקוי רשומות ריקות
               </Button>
@@ -353,9 +353,9 @@ export default function CleanupData() {
                 className="w-full justify-start"
               >
                 {serverProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Shuffle className="h-4 w-4 mr-2" />
+                  <Shuffle className="h-4 w-4 me-2" />
                 )}
                 איחוד ריאגנטים כפולים
               </Button>
@@ -367,7 +367,7 @@ export default function CleanupData() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center text-red-600">
-              <Trash2 className="h-6 w-6 mr-2" />
+              <Trash2 className="h-6 w-6 me-2" />
               איפוס מלא ושיטתי (פעולה מקומית)
             </CardTitle>
             <CardDescription>
@@ -406,12 +406,12 @@ export default function CleanupData() {
                 >
                   {cleaning ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-4 w-4 animate-spin me-2" />
                       מבצע איפוס...
                     </>
                   ) : (
                     <>
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4 me-2" />
                       התחל איפוס מבוקר
                     </>
                   )}

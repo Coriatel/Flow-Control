@@ -66,7 +66,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול קליטת משלוחים - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. יצירת ישויות חדשות</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -187,7 +187,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול חישוב צריכה ממוצעת - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. אלגוריתם חישוב צריכה</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -280,7 +280,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>מודול ניהול הזמנות מתקדם - מפרט טכני</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. מחזור חיי הזמנה</h3>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -399,7 +399,7 @@ export default function DevelopmentStrategy() {
                 <CardTitle>פיתוחים עתידיים - חזון ארוך טווח</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4 -mr-4">
+                <ScrollArea className="h-[600px] pr-4 -me-4">
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">1. זיהוי אוטומטי של מסמכים (OCR)</h3>
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-md">

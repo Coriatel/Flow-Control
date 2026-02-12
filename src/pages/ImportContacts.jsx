@@ -152,7 +152,7 @@ export default function ImportContactsPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('Contacts'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -163,7 +163,7 @@ export default function ImportContactsPage() {
           </div>
         </div>
         <Button variant="outline" onClick={downloadTemplate}>
-          <Download className="h-4 w-4 mr-2" />
+          <Download className="h-4 w-4 me-2" />
           הורד תבנית
         </Button>
       </div>
@@ -190,7 +190,7 @@ export default function ImportContactsPage() {
                 }`}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <span className={`mr-2 text-sm ${
+                <span className={`me-2 text-sm ${
                   isActive ? 'text-blue-600 font-medium' :
                   isCompleted ? 'text-green-600' :
                   'text-gray-400'
@@ -213,7 +213,7 @@ export default function ImportContactsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Upload className="h-5 w-5 mr-2" />
+              <Upload className="h-5 w-5 me-2" />
               העלאת קובץ CSV
             </CardTitle>
           </CardHeader>
@@ -240,7 +240,7 @@ export default function ImportContactsPage() {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-blue-600 mr-2" />
+                    <FileText className="h-5 w-5 text-blue-600 me-2" />
                     <div>
                       <p className="font-medium">{file.name}</p>
                       <p className="text-sm text-gray-600">
@@ -265,7 +265,7 @@ export default function ImportContactsPage() {
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 me-2 animate-spin" />
                     בודק...
                   </>
                 ) : (
@@ -282,7 +282,7 @@ export default function ImportContactsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2" />
+              <Eye className="h-5 w-5 me-2" />
               תוצאות בדיקה
             </CardTitle>
           </CardHeader>
@@ -354,7 +354,7 @@ export default function ImportContactsPage() {
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 me-2 animate-spin" />
                     מייבא...
                   </>
                 ) : (
@@ -371,7 +371,7 @@ export default function ImportContactsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center text-green-600">
-              <CheckCircle className="h-5 w-5 mr-2" />
+              <CheckCircle className="h-5 w-5 me-2" />
               ייבוא הושלם בהצלחה
             </CardTitle>
           </CardHeader>
@@ -395,7 +395,7 @@ export default function ImportContactsPage() {
                 ייבא קובץ נוסף
               </Button>
               <Button onClick={() => navigate(createPageUrl('Contacts'))}>
-                <Users className="h-4 w-4 mr-2" />
+                <Users className="h-4 w-4 me-2" />
                 עבור לרשימת אנשי קשר
               </Button>
             </div>

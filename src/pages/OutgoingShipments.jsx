@@ -236,12 +236,12 @@ export default function OutgoingShipmentsPage() {
       case 'confirmation_status':
         return shipment.confirmation_received ? (
           <div className="flex items-center text-green-600">
-            <CheckCircle2 className="h-4 w-4 mr-1" />
+            <CheckCircle2 className="h-4 w-4 me-1" />
             <span className="text-xs">אושר</span>
           </div>
         ) : shipment.status === 'sent' ? (
           <div className="flex items-center text-amber-600">
-            <AlertTriangle className="h-4 w-4 mr-1" />
+            <AlertTriangle className="h-4 w-4 me-1" />
             <span className="text-xs">ממתין</span>
           </div>
         ) : (
@@ -354,7 +354,7 @@ export default function OutgoingShipmentsPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="mr-2">טוען משלוחים...</span>
+        <span className="me-2">טוען משלוחים...</span>
       </div>
     );
   }
@@ -368,7 +368,7 @@ export default function OutgoingShipmentsPage() {
             <BackButton />
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center truncate">
-                <Package className="h-5 w-5 sm:h-6 sm:w-6 ml-2 text-indigo-600 flex-shrink-0" />
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 ms-2 text-indigo-600 flex-shrink-0" />
                 <span className="truncate">משלוחים יוצאים</span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -380,7 +380,7 @@ export default function OutgoingShipmentsPage() {
           {/* Desktop: Full Button */}
           <Link to={createPageUrl('NewShipment')} className="hidden sm:block flex-shrink-0">
             <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 me-2" />
               משלוח חדש
             </Button>
           </Link>
@@ -466,17 +466,17 @@ export default function OutgoingShipmentsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4 mr-2" />
+                <MoreHorizontal className="h-4 w-4 me-2" />
                 פעולות
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 הדפס
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -485,7 +485,7 @@ export default function OutgoingShipmentsPage() {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                <Columns3 className="h-4 w-4 mr-2" />
+                <Columns3 className="h-4 w-4 me-2" />
                 עמודות
               </Button>
             </PopoverTrigger>
@@ -518,7 +518,7 @@ export default function OutgoingShipmentsPage() {
             onClick={() => setMobileFilterOpen(true)}
             className="flex-1 relative"
           >
-            <Filter className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4 me-2" />
             סינון
             {activeFiltersCount > 0 && (
               <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 bg-amber-500 text-white text-xs">
@@ -535,11 +535,11 @@ export default function OutgoingShipmentsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 הדפס
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -693,7 +693,7 @@ export default function OutgoingShipmentsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl(`EditShipment?id=${shipment.id}`)}>
-                        <Edit className="h-4 w-4 ml-2" />
+                        <Edit className="h-4 w-4 ms-2" />
                         עריכה
                       </DropdownMenuItem>
                     </DropdownMenuContent>

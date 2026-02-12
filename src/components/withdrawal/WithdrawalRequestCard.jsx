@@ -83,13 +83,13 @@ const WithdrawalRequestCard = ({ request }) => {
                         ) : (
                             <span className="font-medium text-amber-700">ללא הזמנת מסגרת</span>
                         )}
-                        <span className="flex items-center text-slate-500"><ShoppingCart className="w-3 h-3 ml-1"/>הזמנת מסגרת</span>
+                        <span className="flex items-center text-slate-500"><ShoppingCart className="w-3 h-3 ms-1"/>הזמנת מסגרת</span>
                     </div>
                      <div className="flex justify-between items-center">
                          <span className="font-medium text-slate-700">
                             {request.request_date ? format(parseISO(request.request_date), 'dd/MM/yy', { locale: he }) : 'לא צוין'}
                         </span>
-                        <span className="flex items-center text-slate-500"><Calendar className="w-3 h-3 ml-1"/>תאריך בקשה</span>
+                        <span className="flex items-center text-slate-500"><Calendar className="w-3 h-3 ms-1"/>תאריך בקשה</span>
                     </div>
                 </div>
             </CardContent>

@@ -188,7 +188,7 @@ export default function SupplierForm({ supplier, onSuccess, onCancel }) {
           ביטול
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+          {saving && <Loader2 className="h-4 w-4 animate-spin ms-2" />}
           {supplier ? 'עדכן' : 'צור ספק'}
         </Button>
       </div>

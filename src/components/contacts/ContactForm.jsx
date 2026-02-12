@@ -117,7 +117,7 @@ export default function ContactForm({ contact, onSuccess, onCancel }) {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="mr-3 text-gray-600">טוען נתונים...</span>
+        <span className="me-3 text-gray-600">טוען נתונים...</span>
       </div>
     );
   }
@@ -273,7 +273,7 @@ export default function ContactForm({ contact, onSuccess, onCancel }) {
         <Button type="submit" disabled={saving}>
           {saving ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 me-2 animate-spin" />
               שומר...
             </>
           ) : (

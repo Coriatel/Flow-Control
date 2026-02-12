@@ -184,7 +184,7 @@ export default function EditWithdrawalRequestPage() {
         return (
             <div className="flex justify-center items-center h-64" dir="rtl">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="mr-2">טוען נתונים...</span>
+                <span className="me-2">טוען נתונים...</span>
             </div>
         );
     }
@@ -198,7 +198,7 @@ export default function EditWithdrawalRequestPage() {
                             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                             <p className="text-lg text-gray-700">בקשת משיכה לא נמצאה</p>
                             <Button onClick={() => navigate(createPageUrl('WithdrawalRequests'))} className="mt-4">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                <ArrowLeft className="h-4 w-4 me-2" />
                                 חזרה לרשימה
                             </Button>
                         </div>
@@ -237,7 +237,7 @@ export default function EditWithdrawalRequestPage() {
                                 variant="outline"
                                 onClick={() => setShowPrintDialog(true)}
                             >
-                                <Printer className="h-4 w-4 mr-2" />
+                                <Printer className="h-4 w-4 me-2" />
                                 הדפסה
                             </Button>
                             <Button
@@ -245,7 +245,7 @@ export default function EditWithdrawalRequestPage() {
                                 onClick={() => setIsEditMode(true)}
                                 disabled={withdrawalRequest.status === 'completed' || withdrawalRequest.status === 'cancelled'}
                             >
-                                <Edit className="h-4 w-4 mr-2" />
+                                <Edit className="h-4 w-4 me-2" />
                                 עריכה
                             </Button>
                             <Button
@@ -254,7 +254,7 @@ export default function EditWithdrawalRequestPage() {
                                 className="text-red-600 hover:text-red-700"
                                 disabled={withdrawalRequest.status === 'completed'}
                             >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-4 w-4 me-2" />
                                 מחיקה
                             </Button>
                         </>
@@ -265,7 +265,7 @@ export default function EditWithdrawalRequestPage() {
                                 onClick={handleCancel}
                                 disabled={saving}
                             >
-                                <X className="h-4 w-4 mr-2" />
+                                <X className="h-4 w-4 me-2" />
                                 ביטול
                             </Button>
                             <Button
@@ -273,7 +273,7 @@ export default function EditWithdrawalRequestPage() {
                                 disabled={saving}
                                 className="bg-amber-500 hover:bg-amber-600"
                             >
-                                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                                {saving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
                                 שמירה
                             </Button>
                         </>
@@ -312,7 +312,7 @@ export default function EditWithdrawalRequestPage() {
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center">
-                            <FileText className="h-5 w-5 ml-2 text-blue-600" />
+                            <FileText className="h-5 w-5 ms-2 text-blue-600" />
                             פרטי בקשה
                         </CardTitle>
                     </CardHeader>
@@ -439,7 +439,7 @@ export default function EditWithdrawalRequestPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center text-base">
-                            <Truck className="h-5 w-5 ml-2 text-purple-600" />
+                            <Truck className="h-5 w-5 ms-2 text-purple-600" />
                             מסמכים מקושרים
                         </CardTitle>
                     </CardHeader>
@@ -472,11 +472,11 @@ export default function EditWithdrawalRequestPage() {
                         {/* Created By / Date */}
                         <div className="pt-4 border-t">
                             <div className="flex items-center text-xs text-gray-500 mb-2">
-                                <User className="h-3 w-3 ml-1" />
+                                <User className="h-3 w-3 ms-1" />
                                 נוצר על ידי: {withdrawalRequest.created_by || 'לא ידוע'}
                             </div>
                             <div className="flex items-center text-xs text-gray-500">
-                                <Calendar className="h-3 w-3 ml-1" />
+                                <Calendar className="h-3 w-3 ms-1" />
                                 תאריך בקשה: {format(parseISO(withdrawalRequest.request_date), 'dd/MM/yyyy', { locale: he })}
                             </div>
                         </div>
@@ -488,7 +488,7 @@ export default function EditWithdrawalRequestPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center">
-                        <Package className="h-5 w-5 ml-2 text-green-600" />
+                        <Package className="h-5 w-5 ms-2 text-green-600" />
                         פריטים בבקשה ({items.length})
                     </CardTitle>
                 </CardHeader>

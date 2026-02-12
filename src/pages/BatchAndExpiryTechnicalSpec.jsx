@@ -36,7 +36,7 @@ export default function BatchAndExpiryTechnicalSpec() {
     <div className="bg-gray-900 text-gray-100 rounded-lg overflow-hidden my-4">
       {title && (
         <div className="bg-gray-800 px-4 py-2 text-sm font-medium text-gray-300 border-b border-gray-700">
-          <Code className="inline w-4 h-4 mr-2" />
+          <Code className="inline w-4 h-4 me-2" />
           {title}
         </div>
       )}
@@ -61,7 +61,7 @@ export default function BatchAndExpiryTechnicalSpec() {
         >
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center">
-              <Icon className="w-5 h-5 mr-3 text-blue-600" />
+              <Icon className="w-5 h-5 me-3 text-blue-600" />
               {title}
             </div>
             {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
@@ -86,7 +86,7 @@ export default function BatchAndExpiryTechnicalSpec() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate(createPageUrl('Dashboard'))}
-                className="mr-3"
+                className="me-3"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -221,30 +221,30 @@ State Management:
                 <div className="text-sm font-mono bg-white p-4 rounded border">
                   <div className="space-y-1">
                     <div>BatchAndExpiryManagement/</div>
-                    <div className="mr-2">├── pages/</div>
-                    <div className="mr-4">│   └── BatchAndExpiryManagement.jsx</div>
-                    <div className="mr-2">├── components/</div>
-                    <div className="mr-4">│   ├── batch/</div>
-                    <div className="mr-6">│   │   ├── BatchRow.jsx</div>
-                    <div className="mr-6">│   │   ├── BatchFilters.jsx</div>
-                    <div className="mr-6">│   │   ├── BatchActions.jsx</div>
-                    <div className="mr-6">│   │   └── COAManager.jsx</div>
-                    <div className="mr-4">│   ├── expiry/</div>
-                    <div className="mr-6">│   │   ├── ExpiringBatchesView.jsx</div>
-                    <div className="mr-6">│   │   ├── HandledBatchesView.jsx</div>
-                    <div className="mr-6">│   │   └── AllBatchesView.jsx</div>
-                    <div className="mr-4">│   └── ui/</div>
-                    <div className="mr-6">│       ├── StatusBadge.jsx</div>
-                    <div className="mr-6">│       ├── PriorityIndicator.jsx</div>
-                    <div className="mr-6">│       └── ActionDialog.jsx</div>
-                    <div className="mr-2">├── functions/</div>
-                    <div className="mr-4">│   ├── getBatchAndExpiryData.js</div>
-                    <div className="mr-4">│   ├── updateReagentInventory.js</div>
-                    <div className="mr-4">│   └── exportBatchData.js</div>
-                    <div className="mr-2">└── utils/</div>
-                    <div className="mr-4">    ├── dateUtils.js</div>
-                    <div className="mr-4">    ├── batchHelpers.js</div>
-                    <div className="mr-4">    └── exportHelpers.js</div>
+                    <div className="me-2">├── pages/</div>
+                    <div className="me-4">│   └── BatchAndExpiryManagement.jsx</div>
+                    <div className="me-2">├── components/</div>
+                    <div className="me-4">│   ├── batch/</div>
+                    <div className="me-6">│   │   ├── BatchRow.jsx</div>
+                    <div className="me-6">│   │   ├── BatchFilters.jsx</div>
+                    <div className="me-6">│   │   ├── BatchActions.jsx</div>
+                    <div className="me-6">│   │   └── COAManager.jsx</div>
+                    <div className="me-4">│   ├── expiry/</div>
+                    <div className="me-6">│   │   ├── ExpiringBatchesView.jsx</div>
+                    <div className="me-6">│   │   ├── HandledBatchesView.jsx</div>
+                    <div className="me-6">│   │   └── AllBatchesView.jsx</div>
+                    <div className="me-4">│   └── ui/</div>
+                    <div className="me-6">│       ├── StatusBadge.jsx</div>
+                    <div className="me-6">│       ├── PriorityIndicator.jsx</div>
+                    <div className="me-6">│       └── ActionDialog.jsx</div>
+                    <div className="me-2">├── functions/</div>
+                    <div className="me-4">│   ├── getBatchAndExpiryData.js</div>
+                    <div className="me-4">│   ├── updateReagentInventory.js</div>
+                    <div className="me-4">│   └── exportBatchData.js</div>
+                    <div className="me-2">└── utils/</div>
+                    <div className="me-4">    ├── dateUtils.js</div>
+                    <div className="me-4">    ├── batchHelpers.js</div>
+                    <div className="me-4">    └── exportHelpers.js</div>
                   </div>
                 </div>
               </div>
@@ -1579,7 +1579,7 @@ const parseVoiceCommand = (command) => {
 
         <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
           <div className="flex items-center mb-4">
-            <Lightbulb className="w-6 h-6 text-blue-600 mr-3" />
+            <Lightbulb className="w-6 h-6 text-blue-600 me-3" />
             <h3 className="text-xl font-bold text-blue-900">סיכום טכני</h3>
           </div>
           

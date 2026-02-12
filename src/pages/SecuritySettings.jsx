@@ -123,24 +123,24 @@ export default function SecuritySettings() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">הגדרות אבטחה</h1>
         <div className="flex items-center">
-          <ShieldCheck className="h-5 w-5 text-green-500 ml-2" />
+          <ShieldCheck className="h-5 w-5 text-green-500 ms-2" />
           <span className="text-sm text-green-700">רמת אבטחה גבוהה</span>
         </div>
       </div>
       
       {showSuccess && (
         <Alert className="bg-green-50 border-green-200 text-green-800">
-          <CheckCircle className="h-4 w-4 ml-2" />
+          <CheckCircle className="h-4 w-4 ms-2" />
           <AlertDescription>ההגדרות נשמרו בהצלחה</AlertDescription>
         </Alert>
       )}
       
       {error && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4 ml-2" />
+          <AlertCircle className="h-4 w-4 ms-2" />
           <AlertDescription>
             {error}
-            <Button variant="link" onClick={() => setRetryCount(0)} className="p-0 h-auto text-white underline mr-2">
+            <Button variant="link" onClick={() => setRetryCount(0)} className="p-0 h-auto text-white underline me-2">
               נסה שוב
             </Button>
           </AlertDescription>
@@ -160,7 +160,7 @@ export default function SecuritySettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 ml-2" />
+                <Shield className="h-5 w-5 ms-2" />
                 הגדרות אבטחה כלליות
               </CardTitle>
               <CardDescription>
@@ -245,7 +245,7 @@ export default function SecuritySettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Smartphone className="h-5 w-5 ml-2" />
+                <Smartphone className="h-5 w-5 ms-2" />
                 אבטחת מכשירים
               </CardTitle>
               <CardDescription>
@@ -281,17 +281,17 @@ export default function SecuritySettings() {
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                       מעבד...
                     </>
                   ) : user?.device_fingerprint ? (
                     <>
-                      <RefreshCw className="h-4 w-4 ml-2" />
+                      <RefreshCw className="h-4 w-4 ms-2" />
                       אפס זיהוי מכשיר
                     </>
                   ) : (
                     <>
-                      <Shield className="h-4 w-4 ml-2" />
+                      <Shield className="h-4 w-4 ms-2" />
                       רשום מכשיר זה
                     </>
                   )}
@@ -308,12 +308,12 @@ export default function SecuritySettings() {
             >
               {saving ? (
                 <>
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                   שומר הגדרות...
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="h-4 w-4 ml-2" />
+                  <ShieldCheck className="h-4 w-4 ms-2" />
                   שמור הגדרות אבטחה
                 </>
               )}

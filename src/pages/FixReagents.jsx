@@ -202,7 +202,7 @@ export default function FixReagentsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Wrench className="h-6 w-6 mr-3 text-blue-600" />
+            <Wrench className="h-6 w-6 me-3 text-blue-600" />
             תיקון ריאגנטים - שדות נדרשים
           </CardTitle>
         </CardHeader>
@@ -217,19 +217,19 @@ export default function FixReagentsPage() {
 
           <div className="flex gap-4">
             <Button onClick={checkReagents} variant="outline" disabled={fixing}>
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="h-4 w-4 me-2" />
               בדוק ריאגנטים
             </Button>
             
             <Button onClick={fixAllReagents} disabled={fixing}>
               {fixing ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                   מתקן...
                 </>
               ) : (
                 <>
-                  <Wrench className="h-4 w-4 mr-2" />
+                  <Wrench className="h-4 w-4 me-2" />
                   תקן את כל הריאגנטים
                 </>
               )}

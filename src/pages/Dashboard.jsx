@@ -167,7 +167,7 @@ export default function Dashboard() {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
-        <span className="mr-3 text-lg text-gray-600">טוען דשבורד...</span>
+        <span className="ms-3 text-lg text-gray-600">טוען דשבורד...</span>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function Dashboard() {
         <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
         <p className="text-red-600 text-lg">{error}</p>
         <Button onClick={fetchDashboardData} className="mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="h-4 w-4 me-2" />
           נסה שוב
         </Button>
       </div>
@@ -237,10 +237,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 mb-4">
+      <div className="bg-gradient-to-br from-white to-slate-50 border-b border-gray-200 px-4 py-3 mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-800">מרכז הבקרה</h1>
+            <h1 className="text-2xl font-bold text-slate-900">מרכז הבקרה</h1>
             <p className="text-sm text-slate-600 mt-1">מידע מבצעי ופעולות לניהול המלאי</p>
           </div>
           <Button
@@ -251,7 +251,7 @@ export default function Dashboard() {
             className="bg-white border-slate-300 hover:bg-slate-50"
           >
             {isManualRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            <span className="mr-2">רענון</span>
+            <span className="ms-2">רענון</span>
           </Button>
         </div>
       </div>
@@ -262,9 +262,9 @@ export default function Dashboard() {
           <MobileAlerts actions={criticalActions} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-8">
           {/* Main Content - InfoCards (right side in RTL = first in DOM) */}
-          <div className="lg:col-span-3 space-y-4 mb-6 lg:mb-0">
+          <div className="lg:col-span-3 space-y-6 mb-6 lg:mb-0">
             <InfoCard
               icon={<Clock />}
               title="ריאגנטים קצרי תוקף"
@@ -321,11 +321,11 @@ export default function Dashboard() {
             <Card className="bg-white shadow-sm border border-gray-200 rounded-lg">
               <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
                 <CardTitle className="flex items-center text-base font-semibold text-slate-800">
-                  <ClipboardCheck className="h-5 w-5 text-amber-600 ml-2" />
+                  <ClipboardCheck className="h-5 w-5 text-amber-600 me-2" />
                   הערות ומשימות
                 </CardTitle>
                 <Link to={createPageUrl('DashboardNotes')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center">
-                  הצג הכל <ArrowLeft className="h-4 w-4 mr-1" />
+                  הצג הכל <ArrowLeft className="h-4 w-4 ms-1" />
                 </Link>
               </CardHeader>
               <CardContent className="px-4 pb-4">
@@ -350,7 +350,7 @@ export default function Dashboard() {
 
             <div className="w-full">
               <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-end">
-                <div className="bg-sky-100 p-2 rounded-lg ml-3">
+                <div className="bg-sky-100 p-2 rounded-lg me-3">
                   <Zap className="h-5 w-5 text-sky-700" />
                 </div>
                 <span>ניווט מהיר ופעולות</span>

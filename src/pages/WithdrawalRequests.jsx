@@ -461,7 +461,7 @@ export default function WithdrawalRequestsPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="mr-2">טוען בקשות משיכה...</span>
+        <span className="me-2">טוען בקשות משיכה...</span>
       </div>
     );
   }
@@ -475,7 +475,7 @@ export default function WithdrawalRequestsPage() {
             <BackButton />
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center truncate">
-                <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6 ml-2 text-purple-600 flex-shrink-0" />
+                <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6 ms-2 text-purple-600 flex-shrink-0" />
                 <span className="truncate">ניהול בקשות משיכה</span>
               </h1>
             </div>
@@ -484,12 +484,12 @@ export default function WithdrawalRequestsPage() {
           {/* Desktop: Full Button */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
+              <Printer className="h-4 w-4 me-2" />
               הדפסה
             </Button>
             <Link to={createPageUrl('NewWithdrawalRequest')}>
               <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 בקשת משיכה חדשה
               </Button>
             </Link>
@@ -570,17 +570,17 @@ export default function WithdrawalRequestsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4 mr-2" />
+                <MoreHorizontal className="h-4 w-4 me-2" />
                 פעולות
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 הדפס
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -589,7 +589,7 @@ export default function WithdrawalRequestsPage() {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                <Columns className="h-4 w-4 mr-2" />
+                <Columns className="h-4 w-4 me-2" />
                 עמודות
               </Button>
             </PopoverTrigger>
@@ -622,7 +622,7 @@ export default function WithdrawalRequestsPage() {
             onClick={() => setMobileFilterOpen(true)}
             className="flex-1 relative"
           >
-            <Filter className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4 me-2" />
             סינון
             {activeFiltersCount > 0 && (
               <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 bg-amber-500 text-white text-xs">
@@ -639,11 +639,11 @@ export default function WithdrawalRequestsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 הדפס
               </DropdownMenuItem>
               <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
                 רענון
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -774,7 +774,7 @@ export default function WithdrawalRequestsPage() {
             >
               {deleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                   מוחק...
                 </>
               ) : (
@@ -800,8 +800,12 @@ export default function WithdrawalRequestsPage() {
             />
 
             {filteredAndSortedWithdrawals.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">לא נמצאו בקשות משיכה התואמות לחיפוש</p>
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <PackageCheck className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">לא נמצאו בקשות משיכה</p>
+                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
               </div>
             )}
           </CardContent>
@@ -811,10 +815,13 @@ export default function WithdrawalRequestsPage() {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {filteredAndSortedWithdrawals.length === 0 ? (
-          <Card className="p-6">
-            <div className="text-center text-gray-500">
-              <PackageCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <p>לא נמצאו בקשות משיכה התואמות לחיפוש</p>
+          <Card className="p-8">
+            <div className="text-center">
+              <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <PackageCheck className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">לא נמצאו בקשות משיכה</p>
+              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
             </div>
           </Card>
         ) : (
@@ -838,11 +845,11 @@ export default function WithdrawalRequestsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       <DropdownMenuItem onClick={() => handleRowPrint(withdrawal)}>
-                        <Printer className="h-4 w-4 ml-2" />
+                        <Printer className="h-4 w-4 ms-2" />
                         הדפסה
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate(createPageUrl(`EditWithdrawalRequest?id=${withdrawal.id}`))}>
-                        <Edit className="h-4 w-4 ml-2" />
+                        <Edit className="h-4 w-4 ms-2" />
                         עריכה
                       </DropdownMenuItem>
                       {(withdrawal.status === 'draft' || withdrawal.status === 'submitted') && (
@@ -850,7 +857,7 @@ export default function WithdrawalRequestsPage() {
                           onClick={() => handleDeleteClick(withdrawal)}
                           className="text-red-600"
                         >
-                          <Trash2 className="h-4 w-4 ml-2" />
+                          <Trash2 className="h-4 w-4 ms-2" />
                           מחק
                         </DropdownMenuItem>
                       )}

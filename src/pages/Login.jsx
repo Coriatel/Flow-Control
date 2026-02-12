@@ -123,15 +123,28 @@ export default function Login() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   מתחבר...
                 </>
               ) : (
                 <>
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="me-2 h-4 w-4" />
                   התחבר
                 </>
               )}
+            </Button>
+
+            <div className="relative w-full">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">או</span>
+              </div>
+            </div>
+
+            <Button type="button" variant="outline" className="w-full" asChild>
+              <a href="/auth/google">המשך עם Google</a>
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
@@ -142,12 +155,6 @@ export default function Login() {
               >
                 הירשם כאן
               </Link>
-            </div>
-
-            <div className="pt-4 border-t">
-              <p className="text-xs text-center text-muted-foreground">
-                משתמש לדוגמה: admin@flow-control.com / Admin123!
-              </p>
             </div>
           </CardFooter>
         </form>

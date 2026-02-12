@@ -106,7 +106,7 @@ export default function ReagentItem({ reagent, batches, onBatchesChange, showNew
           onClick={handleAddBatch}
           className="w-full border-dashed border-2 hover:border-blue-400 hover:bg-blue-50 transition-colors"
         >
-          <Plus className="h-4 w-4 ml-2" />
+          <Plus className="h-4 w-4 ms-2" />
           הוסף אצווה
         </Button>
       </div>

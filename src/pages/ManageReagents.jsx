@@ -35,11 +35,11 @@ const stockStatusLabels = {
   overstocked: 'מלאי עודף'
 };
 
-const stockStatusColors = {
-  in_stock: 'bg-green-100 text-green-800 border-green-300',
-  low_stock: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  out_of_stock: 'bg-red-100 text-red-800 border-red-300',
-  overstocked: 'bg-blue-100 text-blue-800 border-blue-300'
+const stockStatusVariants = {
+  in_stock: 'success',
+  low_stock: 'warning',
+  out_of_stock: 'danger',
+  overstocked: 'info'
 };
 
 export default function ManageReagentsPage() {
@@ -269,7 +269,7 @@ export default function ManageReagentsPage() {
         return reagent.active_batches_count || 0;
       case 'current_stock_status':
         return (
-          <Badge variant="outline" className={stockStatusColors[reagent.current_stock_status] || 'bg-gray-100 text-gray-800'}>
+          <Badge variant={stockStatusVariants[reagent.current_stock_status] || 'outline'}>
             {stockStatusLabels[reagent.current_stock_status] || reagent.current_stock_status}
           </Badge>
         );
@@ -294,11 +294,13 @@ export default function ManageReagentsPage() {
         return reagent.requires_coa ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" /> : <XCircle className="h-4 w-4 text-gray-400 mx-auto" />;
       case 'validation_status':
         return reagent.hasValidationIssues ? (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+          <Badge variant="warning">
+            <AlertTriangle className="h-3 w-3" />
             חסרים {reagent.missingFields.length} שדות
           </Badge>
         ) : (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+          <Badge variant="success">
+            <CheckCircle2 className="h-3 w-3" />
             תקין
           </Badge>
         );
@@ -334,14 +336,17 @@ export default function ManageReagentsPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <BackButton />
-          <h1 className="text-2xl font-bold mr-3">ניהול ריאגנטים</h1>
+          <div className="ms-3">
+            <h1 className="text-2xl font-bold">ניהול ריאגנטים</h1>
+            <p className="text-sm text-slate-500 mt-0.5">צפייה ועריכה של כל הריאגנטים במערכת</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={fetchReagents} variant="outline" size="icon">
             <RefreshCw className="h-4 w-4" />
           </Button>
           <Button onClick={() => navigate(createPageUrl('NewReagent'))}>
-            <Plus className="h-4 w-4 ml-2" />
+            <Plus className="h-4 w-4 me-2" />
             ריאגנט חדש
           </Button>
         </div>
@@ -352,12 +357,12 @@ export default function ManageReagentsPage() {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="חיפוש לפי שם, מק״ט, ספק..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pe-10 focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -411,7 +416,7 @@ export default function ManageReagentsPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline">
-                    <Columns3 className="h-4 w-4 ml-2" />
+                    <Columns3 className="h-4 w-4 me-2" />
                     עמודות
                   </Button>
                 </PopoverTrigger>
@@ -445,12 +450,12 @@ export default function ManageReagentsPage() {
           <CardContent className="p-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="חיפוש..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
+                  className="pe-10"
                 />
               </div>
               <Button
@@ -595,8 +600,15 @@ export default function ManageReagentsPage() {
               renderCell={renderCell}
             />
             {filteredAndSortedReagents.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">לא נמצאו ריאגנטים התואמים את הסינון</p>
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <Search className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">לא נמצאו ריאגנטים</p>
+                <p className="text-sm text-slate-400 mb-4">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  נקה מסננים
+                </Button>
               </div>
             )}
           </CardContent>
@@ -611,8 +623,15 @@ export default function ManageReagentsPage() {
           ))
         ) : (
           <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-gray-500">לא נמצאו ריאגנטים</p>
+            <CardContent className="text-center py-12">
+              <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <Search className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">לא נמצאו ריאגנטים</p>
+              <p className="text-sm text-slate-400 mb-3">נסה לשנות את החיפוש או להסיר מסננים</p>
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                נקה מסננים
+              </Button>
             </CardContent>
           </Card>
         )}

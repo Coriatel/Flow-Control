@@ -260,7 +260,7 @@ const DeliveryItemRow = ({ item, index, updateItem, deleteItem, toggleApprove, r
                         {requiresCOA && (
                             <div className="space-y-2 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 ml-1 text-yellow-600" />
+                                    <FileText className="h-4 w-4 ms-1 text-yellow-600" />
                                     <Label htmlFor={`coa_file_${item.key}`} className="font-medium">
                                         תעודת אנליזה (COA) - נדרש
                                     </Label>
@@ -268,7 +268,7 @@ const DeliveryItemRow = ({ item, index, updateItem, deleteItem, toggleApprove, r
                                 <div className="flex items-center gap-2">
                                     <Button asChild variant="outline" className="flex-1">
                                         <Label htmlFor={`coa_file_${item.key}`} className="cursor-pointer flex items-center justify-center">
-                                            <Upload className="h-4 w-4 ml-2" />
+                                            <Upload className="h-4 w-4 ms-2" />
                                             {item.coaFileName ? 'החלף קובץ' : 'בחר קובץ COA'}
                                         </Label>
                                     </Button>
@@ -283,9 +283,9 @@ const DeliveryItemRow = ({ item, index, updateItem, deleteItem, toggleApprove, r
                                 {item.coaFileName && (
                                     <div className="mt-2 p-2 bg-white border rounded flex items-center justify-between">
                                         <div className="flex items-center text-sm text-gray-700">
-                                            <Paperclip className="h-4 w-4 ml-1" />
+                                            <Paperclip className="h-4 w-4 ms-1" />
                                             <span>{item.coaFileName}</span>
-                                            <Badge variant="outline" className="mr-2 text-green-600">
+                                            <Badge variant="outline" className="me-2 text-green-600">
                                                 מוכן להעלאה
                                             </Badge>
                                         </div>
@@ -314,13 +314,13 @@ const DeliveryItemRow = ({ item, index, updateItem, deleteItem, toggleApprove, r
                             >
                                 {item.approved ? (
                                     <>
-                                        <X className="h-5 w-5 ml-2" />
+                                        <X className="h-5 w-5 ms-2" />
                                         בטל אישור
                                     </>
                                 ) : (
                                     <>
-                                        <Check className="h-5 w-5 ml-2" />
-                                        <Plus className="h-4 w-4 mr-1" />
+                                        <Check className="h-5 w-5 ms-2" />
+                                        <Plus className="h-4 w-4 me-1" />
                                         אשר פריט
                                     </>
                                 )}
@@ -345,7 +345,7 @@ const NoItemsRow = ({ onAddItem, supplierSelected }) => (
             "אין פריטים במשלוח. לחץ על כפתור + להוספה."
         )}
         <Button onClick={onAddItem} className="mt-4" disabled={!supplierSelected}>
-            <Plus className="h-4 w-4 ml-2" />
+            <Plus className="h-4 w-4 ms-2" />
             הוסף פריט
         </Button>
     </div>
@@ -1599,13 +1599,13 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       {/* Enhanced Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2">
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(createPageUrl('Deliveries'))}>
+          <Button variant="ghost" size="icon" className="me-2" onClick={() => navigate(createPageUrl('Deliveries'))}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg md:text-xl font-bold">
             קליטת משלוח חדש
             {preFilledSourceInfo && (
-              <span className="text-lg font-normal text-blue-600 mr-2">
+              <span className="text-lg font-normal text-blue-600 me-2">
                 (מ{preFilledSourceInfo.object_type === 'Order' ? 'הזמנה' : 'בקשת משיכה'}:
                 {preFilledSourceInfo.object_type === 'Order' ?
                   (preFilledSourceInfo.order_number_temp || preFilledSourceInfo.order_number_permanent) :
@@ -1617,7 +1617,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
         </div>
         <div className="hidden sm:flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => handleSaveDelivery(false)} disabled={saving || isLocked || items.length === 0}>
-             <Save className="h-4 w-4 ml-2" />
+             <Save className="h-4 w-4 ms-2" />
              שמור טיוטה
           </Button>
           <Button
@@ -1626,7 +1626,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
             onClick={() => handleSaveDelivery(true)}
             disabled={saving || isLocked || items.filter(i => i.approved).length === 0} // Disabled if no items are approved for final save
           >
-            {saving ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Check className="h-4 w-4 ml-2" />}
+            {saving ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <Check className="h-4 w-4 ms-2" />}
             קבלת המשלוח
           </Button>
         </div>
@@ -1659,7 +1659,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                   <Badge variant="outline" className="text-blue-700">
                     ספק: {preFilledSourceInfo.object_type === 'Order' ? preFilledSourceInfo.supplier : preFilledSourceInfo.supplier_snapshot}
                   </Badge>
-                  <Badge variant="outline" className="mr-2 text-blue-700">
+                  <Badge variant="outline" className="me-2 text-blue-700">
                     {items.filter(item => item.isPreFilled).length} פריטים נטענו
                   </Badge>
                 </div>
@@ -1676,10 +1676,10 @@ export default function NewDeliveryPage() { // Renamed component as per outline
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           >
               <div className="flex items-center">
-                  <FileText className="h-5 w-5 ml-3" />
+                  <FileText className="h-5 w-5 ms-3" />
                   <CardTitle className="text-base font-semibold">פרטי משלוח</CardTitle>
                   {preFilledSourceInfo && (
-                    <Badge className="mr-2 bg-blue-100 text-blue-800">
+                    <Badge className="me-2 bg-blue-100 text-blue-800">
                       מקושר ל{preFilledSourceInfo.object_type === 'Order' ? 'הזמנה' : 'משיכה'}
                     </Badge>
                   )}
@@ -1856,7 +1856,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
         <CardHeader>
           <div className="mb-4">
             <CardTitle className="flex items-center mb-2">
-              <Package className="h-5 w-5 ml-2" />
+              <Package className="h-5 w-5 ms-2" />
               קליטת פריטים ({approvedCount})
             </CardTitle>
             <div className="flex gap-2 justify-start">
@@ -1904,11 +1904,11 @@ export default function NewDeliveryPage() { // Renamed component as per outline
             <DialogTitle>
               בחר ריאגנט
               {deliveryData.supplier ? (
-                <span className="text-sm font-normal text-gray-600 mr-2">
+                <span className="text-sm font-normal text-gray-600 me-2">
                   (מסונן לספק: {deliveryData.supplier})
                 </span>
               ) : (
-                <span className="text-sm font-normal text-red-600 mr-2">
+                <span className="text-sm font-normal text-red-600 me-2">
                   (יש לבחור ספק תחילה)
                 </span>
               )}
@@ -1948,7 +1948,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
                     <div className="font-medium">
                       {reagent.name}
                       {reagent.category === 'consumables' && (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded mr-2">
+                        <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded me-2">
                           מתכל
                         </span>
                       )}
@@ -1993,7 +1993,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
       <div className="sm:hidden mt-4 p-2 bg-white/80 backdrop-blur-md border-t border-gray-200 sticky bottom-0 z-10">
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" onClick={() => handleSaveDelivery(false)} disabled={saving || isLocked || items.length === 0}>
-             <Save className="h-4 w-4 ml-2" />
+             <Save className="h-4 w-4 ms-2" />
              שמור טיוטה
           </Button>
           <Button
@@ -2001,7 +2001,7 @@ export default function NewDeliveryPage() { // Renamed component as per outline
             onClick={() => handleSaveDelivery(true)}
             disabled={saving || isLocked || items.filter(i => i.approved).length === 0} // Disabled if no items are approved for final save
           >
-            {saving ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Check className="h-4 w-4 ml-2" />}
+            {saving ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <Check className="h-4 w-4 ms-2" />}
             קבלת המשלוח
           </Button>
         </div>

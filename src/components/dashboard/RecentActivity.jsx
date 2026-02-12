@@ -41,13 +41,13 @@ const RecentActivity = ({ activities }) => {
     <Card className="bg-white shadow-sm border border-gray-200 rounded-lg">
       <CardHeader className="flex flex-row items-center justify-between py-4 px-6">
         <CardTitle className="flex items-center text-lg font-semibold text-slate-800">
-          <div className="bg-slate-50 p-2 rounded-lg mr-2">
+          <div className="bg-slate-50 p-2 rounded-lg me-2">
             <History className="h-5 w-5 text-slate-600" />
           </div>
           פעולות אחרונות
         </CardTitle>
         <Link to={createPageUrl('ActivityLog')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors">
-          הצג הכל <ArrowLeft className="h-4 w-4 mr-1" />
+          הצג הכל <ArrowLeft className="h-4 w-4 me-1" />
         </Link>
       </CardHeader>
       <CardContent className="px-6 pb-6">

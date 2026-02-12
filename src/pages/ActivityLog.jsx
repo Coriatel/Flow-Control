@@ -212,7 +212,7 @@ export default function ActivityLogPage() {
     return (
       <div className="flex justify-center items-center h-64" dir="rtl">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="mr-3 text-lg text-gray-600">טוען יומן פעילות...</p>
+        <p className="me-3 text-lg text-gray-600">טוען יומן פעילות...</p>
       </div>
     );
   }
@@ -224,7 +224,7 @@ export default function ActivityLogPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2"
+            className="me-2"
             onClick={() => navigate(createPageUrl('Dashboard'))}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -237,14 +237,14 @@ export default function ActivityLogPage() {
             onClick={downloadActivityReport}
             disabled={activities.length === 0}
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 me-2" />
             ייצוא לקובץ
           </Button>
           <Button
             variant="outline"
             onClick={fetchActivities}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 me-2" />
             רענן
           </Button>
         </div>
@@ -286,7 +286,7 @@ export default function ActivityLogPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
+            <Filter className="h-5 w-5 me-2" />
             סינון פעילות
           </CardTitle>
         </CardHeader>
@@ -388,7 +388,7 @@ export default function ActivityLogPage() {
 
                         {activity.impact && (
                           <div className="flex items-center mt-2">
-                            <Package className="h-3 w-3 mr-1 text-orange-500" />
+                            <Package className="h-3 w-3 me-1 text-orange-500" />
                             <span className="text-xs text-orange-600 font-medium">
                               השפעה על מלאי: {activity.impact}
                             </span>

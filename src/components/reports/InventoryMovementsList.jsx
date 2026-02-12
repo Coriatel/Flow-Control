@@ -127,7 +127,7 @@ export default function InventoryMovementsList() {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="mr-3 text-gray-600">טוען תנועות מלאי...</p>
+        <p className="me-3 text-gray-600">טוען תנועות מלאי...</p>
       </div>
     );
   }
@@ -209,7 +209,7 @@ export default function InventoryMovementsList() {
                   
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center">
-                      <ArrowUpDown className="h-3 w-3 mr-1 text-orange-500" />
+                      <ArrowUpDown className="h-3 w-3 me-1 text-orange-500" />
                       <span className="text-xs text-orange-600 font-medium">
                         השפעה: {movement.impact}
                       </span>

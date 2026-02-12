@@ -59,7 +59,7 @@ export default function Layout({ children, currentPageName }) {
       console.error("Failed to parse openAccordionGroups from localStorage", e);
     }
     // Default open groups if nothing is stored
-    return ['dashboard', 'inventory', 'procurement'];
+    return ['dashboard', 'operations'];
   });
   
   const [systemDisplay, setSystemDisplay] = useState({
@@ -144,32 +144,42 @@ export default function Layout({ children, currentPageName }) {
     });
   }, [location.pathname]);
 
-  // Navigation items (constants, not hooks)
+  // Navigation items - ordered by workflow frequency
   const navItems = [
+  // Dashboard
   { name: "מרכז הבקרה", href: "Dashboard", icon: BarChart3, group: "dashboard" },
-  { name: "קליטת משלוח", href: "NewDelivery", icon: ArrowDownToLine, group: "inventory" },
-  { name: "ספירת מלאי", href: "InventoryCount", icon: Clipboard, group: "inventory" },
+  // Daily operations
+  { name: "קליטת משלוח", href: "NewDelivery", icon: ArrowDownToLine, group: "operations" },
+  { name: "משלוחים שהתקבלו", href: "Deliveries", icon: FileStack, group: "operations" },
+  { name: "ספירת מלאי", href: "InventoryCount", icon: Clipboard, group: "operations" },
+  { name: "משיכת ריאגנטים", href: "NewWithdrawalRequest", icon: ArrowDownToLine, group: "operations" },
+  { name: "ניהול בקשות משיכה", href: "WithdrawalRequests", icon: PackageCheck, group: "operations" },
+  // Inventory management
+  { name: "ניהול אצוות ופגי תוקף", href: "BatchAndExpiryManagement", icon: Archive, group: "inventory" },
   { name: "ניהול נתוני צריכה", href: "UsageDataManagement", icon: TrendingUp, group: "inventory" },
   { name: "חישוב השלמות מלאי", href: "InventoryReplenishment", icon: Target, group: "inventory" },
-  { name: "ניהול אצוות ופגי תוקף", href: "BatchAndExpiryManagement", icon: Archive, group: "inventory" },
+  // Procurement
   { name: "הקמת מסמך רכש חדש", href: "NewOrder", icon: FileText, group: "procurement" },
   { name: "ניהול דרישות רכש", href: "Orders", icon: ClipboardList, group: "procurement" },
-  { name: "משיכת ריאגנטים", href: "NewWithdrawalRequest", icon: ArrowDownToLine, group: "procurement" },
-  { name: "ניהול בקשות משיכה", href: "WithdrawalRequests", icon: PackageCheck, group: "procurement" },
-  { name: "משלוחים שהתקבלו", href: "Deliveries", icon: FileStack, group: "shipments" },
-  { name: "ניהול משלוחים יוצאים", href: "OutgoingShipments", icon: Package, group: "shipments" },
+  { name: "מעקב אספקות", href: "SupplyTracking", icon: FileSearch, group: "procurement" },
+  // Outgoing shipments
   { name: "שליחת ריאגנטים", href: "NewShipment", icon: Truck, group: "shipments" },
-  { name: "מעקב אספקות", href: "SupplyTracking", icon: FileSearch, group: "shipments" },
-  { name: "העלאת תעודות אנליזה", href: "UploadCOA", icon: Upload, group: "quality" },
+  { name: "ניהול משלוחים יוצאים", href: "OutgoingShipments", icon: Package, group: "shipments" },
+  // Quality
   { name: "בקרת איכות", href: "QualityAssurance", icon: FlaskConical, group: "quality" },
+  { name: "העלאת תעודות אנליזה", href: "UploadCOA", icon: Upload, group: "quality" },
+  // Reports & tracking
   { name: "דוחות ומעקב", href: "Reports", icon: BarChart3, group: "reports" },
+  { name: "יומן פעילות", href: "ActivityLog", icon: Activity, group: "reports" },
   { name: "התראות ותזכורות", href: "AlertsManagement", icon: Bell, group: "reports" },
   { name: "הערות ומשימות", href: "DashboardNotes", icon: ClipboardCheck, group: "reports" },
-  { name: "יומן פעילות", href: "ActivityLog", icon: Activity, group: "reports" },
+  // Master data
   { name: "ניהול ריאגנטים", href: "ManageReagents", icon: FlaskConical, group: "master_data" },
   { name: "ניהול ספקים", href: "ManageSuppliers", icon: Building2, group: "master_data" },
+  // Contacts
   { name: "ניהול אנשי קשר", href: "Contacts", icon: PhoneCall, group: "contacts" },
   { name: "קליטת אנשי קשר מקובץ", href: "ImportContacts", icon: UserPlus, group: "contacts" },
+  // Documentation
   { name: "ניהול תיעוד מערכת", href: "SystemDocumentation", icon: BookOpen, group: "documentation" }];
 
   const adminNavItems = [
@@ -206,13 +216,21 @@ export default function Layout({ children, currentPageName }) {
       borderColor: 'border-slate-400/50',
       iconColor: 'text-slate-300'
     },
-    inventory: {
-      title: 'ניהול מלאי',
-      emoji: '📦',
+    operations: {
+      title: 'פעולות יומיות',
+      emoji: '⚡',
       textColor: 'text-blue-200',
       bgColor: 'bg-blue-600/20',
       borderColor: 'border-blue-400/50',
       iconColor: 'text-blue-300'
+    },
+    inventory: {
+      title: 'ניהול מלאי',
+      emoji: '📦',
+      textColor: 'text-teal-200',
+      bgColor: 'bg-teal-600/20',
+      borderColor: 'border-teal-400/50',
+      iconColor: 'text-teal-300'
     },
     procurement: {
       title: 'רכש והזמנות',
@@ -223,7 +241,7 @@ export default function Layout({ children, currentPageName }) {
       iconColor: 'text-amber-300'
     },
     shipments: {
-      title: 'ניהול משלוחים',
+      title: 'משלוחים יוצאים',
       emoji: '🚚',
       textColor: 'text-sky-200',
       bgColor: 'bg-sky-600/20',
@@ -247,7 +265,7 @@ export default function Layout({ children, currentPageName }) {
       iconColor: 'text-purple-300'
     },
     master_data: {
-      title: 'ניהול נתונים ראשיים',
+      title: 'נתונים ראשיים',
       emoji: '⚙️',
       textColor: 'text-slate-200',
       bgColor: 'bg-slate-600/20',
@@ -356,7 +374,7 @@ export default function Layout({ children, currentPageName }) {
                 className="h-9 w-auto rounded-md object-contain"
                 loading="lazy"
               />
-              <h1 className="text-lg font-semibold text-white mr-3">{systemDisplay.sidebarHeaderName}</h1>
+              <h1 className="text-lg font-semibold text-white ms-3">{systemDisplay.sidebarHeaderName}</h1>
             </>
           )}
         </div>
@@ -370,10 +388,10 @@ export default function Layout({ children, currentPageName }) {
                 placeholder="חיפוש מסכים..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 pl-8 text-sm bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pe-3 ps-10 py-2 text-sm bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 dir="rtl"
               />
-              <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+              <div className="absolute start-2 top-1/2 transform -translate-y-1/2">
                 {searchTerm ? (
                   <button
                     onClick={() => setSearchTerm('')}
@@ -389,6 +407,11 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </div>
             </div>
+            {searchTerm && (
+              <p className="text-xs text-slate-400 mt-1.5 px-1">
+                {filteredNavItems.length} תוצאות נמצאו
+              </p>
+            )}
           </div>
         )}
 
@@ -408,9 +431,9 @@ export default function Layout({ children, currentPageName }) {
                 <AccordionItem key={groupName} value={groupName} className="border-none">
                   <AccordionTrigger className="w-full px-3 py-2 text-right hover:no-underline hover:bg-slate-700/30 rounded-lg">
                     <div className={`flex items-center w-full text-sm font-bold uppercase tracking-wider ${groupInfo.textColor}`}>
-                      <span className="mr-2 text-lg">{groupInfo.emoji}</span>
+                      <span className="me-2 text-lg">{groupInfo.emoji}</span>
                       <span>{groupInfo.title}</span>
-                      {searchTerm && <span className="mr-2 text-xs">({items.length})</span>}
+                      {searchTerm && <span className="ms-2 text-xs">({items.length})</span>}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-1">
@@ -425,9 +448,9 @@ export default function Layout({ children, currentPageName }) {
                             : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                         }`}
                       >
-                        <item.icon className={`ml-3 flex-shrink-0 h-5 w-5 transition-colors ${
-                          isNavItemActive(item.href) 
-                            ? 'text-white' 
+                        <item.icon className={`me-3 flex-shrink-0 h-5 w-5 transition-colors ${
+                          isNavItemActive(item.href)
+                            ? 'text-white'
                             : `${groupInfo.iconColor} group-hover:text-white`
                         }`} />
                         <span className={`transition-colors group-hover:text-white ${
@@ -441,14 +464,14 @@ export default function Layout({ children, currentPageName }) {
                 </AccordionItem>
               );
             })}
-            
+
             {user?.role === 'admin' && filteredAdminNavItems.length > 0 && (
               <AccordionItem value="admin" className="border-none">
                  <AccordionTrigger className="w-full px-3 py-2 text-right hover:no-underline hover:bg-slate-700/30 rounded-lg">
                     <div className="flex items-center w-full text-sm font-bold text-red-200 uppercase tracking-wider">
-                      <span className="mr-2 text-lg">⚙️</span>
+                      <span className="me-2 text-lg">⚙️</span>
                       <span>ניהול מתקדם</span>
-                      {searchTerm && <span className="mr-2 text-xs">({filteredAdminNavItems.length})</span>}
+                      {searchTerm && <span className="ms-2 text-xs">({filteredAdminNavItems.length})</span>}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-1">
@@ -463,7 +486,7 @@ export default function Layout({ children, currentPageName }) {
                               : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                           }`}
                         >
-                          <item.icon className="ml-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-white transition-colors" />
+                          <item.icon className="me-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-white transition-colors" />
                           <span className="text-slate-200 group-hover:text-white transition-colors">{item.name}</span>
                         </Link>
                       ))}
@@ -490,9 +513,9 @@ export default function Layout({ children, currentPageName }) {
                   }`}
                   title={item.name}
                 >
-                  <item.icon className={`ml-3 flex-shrink-0 h-5 w-5 transition-colors ${
-                    isNavItemActive(item.href) 
-                      ? 'text-white' 
+                  <item.icon className={`me-3 flex-shrink-0 h-5 w-5 transition-colors ${
+                    isNavItemActive(item.href)
+                      ? 'text-white'
                       : `${groupInfo.iconColor} group-hover:text-white`
                   }`} />
                 </Link>
@@ -510,7 +533,7 @@ export default function Layout({ children, currentPageName }) {
                   }`}
                   title={item.name}
                 >
-                  <item.icon className="ml-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-white transition-colors" />
+                  <item.icon className="me-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-white transition-colors" />
                 </Link>
               ))}
           </nav>
@@ -523,36 +546,6 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <SystemLockProvider>
-      <style>{`
-        :root {
-          --brand-primary: #f59e0b; /* Amber-500 for primary actions */
-          --brand-primary-light: #fbbf24; /* Amber-400 */
-          --brand-primary-dark: #d97706; /* Amber-600 */
-          --brand-secondary: #64748b; /* Slate-500 */
-          --brand-success: #16a34a; /* Green-600 */
-          --brand-warning: #f59e0b; /* Amber-500 */
-          --brand-danger: #dc2626; /* Red-600 */
-        }
-        .btn-primary {
-          background-color: var(--brand-primary);
-          color: white;
-        }
-        .btn-primary:hover {
-          background-color: var(--brand-primary-dark);
-        }
-        .glassmorphism {
-          background: rgba(255, 255, 255, 0.25);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-        .glassmorphism-dark {
-          background: rgba(30, 41, 59, 0.85);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-      `}</style>
       <div className="flex h-screen bg-slate-50 overflow-hidden" dir="rtl">
         
         {user && (
@@ -580,10 +573,10 @@ export default function Layout({ children, currentPageName }) {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="relative flex-1 flex flex-col max-w-xs w-full glassmorphism-dark shadow-2xl">
 
-                <div className="absolute top-0 left-0 -ml-12 pt-2">
+                <div className="absolute top-0 start-0 -ms-12 pt-2">
                   <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 glassmorphism">
+                  className="ms-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 glassmorphism">
                     <X className="h-6 w-6 text-white" />
                   </button>
                 </div>
@@ -668,7 +661,7 @@ export default function Layout({ children, currentPageName }) {
                           >
                             <div className="flex items-center justify-between w-full">
                               <span>{pageName}</span>
-                              <ArrowRight className="h-4 w-4 ml-2 text-slate-400" />
+                              <ArrowRight className="h-4 w-4 me-2 text-slate-400" />
                             </div>
                           </DropdownMenuItem>
                         );

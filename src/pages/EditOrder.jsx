@@ -164,7 +164,7 @@ export default function EditOrderPage() {
         return (
             <div className="flex justify-center items-center h-64" dir="rtl">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="mr-2">טוען נתונים...</span>
+                <span className="me-2">טוען נתונים...</span>
             </div>
         );
     }
@@ -178,7 +178,7 @@ export default function EditOrderPage() {
                             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                             <p className="text-lg text-gray-700">הזמנה לא נמצאה</p>
                             <Button onClick={() => navigate(createPageUrl('Orders'))} className="mt-4">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                <ArrowLeft className="h-4 w-4 me-2" />
                                 חזרה לרשימה
                             </Button>
                         </div>
@@ -217,7 +217,7 @@ export default function EditOrderPage() {
                                 variant="outline"
                                 onClick={() => setShowPrintDialog(true)}
                             >
-                                <Printer className="h-4 w-4 mr-2" />
+                                <Printer className="h-4 w-4 me-2" />
                                 הדפסה
                             </Button>
                             <Button
@@ -225,7 +225,7 @@ export default function EditOrderPage() {
                                 onClick={() => setIsEditMode(true)}
                                 disabled={order.status === 'closed' || order.status === 'cancelled'}
                             >
-                                <Edit className="h-4 w-4 mr-2" />
+                                <Edit className="h-4 w-4 me-2" />
                                 עריכה
                             </Button>
                             <Button
@@ -234,7 +234,7 @@ export default function EditOrderPage() {
                                 className="text-red-600 hover:text-red-700"
                                 disabled={order.status === 'fully_received'}
                             >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-4 w-4 me-2" />
                                 מחיקה
                             </Button>
                         </>
@@ -245,7 +245,7 @@ export default function EditOrderPage() {
                                 onClick={handleCancel}
                                 disabled={saving}
                             >
-                                <X className="h-4 w-4 mr-2" />
+                                <X className="h-4 w-4 me-2" />
                                 ביטול
                             </Button>
                             <Button
@@ -253,7 +253,7 @@ export default function EditOrderPage() {
                                 disabled={saving}
                                 className="bg-amber-500 hover:bg-amber-600"
                             >
-                                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                                {saving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
                                 שמירה
                             </Button>
                         </>
@@ -292,7 +292,7 @@ export default function EditOrderPage() {
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center">
-                            <FileText className="h-5 w-5 ml-2 text-blue-600" />
+                            <FileText className="h-5 w-5 ms-2 text-blue-600" />
                             פרטי הזמנה
                         </CardTitle>
                     </CardHeader>
@@ -430,7 +430,7 @@ export default function EditOrderPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center text-base">
-                            <ShoppingCart className="h-5 w-5 ml-2 text-green-600" />
+                            <ShoppingCart className="h-5 w-5 ms-2 text-green-600" />
                             מסמכים מקושרים
                         </CardTitle>
                     </CardHeader>
@@ -488,11 +488,11 @@ export default function EditOrderPage() {
                         {/* Created By / Date */}
                         <div className="pt-4 border-t">
                             <div className="flex items-center text-xs text-gray-500 mb-2">
-                                <UserIcon className="h-3 w-3 ml-1" />
+                                <UserIcon className="h-3 w-3 ms-1" />
                                 נוצר על ידי: {order.created_by || 'לא ידוע'}
                             </div>
                             <div className="flex items-center text-xs text-gray-500">
-                                <Calendar className="h-3 w-3 ml-1" />
+                                <Calendar className="h-3 w-3 ms-1" />
                                 תאריך הזמנה: {format(parseISO(order.order_date), 'dd/MM/yyyy', { locale: he })}
                             </div>
                         </div>
@@ -504,7 +504,7 @@ export default function EditOrderPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center">
-                        <Package className="h-5 w-5 ml-2 text-green-600" />
+                        <Package className="h-5 w-5 ms-2 text-green-600" />
                         פריטים בהזמנה ({items.length})
                     </CardTitle>
                 </CardHeader>
