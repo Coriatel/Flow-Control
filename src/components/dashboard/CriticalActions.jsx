@@ -62,13 +62,13 @@ const CriticalActions = ({ actions }) => {
                     {actions.map((action, index) => {
                         const styles = priorityStyles[action.priority];
                         return (
-                            <Link to={createPageUrl(action.link || '#')} key={index} className="block group">
+                            <Link to={action.route || '#'} key={index} className="block group">
                                 <div className={`${styles.bg} ${styles.border} ${styles.hover} border rounded-lg p-3 transition-all duration-200`}>
                                     <div className="flex items-center justify-between text-right">
                                         <ChevronLeft className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
                                         <div className="flex items-center flex-1 justify-end">
                                             <p className={`text-sm font-medium text-right w-full ${styles.text} group-hover:font-semibold`}>
-                                                {action.text}
+                                                {action.title}{action.description ? ` - ${action.description}` : ''}
                                             </p>
                                             <AlertTriangle className={`h-4 w-4 ml-2 flex-shrink-0 ${styles.icon}`} />
                                         </div>

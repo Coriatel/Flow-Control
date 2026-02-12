@@ -16,15 +16,56 @@ import {
 import { format, parseISO } from "date-fns";
 import { he } from "date-fns/locale";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-// New Components
-import SummaryCard from "../components/dashboard/SummaryCard";
+import InfoCard from "../components/dashboard/InfoCard";
+import MobileAlerts from "../components/dashboard/MobileAlerts";
 import CriticalActions from "../components/dashboard/CriticalActions";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import { NavGroupAccordion } from "../components/dashboard/NavGroupAccordion";
 
+// Status translation map for orders
+const statusLabels = {
+  DRAFT: 'טיוטה',
+  PENDING_SAP: 'ממתין ל-SAP',
+  APPROVED: 'מאושר',
+  PARTIALLY_RECEIVED: 'התקבל חלקית',
+  SUBMITTED: 'הוגש',
+  SHIPPING: 'בשילוח',
+};
+
+function formatDaysUntilExpiry(days) {
+  if (days <= 0) return '!פג תוקף';
+  if (days === 1) return 'יום אחד';
+  return `${days} ימים`;
+}
+
+function formatMonthsOfStock(months) {
+  if (months <= 0) return 'אזל';
+  const weeks = Math.round(months * 4.33);
+  if (weeks <= 4) return `${weeks} שבועות`;
+  return `${months.toFixed(1)} חודשים`;
+}
+
+function expiryColorClass(days) {
+  if (days <= 0) return 'text-red-600 font-bold';
+  if (days <= 7) return 'text-red-500 font-semibold';
+  return 'text-amber-600';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = typeof dateStr === 'string' ? parseISO(dateStr) : new Date(dateStr);
+    return format(d, 'dd/MM/yy', { locale: he });
+  } catch {
+    return '-';
+  }
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,99 +84,13 @@ export default function Dashboard() {
     onOrderQuantity: 0
   });
 
-  /**
-   * FRONTEND LOGIC (מופחת מאוד):
-   * ================================
-   * 
-   * מה שקורה ב-FRONTEND:
-   * --------------------
-   * 1. קריאה אחת בלבד לפונקציית Backend: getDashboardData()
-   * 2. קבלת כל הנתונים המעובדים והמוכנים מהשרת
-   * 3. עדכון state עם הנתונים שהתקבלו
-   * 4. טיפול ב-loading ו-error states
-   * 5. הצגת הנתונים בממשק
-   * 
-   * מה שלא קורה ב-FRONTEND (הועבר לשרת):
-   * -------------------------------------
-   * ❌ אין קריאות מרובות לישויות שונות
-   * ❌ אין חישובים של expiringReagents
-   * ❌ אין חישובים של lowStockReagents
-   * ❌ אין חישובים של pendingOrders/Supplies
-   * ❌ אין עיבוד של recentActivity
-   * ❌ אין חישוב של criticalActions
-   * 
-   * מה שקורה ב-BACKEND (functions/getDashboardData.js):
-   * ===================================================
-   * 
-   * 1. טעינת כל הנתונים הדרושים במקביל:
-   *    - Reagent (כל הריאגנטים)
-   *    - Order (כל ההזמנות)
-   *    - WithdrawalRequest (כל בקשות המשיכה)
-   *    - ExpiredProductLog (יומן פגי תוקף)
-   *    - DashboardNote (5 הערות אחרונות)
-   *    - CompletedInventoryCount (ספירת מלאי אחרונה)
-   *    - InventoryTransaction (20 תנועות אחרונות)
-   *    - Delivery (10 משלוחים אחרונים)
-   * 
-   * 2. חישוב expiringReagents:
-   *    - סינון ריאגנטים שתפוגתם תוך 14 יום
-   *    - בדיקה מול יומן פגי תוקף (למנוע כפילויות)
-   *    - מיון לפי תאריך תפוגה
-   *    - החזרת מערך מצומצם עם השדות הרלוונטיים בלבד
-   * 
-   * 3. חישוב lowStockReagents:
-   *    - סינון ריאגנטים עם מלאי נמוך (< 4 שבועות או < 5 יח')
-   *    - חישוב months_of_stock לכל ריאגנט
-   *    - מיון לפי דחיפות (פחות מלאי = יותר דחוף)
-   *    - החזרת מערך עם נתונים מעובדים
-   * 
-   * 4. חישוב pendingOrders:
-   *    - סינון הזמנות הממתינות לפרטי SAP
-   *    - מיון לפי תאריך יצירה
-   *    - החזרת מערך מצומצם
-   * 
-   * 5. חישוב pendingSupplies:
-   *    - איחוד של בקשות משיכה פעילות + הזמנות רגילות מאושרות
-   *    - מיון לפי תאריך בקשה
-   *    - החזרת מערך מאוחד ומצומצם
-   * 
-   * 6. עיבוד recentActivity:
-   *    - איחוד transactions + orders
-   *    - יצירת תיאורים קריאים
-   *    - מיון לפי תאריך (חדש ← ישן)
-   *    - הגבלה ל-20 פעילויות אחרונות
-   * 
-   * 7. חישוב criticalActions:
-   *    - בדיקת פגי תוקף היום
-   *    - בדיקת מועד ספירת מלאי אחרונה
-   *    - בדיקת מלאי נמוך
-   *    - בדיקת הזמנות ממתינות
-   *    - החזרת מערך עם המלצות בסדר עדיפות
-   * 
-   * 8. החזרת אובייקט JSON מאוחד:
-   *    - כל הנתונים מעובדים ומוכנים להצגה
-   *    - ללא צורך בעיבוד נוסף בצד הלקוח
-   * 
-   * יתרונות הגישה החדשה:
-   * =====================
-   * ✅ פחות טעינה על הדפדפן (במיוחד במובייל)
-   * ✅ טעינה מהירה יותר (קריאה אחת במקום 8+)
-   * ✅ קוד פשוט יותר ב-Frontend
-   * ✅ לוגיקה מרוכזת במקום אחד (Backend)
-   * ✅ קל יותר לתחזוקה ולבדיקות
-   * ✅ ניצול טוב יותר של משאבי השרת (Deno)
-   */
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("[Dashboard Frontend] Fetching dashboard data from backend...");
-
-      // Fetch user data
       const userData = await User.me();
       setUser(userData);
 
-      // 🎯 קריאה אחת בלבד לפונקציית Backend - כל הלוגיקה בשרת!
       const response = await getDashboardData();
       const payload = response?.data?.data ?? response?.data ?? response ?? {};
       const errorMessage = response?.error || response?.data?.error;
@@ -143,18 +98,6 @@ export default function Dashboard() {
         throw new Error(errorMessage);
       }
 
-      console.log("[Dashboard Frontend] ✅ Data received:", {
-        expiringCount: payload.expiringReagents?.length || 0,
-        lowStockCount: payload.lowStockReagents?.length || 0,
-        pendingOrdersCount: payload.pendingOrders?.length || 0,
-        pendingSuppliesCount: payload.pendingSupplies?.length || 0,
-        notesCount: payload.dashboardNotes?.length || 0,
-        activityCount: payload.recentActivity?.length || 0,
-        criticalActionsCount: payload.criticalActions?.length || 0,
-        onOrderQuantity: payload.onOrderQuantity || 0
-      });
-
-      // פשוט מעדכן state - אין צורך בשום עיבוד!
       setDashboardData({
         expiringReagents: payload.expiringReagents || [],
         lowStockReagents: payload.lowStockReagents || [],
@@ -169,11 +112,9 @@ export default function Dashboard() {
       });
 
     } catch (err) {
-      console.error('[Dashboard Frontend] ❌ Error loading dashboard:', err);
+      console.error('[Dashboard] Error loading:', err);
       setError(`שגיאה בטעינת הדשבורד: ${err.message}`);
-      toast.error('שגיאה בטעינת הדשבורד', {
-        description: err.message
-      });
+      toast.error('שגיאה בטעינת הדשבורד', { description: err.message });
     } finally {
       setLoading(false);
       setIsManualRefreshing(false);
@@ -246,174 +187,179 @@ export default function Dashboard() {
 
   const { expiringReagents, lowStockReagents, pendingSupplies, pendingOrders, criticalActions, onOrderQuantity } = dashboardData;
 
+  // === Data transformation for InfoCards ===
+
+  const expiringRows = expiringReagents.map((item) => ({
+    key: item.id,
+    linkTo: createPageUrl(`EditReagentBatch?id=${item.id}`),
+    cells: [
+      { text: item.name, fullText: item.name },
+      { text: formatDaysUntilExpiry(item.daysUntilExpiry), className: expiryColorClass(item.daysUntilExpiry) },
+      { text: `${item.currentQuantity} יח'`, className: 'text-slate-500 text-xs' },
+      { text: item.batchNumber || '', className: 'text-slate-400 text-xs font-mono' },
+    ],
+  }));
+
+  const lowStockRows = lowStockReagents.map((item) => ({
+    key: item.id,
+    linkTo: createPageUrl(`InventoryReplenishment?reagent_id=${item.id}`),
+    cells: [
+      { text: item.name, fullText: item.name },
+      { text: `${item.currentQuantity} יח'`, className: 'text-slate-600' },
+      { text: formatMonthsOfStock(item.monthsOfStock), className: item.monthsOfStock < 1 ? 'text-red-600 font-semibold' : 'text-amber-600' },
+      { text: item.supplier || '', className: 'text-slate-400 text-xs' },
+    ],
+  }));
+
+  const pendingSupplyRows = pendingSupplies.map((item) => {
+    const isOrder = item.type === 'order';
+    return {
+      key: item.id,
+      linkTo: createPageUrl(`${isOrder ? 'EditOrder' : 'EditWithdrawalRequest'}?id=${item.id}`),
+      cells: [
+        { text: item.number || '-', className: 'font-mono' },
+        { text: item.supplier || '-' },
+        { text: formatDate(item.requestDate), className: 'text-slate-500 text-xs' },
+      ],
+    };
+  });
+
+  const pendingOrderRows = pendingOrders.map((item) => ({
+    key: item.id,
+    linkTo: createPageUrl(`EditOrder?id=${item.id}`),
+    cells: [
+      { text: item.tempNumber || '-', className: 'font-mono' },
+      { text: item.supplier || '-' },
+      { text: statusLabels[item.status] || item.status, className: 'text-slate-500 text-xs' },
+    ],
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 mb-4">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800">מרכז הבקרה</h1>
-                    <p className="text-sm text-slate-600 mt-1">מידע מבצעי ופעולות לניהול המלאי</p>
-                </div>
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={manualRefresh} 
-                    disabled={isManualRefreshing} 
-                    className="bg-white border-slate-300 hover:bg-slate-50"
-                >
-                    {isManualRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    <span className="mr-2">רענון</span>
-                </Button>
-            </div>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">מרכז הבקרה</h1>
+            <p className="text-sm text-slate-600 mt-1">מידע מבצעי ופעולות לניהול המלאי</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={manualRefresh}
+            disabled={isManualRefreshing}
+            className="bg-white border-slate-300 hover:bg-slate-50"
+          >
+            {isManualRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            <span className="mr-2">רענון</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="px-4">
+        {/* Mobile: MobileAlerts first */}
+        <div className="md:hidden mb-4">
+          <MobileAlerts actions={criticalActions} />
         </div>
 
-        <div className="px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-6">
-                
-                {/* Main Content (Right Column) */}
-                <div className="lg:col-span-3 space-y-6">
-                    <CriticalActions actions={criticalActions} />
+        <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-6">
+          {/* Main Content - InfoCards (right side in RTL = first in DOM) */}
+          <div className="lg:col-span-3 space-y-4 mb-6 lg:mb-0">
+            <InfoCard
+              icon={<Clock />}
+              title="ריאגנטים קצרי תוקף"
+              count={expiringReagents.length}
+              titleLinkTo={createPageUrl('BatchAndExpiryManagement?view=expiring&days=14')}
+              color="red"
+              rows={expiringRows}
+              initialVisibleRows={4}
+              defaultCollapsed
+            />
 
-                    {/* Summary Cards on Mobile */}
-                    <div className="grid grid-cols-2 gap-3 lg:hidden">
-                        <SummaryCard 
-                            icon={<Clock/>} 
-                            title="בתפוגה קרובה" 
-                            count={expiringReagents.length} 
-                            linkTo="BatchAndExpiryManagement?view=expiring&days=14" 
-                            color="red" 
-                            popoverItems={expiringReagents} 
-                            popoverType="expiring" 
-                        />
-                        <SummaryCard 
-                            icon={<TrendingDown/>} 
-                            title="במלאי קצר" 
-                            count={lowStockReagents.length} 
-                            linkTo="InventoryReplenishment" 
-                            color="orange" 
-                            popoverItems={lowStockReagents} 
-                            popoverType="low_stock" 
-                        />
-                        <SummaryCard 
-                            icon={<Truck/>} 
-                            title="אספקות בדרך" 
-                            count={pendingSupplies.length} 
-                            linkTo="SupplyTracking" 
-                            color="blue" 
-                            popoverItems={pendingSupplies} 
-                            popoverType="pending_supplies" 
-                        />
-                        <SummaryCard 
-                            icon={<FileText/>} 
-                            title="דרישות להשלמה" 
-                            count={pendingOrders.length} 
-                            linkTo="Orders" 
-                            color="purple" 
-                            popoverItems={pendingOrders} 
-                            popoverType="pending_orders"
-                        />
-                        <SummaryCard
-                            icon={<ShoppingCart/>}
-                            title="בהמתינה לקבלה"
-                            count={Math.round(onOrderQuantity)}
-                            linkTo="Orders"
-                            color="teal"
-                        />
-                    </div>
+            <InfoCard
+              icon={<TrendingDown />}
+              title="מלאי נמוך"
+              count={lowStockReagents.length}
+              titleLinkTo={createPageUrl('InventoryReplenishment')}
+              color="orange"
+              rows={lowStockRows}
+              initialVisibleRows={4}
+              defaultCollapsed
+            />
 
-                    <Card className="bg-white shadow-sm border border-gray-200 rounded-lg">
-                        <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-                            <CardTitle className="flex items-center text-base font-semibold text-slate-800">
-                                <ClipboardCheck className="h-5 w-5 text-amber-600 ml-2" />
-                                הערות ומשימות
-                            </CardTitle>
-                            <Link to={createPageUrl('DashboardNotes')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center">
-                                הצג הכל <ArrowLeft className="h-4 w-4 mr-1" />
-                            </Link>
-                        </CardHeader>
-                        <CardContent className="px-4 pb-4">
-                            <ScrollArea className="h-48">
-                                <div className="space-y-2 text-right">
-                                    {dashboardData.dashboardNotes.length > 0 ? dashboardData.dashboardNotes.map((note) =>
-                                        <div key={note.id} className="border-r-4 border-amber-400 bg-slate-50 p-2 rounded-r-lg">
-                                            {note.title && <p className="font-medium text-slate-800 text-sm mb-1">{note.title}</p>}
-                                            <p className="text-slate-600 text-xs line-clamp-2">{note.content}</p>
-                                        </div>
-                                    ) :
-                                        <div className="text-center py-6">
-                                            <p className="text-sm text-slate-500">אין הערות פעילות.</p>
-                                        </div>
-                                    }
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                    
-                    <RecentActivity activities={dashboardData.recentActivity} />
-                </div>
+            <InfoCard
+              icon={<Truck />}
+              title="אספקות בדרך"
+              count={pendingSupplies.length}
+              titleLinkTo={createPageUrl('SupplyTracking')}
+              color="blue"
+              rows={pendingSupplyRows}
+              initialVisibleRows={4}
+              defaultCollapsed
+            />
 
-                {/* Sidebar Content (Left Column on Desktop) */}
-                <div className="lg:col-span-2 space-y-6">
-                     {/* Summary Cards on Desktop */}
-                     <div className="hidden lg:grid grid-cols-2 gap-3">
-                        <SummaryCard 
-                            icon={<Clock/>} 
-                            title="בתפוגה קרובה" 
-                            count={expiringReagents.length} 
-                            linkTo="BatchAndExpiryManagement?view=expiring&days=14" 
-                            color="red" 
-                            popoverItems={expiringReagents} 
-                            popoverType="expiring" 
-                        />
-                        <SummaryCard 
-                            icon={<TrendingDown/>} 
-                            title="במלאי קצר" 
-                            count={lowStockReagents.length} 
-                            linkTo="InventoryReplenishment" 
-                            color="orange" 
-                            popoverItems={lowStockReagents} 
-                            popoverType="low_stock" 
-                        />
-                        <SummaryCard 
-                            icon={<Truck/>} 
-                            title="אספקות בדרך" 
-                            count={pendingSupplies.length} 
-                            linkTo="SupplyTracking" 
-                            color="blue" 
-                            popoverItems={pendingSupplies} 
-                            popoverType="pending_supplies" 
-                        />
-                        <SummaryCard 
-                            icon={<FileText/>} 
-                            title="דרישות להשלמה" 
-                            count={pendingOrders.length} 
-                            linkTo="Orders" 
-                            color="purple" 
-                            popoverItems={pendingOrders} 
-                            popoverType="pending_orders"
-                        />
-                        <SummaryCard
-                            icon={<ShoppingCart/>}
-                            title="בהמתינה לקבלה"
-                            count={Math.round(onOrderQuantity)}
-                            linkTo="Orders"
-                            color="teal"
-                        />
-                    </div>
+            <InfoCard
+              icon={<FileText />}
+              title="דרישות רכש להשלמה"
+              count={pendingOrders.length}
+              titleLinkTo={createPageUrl('Orders')}
+              color="purple"
+              rows={pendingOrderRows}
+              initialVisibleRows={4}
+              defaultCollapsed
+            />
+          </div>
 
-                    <div className="w-full">
-                        <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-end">
-                            <div className="bg-sky-100 p-2 rounded-lg ml-3">
-                                <Zap className="h-5 w-5 text-sky-700" />
-                            </div>
-                            <span>ניווט מהיר ופעולות</span>
-                        </h2>
-                        <NavGroupAccordion navItems={navItems} adminNavItems={adminNavItems} userRole={user?.role} />
-                    </div>
-                </div>
+          {/* Sidebar (left side in RTL) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* CriticalActions - desktop only */}
+            <div className="hidden md:block">
+              <CriticalActions actions={criticalActions} />
             </div>
+
+            {/* Dashboard Notes */}
+            <Card className="bg-white shadow-sm border border-gray-200 rounded-lg">
+              <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+                <CardTitle className="flex items-center text-base font-semibold text-slate-800">
+                  <ClipboardCheck className="h-5 w-5 text-amber-600 ml-2" />
+                  הערות ומשימות
+                </CardTitle>
+                <Link to={createPageUrl('DashboardNotes')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center">
+                  הצג הכל <ArrowLeft className="h-4 w-4 mr-1" />
+                </Link>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <ScrollArea className="h-48">
+                  <div className="space-y-2 text-right">
+                    {dashboardData.dashboardNotes.length > 0 ? dashboardData.dashboardNotes.map((note) =>
+                      <div key={note.id} className={`border-r-4 ${note.noteType === 'URGENT' ? 'border-red-500 bg-red-50' : 'border-amber-400 bg-slate-50'} p-2 rounded-r-lg`}>
+                        {note.title && <p className="font-medium text-slate-800 text-sm mb-1">{note.title}</p>}
+                        <p className="text-slate-600 text-xs line-clamp-2">{note.content}</p>
+                      </div>
+                    ) :
+                      <div className="text-center py-6">
+                        <p className="text-sm text-slate-500">אין הערות פעילות.</p>
+                      </div>
+                    }
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            <RecentActivity activities={dashboardData.recentActivity} />
+
+            <div className="w-full">
+              <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-end">
+                <div className="bg-sky-100 p-2 rounded-lg ml-3">
+                  <Zap className="h-5 w-5 text-sky-700" />
+                </div>
+                <span>ניווט מהיר ופעולות</span>
+              </h2>
+              <NavGroupAccordion navItems={navItems} adminNavItems={adminNavItems} userRole={user?.role} />
+            </div>
+          </div>
         </div>
+      </div>
     </div>
   );
 }
