@@ -4,3 +4,5 @@ export { inventoryService } from './inventoryService';
 export { batchService } from './batchService';
 export { supplierService } from './supplierService';
 export { orderService } from './orderService';
+export { barcodeService } from './barcodeService';
+export { dispenseService } from './dispenseService';

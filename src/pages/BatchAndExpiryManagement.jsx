@@ -80,6 +80,8 @@ const getActionTakenLabel = (action) => {
 const getStatusDisplay = (status) => {
   switch (status) {
     case 'active': return 'פעיל';
+    case 'IN_USE':
+    case 'in_use': return 'בשימוש';
     case 'expired': return 'פג תוקף';
     case 'disposed': return 'הושמד';
     case 'consumed': return 'נצרך';
@@ -139,6 +141,9 @@ const getStatusBadgeVariant = (status) => {
   switch (status) {
     case 'active':
       return 'success';
+    case 'IN_USE':
+    case 'in_use':
+      return 'warning';
     case 'expired':
       return 'danger';
     case 'disposed':
@@ -368,6 +373,7 @@ export default function BatchAndExpiryManagement() {
   // Constants for filter labels
   const statusLabels = {
     'active': 'פעיל',
+    'IN_USE': 'בשימוש',
     'expired': 'פג תוקף',
     'disposed': 'הושמד',
     'consumed': 'נצרך',
@@ -1282,7 +1288,7 @@ export default function BatchAndExpiryManagement() {
         <div className="space-y-3">
           <Label className="text-slate-300 mb-2 block">סטטוסים</Label>
           <div className="flex flex-wrap gap-2">
-            {['active', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
+            {['active', 'IN_USE', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
               <Button
                 key={status}
                 variant={selectedStatuses.includes(status) ? "default" : "outline"}
@@ -1513,7 +1519,7 @@ export default function BatchAndExpiryManagement() {
                                 <div>
                                     <label className="text-sm font-medium text-slate-700 mb-2 block">סטטוסים</label>
                                     <div className="flex flex-wrap gap-2">
-                                        {['active', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
+                                        {['active', 'IN_USE', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
                                             <Button
                                                 key={status}
                                                 variant={selectedStatuses.includes(status) ? "default" : "outline"}

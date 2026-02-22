@@ -57,6 +57,8 @@ const EditReagent = React.lazy(() => import('./EditReagent'));
 const BatchAndExpiryTechnicalSpec = React.lazy(() => import('./BatchAndExpiryTechnicalSpec'));
 const EditReagentBatch = React.lazy(() => import('./EditReagentBatch'));
 const Reports = React.lazy(() => import('./Reports'));
+const DispenseItems = React.lazy(() => import('./DispenseItems'));
+const ItemsInUse = React.lazy(() => import('./ItemsInUse'));
 
 const PAGES = {
     Dashboard,
@@ -108,6 +110,8 @@ const PAGES = {
     BatchAndExpiryTechnicalSpec,
     EditReagentBatch,
     Reports,
+    DispenseItems,
+    ItemsInUse,
 }
 
 function _getCurrentPage(url) {
@@ -200,6 +204,8 @@ function PagesContent() {
                 <Route path="/BatchAndExpiryTechnicalSpec" element={<ProtectedRoute><Layout currentPageName={currentPage}><BatchAndExpiryTechnicalSpec /></Layout></ProtectedRoute>} />
                 <Route path="/EditReagentBatch" element={<ProtectedRoute><Layout currentPageName={currentPage}><EditReagentBatch /></Layout></ProtectedRoute>} />
                 <Route path="/Reports" element={<ProtectedRoute><Layout currentPageName={currentPage}><Reports /></Layout></ProtectedRoute>} />
+                <Route path="/DispenseItems" element={<ProtectedRoute><Layout currentPageName={currentPage}><DispenseItems /></Layout></ProtectedRoute>} />
+                <Route path="/ItemsInUse" element={<ProtectedRoute><Layout currentPageName={currentPage}><ItemsInUse /></Layout></ProtectedRoute>} />
             </Routes>
         </Suspense>
     );

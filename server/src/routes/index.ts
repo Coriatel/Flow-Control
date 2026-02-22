@@ -22,6 +22,9 @@ import alertsRoutes from './alerts';
 import activityRoutes from './activity';
 import functionsRoutes from './functions';
 import systemSettingsRoutes from './systemsettings';
+import barcodeRoutes from './barcode';
+import dispenseRoutes from './dispense';
+import disposalRoutes from './disposal';
 
 const router = Router();
 
@@ -58,6 +61,11 @@ router.use('/shipmentitems', shipmentItemsRoutes);
 router.use('/inventorytransactions', inventoryTransactionsRoutes);
 router.use('/expiredproductlogs', expiredProductLogsRoutes);
 router.use('/reagentreceiptevents', reagentReceiptEventsRoutes);
+
+// Dispensing & Barcode routes (protected)
+router.use('/barcode', barcodeRoutes);
+router.use('/dispense', dispenseRoutes);
+router.use('/disposal', disposalRoutes);
 
 // Administration routes (protected)
 router.use('/admin/sessions', adminSessionsRoutes);

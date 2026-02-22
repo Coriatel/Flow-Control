@@ -100,7 +100,21 @@ router.post(
         const data = req.body;
 
         try {
-            // Build the value JSON from individual fields
+            // If key+value provided (simple key-value pair), use upsert
+            if (data.key && data.value !== undefined && typeof data.value === 'string') {
+                const result = await prisma.systemSettings.upsert({
+                    where: { key: data.key },
+                    update: { value: data.value },
+                    create: {
+                        key: data.key,
+                        value: data.value,
+                        description: data.description,
+                    },
+                });
+                return res.status(201).json({ success: true, data: result });
+            }
+
+            // Build the value JSON from individual fields (legacy display settings)
             const valueJson = {
                 mainHeaderName: data.mainHeaderName || 'מערכת ניהול ריאגנטים',
                 sidebarHeaderName: data.sidebarHeaderName || 'ניהול מלאי ריאגנטים',

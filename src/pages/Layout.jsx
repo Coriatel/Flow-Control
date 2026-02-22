@@ -7,7 +7,7 @@ import { User as UserEntity } from "@/api/entities";
 import { SystemSettings } from "@/api/entities";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  FileText, Home, ListChecks, Package, Truck, Shield, Database, Settings, FileCode, AlertTriangle, User, ChevronDown, Menu, X, Calculator, ClipboardCheck, Trash2, Zap, BarChart3, Beaker, ShoppingCart, Server, Wrench, ClipboardList, Activity, Users, PackageCheck, ArrowDownToLine, FileUp, FileStack, Bell, SlidersHorizontal, Building2, ArrowLeft, Upload, Clipboard, FlaskConical, TestTube, BadgeCheck, FileSearch, Archive, Target, TrendingUp, BookOpen, PhoneCall, UserPlus, ArrowRight, History } from
+  FileText, Home, ListChecks, Package, Truck, Shield, Database, Settings, FileCode, AlertTriangle, User, ChevronDown, Menu, X, Calculator, ClipboardCheck, Trash2, Zap, BarChart3, Beaker, ShoppingCart, Server, Wrench, ClipboardList, Activity, Users, PackageCheck, ArrowDownToLine, FileUp, FileStack, Bell, SlidersHorizontal, Building2, ArrowLeft, Upload, Clipboard, FlaskConical, TestTube, BadgeCheck, FileSearch, Archive, Target, TrendingUp, BookOpen, PhoneCall, UserPlus, ArrowRight, History, ScanLine, Hand } from
 "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -152,6 +152,8 @@ export default function Layout({ children, currentPageName }) {
   { name: "ספירת מלאי", href: "InventoryCount", icon: Clipboard, group: "operations" },
   { name: "משיכת ריאגנטים", href: "NewWithdrawalRequest", icon: ArrowDownToLine, group: "operations" },
   { name: "ניהול בקשות משיכה", href: "WithdrawalRequests", icon: PackageCheck, group: "operations" },
+  { name: "הוצאה מהמלאי", href: "DispenseItems", icon: ScanLine, group: "operations" },
+  { name: "פריטים בשימוש", href: "ItemsInUse", icon: Hand, group: "operations" },
   // Inventory management
   { name: "ניהול אצוות ופגי תוקף", href: "BatchAndExpiryManagement", icon: Archive, group: "inventory" },
   { name: "ניהול נתוני צריכה", href: "UsageDataManagement", icon: TrendingUp, group: "inventory" },

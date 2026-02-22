@@ -45,6 +45,7 @@ model Supplier {
   orders             Order[]
   deliveries         Delivery[]
   withdrawalRequests WithdrawalRequest[]
+  barcodeFormats     BarcodeFormat[]
 
   @@index([name])
   @@index([isActive])
@@ -110,6 +111,8 @@ model Reagent {
   deliveryItems         DeliveryItem[]
   shipmentItems         ShipmentItem[]
   frameworkOrderItems   FrameworkOrderItem[]
+  dispenseEvents        DispenseEvent[]
+  partialDisposals      PartialDisposal[]
 
   @@unique([name, supplierId])
   @@index([supplierId])
@@ -157,6 +160,8 @@ model ReagentBatch {
   // קשרים
   transactions      InventoryTransaction[]
   expiredProductLogs ExpiredProductLog[]
+  dispenseEvents    DispenseEvent[]
+  partialDisposals  PartialDisposal[]
 
   @@unique([reagentId, batchNumber])
   @@index([reagentId])
@@ -793,4 +798,77 @@ model ActivityLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+// ============================================================================
+// BARCODE & DISPENSING (v2)
+// ============================================================================
+
+/// פורמט ברקוד - הגדרות פיענוח לפי ספק/מוצר
+model BarcodeFormat {
+  id              String    @id @default(cuid())
+  name            String
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+
+  barcodeType     String    @default("CODE128") // CODE128, QR, DATAMATRIX, EAN13, GS1_128
+  parsePattern    String                         // Regex or GS1 AI pattern
+  fieldMapping    String                         // JSON: {lotNumber, expiryDate, catalogNumber, quantity}
+  dateFormat      String    @default("YYMMDD")
+  sampleData      String?
+  notes           String?
+
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([supplierId])
+  @@index([barcodeType])
+}
+
+/// אירוע הוצאה - רישום הוצאת פריט מהמלאי לשימוש
+model DispenseEvent {
+  id              String       @id @default(cuid())
+  reagentId       String
+  reagent         Reagent      @relation(fields: [reagentId], references: [id])
+  batchId         String
+  batch           ReagentBatch @relation(fields: [batchId], references: [id])
+
+  quantity        Float
+  dispensedById   String?
+  dispensedAt     DateTime     @default(now())
+
+  scanMethod      String       @default("BARCODE") // BARCODE, QR, MANUAL, SEARCH
+  rawScanData     String?
+  purpose         String?
+  notes           String?
+
+  createdAt       DateTime     @default(now())
+
+  @@index([reagentId])
+  @@index([batchId])
+  @@index([dispensedAt])
+  @@index([dispensedById])
+}
+
+/// השלכה חלקית - רישום השלכת חלק מפריט בשימוש (ברבעים)
+model PartialDisposal {
+  id               String       @id @default(cuid())
+  reagentId        String
+  reagent          Reagent      @relation(fields: [reagentId], references: [id])
+  batchId          String
+  batch            ReagentBatch @relation(fields: [batchId], references: [id])
+
+  portionDisposed  Float                          // 0.25 (רבע), 0.50 (חצי), 0.75 (שלושה רבעים), 1.00 (מלא)
+  originalQuantity Float                          // הכמות המקורית מה-DispenseEvent, לחישוב בזבוז
+  reason           String                         // EXPIRED_IN_USE, CONTAMINATED, DAMAGED, OTHER
+  notes            String?
+
+  disposedById     String?
+  disposedAt       DateTime     @default(now())
+
+  createdAt        DateTime     @default(now())
+
+  @@index([batchId])
+  @@index([disposedAt])
 }

@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Paperclip } from 'lucide-react';
+import { Loader2, Paperclip, ScanLine } from 'lucide-react';
 import { UploadFile } from '@/api/integrations';
+import { apiClient } from '@/api/client';
 
 export default function SystemSettingsPage() {
     const { toast } = useToast();
@@ -100,11 +102,56 @@ export default function SystemSettingsPage() {
         );
     }
 
+    // Inventory method settings state
+    const [inventorySettings, setInventorySettings] = useState({
+        consumption_method: 'barcode',
+        manual_entry_policy: 'admin_only',
+        receiving_default_method: 'purchase_request',
+    });
+    const [savingInventorySettings, setSavingInventorySettings] = useState(false);
+
+    useEffect(() => {
+        const fetchInventorySettings = async () => {
+            try {
+                const response = await apiClient.get('/systemsettings');
+                const allSettings = Array.isArray(response) ? response : (response?.data || response || []);
+                const settingsArray = Array.isArray(allSettings) ? allSettings : [];
+                const invSettings = {};
+                const invKeys = ['consumption_method', 'manual_entry_policy', 'receiving_default_method'];
+                settingsArray.forEach(s => {
+                    if (invKeys.includes(s.key)) {
+                        invSettings[s.key] = s.value;
+                    }
+                });
+                if (Object.keys(invSettings).length > 0) {
+                    setInventorySettings(prev => ({ ...prev, ...invSettings }));
+                }
+            } catch (e) {
+                // Settings may not exist yet
+            }
+        };
+        fetchInventorySettings();
+    }, []);
+
+    const handleSaveInventorySettings = async () => {
+        setSavingInventorySettings(true);
+        try {
+            for (const [key, value] of Object.entries(inventorySettings)) {
+                await apiClient.post('/systemsettings', { key, value });
+            }
+            toast({ title: "הגדרות מלאי נשמרו", variant: "success" });
+        } catch (err) {
+            toast({ title: "שגיאה בשמירת הגדרות מלאי", description: err.message, variant: "destructive" });
+        } finally {
+            setSavingInventorySettings(false);
+        }
+    };
+
     const logoPreviewUrl = logoFile ? URL.createObjectURL(logoFile) : settings.logoUrl;
 
     return (
-        <div dir="rtl" className="p-6">
-            <h1 className="text-2xl font-bold mb-6">הגדרות מערכת</h1>
+        <div dir="rtl" className="p-6 space-y-6">
+            <h1 className="text-2xl font-bold">הגדרות מערכת</h1>
             <Card className="max-w-2xl">
                 <CardHeader>
                     <CardTitle>התאמה אישית של המערכת</CardTitle>
@@ -160,6 +207,76 @@ export default function SystemSettingsPage() {
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="h-4 w-4 ms-2 animate-spin" />}
                         שמור שינויים
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            {/* Inventory Methods Settings */}
+            <Card className="max-w-2xl">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ScanLine className="h-5 w-5 text-blue-600" />
+                        שיטות מלאי
+                    </CardTitle>
+                    <CardDescription>
+                        הגדרות שיטת הצריכה, הזנה ידנית וקליטת משלוחים
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label>שיטת חישוב צריכה</Label>
+                        <Select
+                            value={inventorySettings.consumption_method}
+                            onValueChange={(val) => setInventorySettings(prev => ({ ...prev, consumption_method: val }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="barcode">סריקת ברקוד (מומלץ)</SelectItem>
+                                <SelectItem value="inference">הסקה מספירת מלאי</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">ברקוד - רישום הוצאה בזמן אמת. הסקה - חישוב אוטומטי לפי הפרש ספירות.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>מדיניות הזנה ידנית</Label>
+                        <Select
+                            value={inventorySettings.manual_entry_policy}
+                            onValueChange={(val) => setInventorySettings(prev => ({ ...prev, manual_entry_policy: val }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="admin_only">מנהלים בלבד</SelectItem>
+                                <SelectItem value="all_users">כל המשתמשים</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">מי רשאי להזין כמויות ידנית ללא סריקת ברקוד.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>שיטת קליטה ברירת מחדל</Label>
+                        <Select
+                            value={inventorySettings.receiving_default_method}
+                            onValueChange={(val) => setInventorySettings(prev => ({ ...prev, receiving_default_method: val }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="purchase_request">דרישת רכש</SelectItem>
+                                <SelectItem value="barcode_scan">סריקת ברקוד</SelectItem>
+                                <SelectItem value="manual">הזנה ידנית</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">השיטה שתשמש כברירת מחדל בקליטת משלוחים.</p>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveInventorySettings} disabled={savingInventorySettings}>
+                        {savingInventorySettings && <Loader2 className="h-4 w-4 ms-2 animate-spin" />}
+                        שמור הגדרות מלאי
                     </Button>
                 </CardFooter>
             </Card>

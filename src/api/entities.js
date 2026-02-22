@@ -111,6 +111,9 @@ const BASE_PATH_OVERRIDES = {
   reagentbatch: '/batches',
   withdrawalrequest: '/withdrawals',
   delivery: '/deliveries',
+  barcodeformat: '/barcode/formats',
+  dispenseevent: '/dispense/history',
+  partialdisposal: '/disposal/history',
 };
 
 // Helper function to create entity CRUD operations
@@ -265,6 +268,11 @@ export const ScheduledReminder = createEntity('scheduledreminder');
 export const DocumentationNote = createEntity('documentationnote');
 export const ReagentReceiptEvent = createEntity('reagentreceiptevent');
 export const FeatureDocumentation = createEntity('featuredocumentation');
+
+// Barcode & Dispensing entities (v2)
+export const BarcodeFormat = createEntity('barcodeformat');
+export const DispenseEvent = createEntity('dispenseevent');
+export const PartialDisposal = createEntity('partialdisposal');
 
 // User/Auth entity - special case with auth methods
 export const User = {

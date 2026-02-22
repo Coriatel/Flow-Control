@@ -622,6 +622,70 @@ router.post('/generate', authorize('ADMIN', 'MANAGER'), asyncHandler(async (req:
         }
         break;
       }
+
+      case 'EXPIRED_IN_USE': {
+        // Find IN_USE batches that are expired or expiring soon
+        const now = new Date();
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() + (rule.thresholdDays || 0));
+
+        const expiredInUseBatches = await prisma.reagentBatch.findMany({
+          where: {
+            status: 'IN_USE',
+            expiryDate: { lte: thresholdDate },
+          },
+          include: {
+            reagent: true,
+            dispenseEvents: {
+              orderBy: { dispensedAt: 'desc' },
+              take: 1,
+            },
+          }
+        });
+
+        for (const batch of expiredInUseBatches) {
+          const existingAlert = await prisma.activeAlert.findFirst({
+            where: {
+              alertRuleId: rule.id,
+              entityType: 'batch',
+              entityId: batch.id,
+              status: { in: ['NEW', 'IN_PROGRESS'] }
+            }
+          });
+
+          if (!existingAlert) {
+            const daysUntilExpiry = Math.ceil(
+              (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            const isExpired = daysUntilExpiry <= 0;
+            const lastDispense = batch.dispenseEvents[0];
+
+            await prisma.activeAlert.create({
+              data: {
+                alertRuleId: rule.id,
+                entityType: 'batch',
+                entityId: batch.id,
+                severity: isExpired ? 'CRITICAL' : daysUntilExpiry <= 7 ? 'HIGH' : 'MEDIUM',
+                message: isExpired
+                  ? `פריט בשימוש פג תוקף! ${batch.reagent.name} אצווה ${batch.batchNumber} - יש להפסיק שימוש מיידית`
+                  : `פריט בשימוש עומד לפוג: ${batch.reagent.name} אצווה ${batch.batchNumber} - ${daysUntilExpiry} ימים`,
+                details: JSON.stringify({
+                  reagentId: batch.reagentId,
+                  reagentName: batch.reagent.name,
+                  batchNumber: batch.batchNumber,
+                  expiryDate: batch.expiryDate,
+                  daysUntilExpiry,
+                  isExpired,
+                  dispensedAt: lastDispense?.dispensedAt,
+                  dispensedById: lastDispense?.dispensedById,
+                })
+              }
+            });
+            alertsCreated++;
+          }
+        }
+        break;
+      }
     }
   }
 
