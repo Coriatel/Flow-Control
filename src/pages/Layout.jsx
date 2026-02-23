@@ -601,12 +601,20 @@ export default function Layout({ children, currentPageName }) {
           <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-slate-200">
             <div className="flex items-center justify-between w-full px-4 sm:px-6 lg:px-8">
 
-              {/* Right side (for RTL): Hamburger (far right), Back Button with History, User Profile */}
+              {/* Right side (for RTL): Hamburger (far right), Sidebar Toggle, Back Button, User Profile */}
               <div className="flex items-center gap-3">
-                 {/* Mobile hamburger - moved to far right */}
+                 {/* Mobile hamburger - far right in RTL */}
                  <button
                   onClick={() => setMobileMenuOpen(true)}
-                  className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-600 focus:outline-none order-first"
+                  className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-600 focus:outline-none"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+
+                {/* Desktop Sidebar Toggle - right after hamburger */}
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className="hidden lg:block p-2 rounded-md text-slate-500 hover:text-slate-600 focus:outline-none"
                 >
                   <Menu className="h-6 w-6" />
                 </button>
@@ -686,14 +694,6 @@ export default function Layout({ children, currentPageName }) {
                     </PopoverContent>
                  </Popover>
                  <h1 className="text-xl font-bold text-slate-800">{systemDisplay.mainHeaderName}</h1>
-                
-                {/* Desktop Sidebar Toggle */}
-                <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="hidden lg:block p-2 rounded-md text-slate-500 hover:text-slate-600 focus:outline-none"
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
               </div>
 
               <div className="flex-1" />

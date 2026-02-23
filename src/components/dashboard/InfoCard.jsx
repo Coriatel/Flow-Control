@@ -55,7 +55,7 @@ const InfoCard = ({
   titleLinkTo,
   color = 'blue',
   rows = [],
-  initialVisibleRows = 4,
+  initialVisibleRows = 3,
   defaultCollapsed = false,
   emptyMessage = 'אין פריטים להצגה',
 }) => {
@@ -76,8 +76,8 @@ const InfoCard = ({
       {/* Header - always visible */}
       <button
         type="button"
-        className={`w-full ${scheme.headerBg} px-4 py-3 flex items-center justify-between cursor-pointer md:cursor-default`}
-        onClick={() => isMobile && setBodyOpen(!bodyOpen)}
+        className={`w-full ${scheme.headerBg} px-4 py-3 flex items-center justify-between cursor-pointer`}
+        onClick={() => setBodyOpen(!bodyOpen)}
       >
         <div className="flex items-center gap-3">
           {IconElement && (
@@ -98,14 +98,12 @@ const InfoCard = ({
             <span className={`text-sm font-semibold ${scheme.titleColor}`}>{title}</span>
           )}
         </div>
-        {isMobile && (
-          <motion.div
-            animate={{ rotate: bodyOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className={`h-4 w-4 ${scheme.iconColor}`} />
-          </motion.div>
-        )}
+        <motion.div
+          animate={{ rotate: bodyOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className={`h-4 w-4 ${scheme.iconColor}`} />
+        </motion.div>
       </button>
 
       {/* Body */}

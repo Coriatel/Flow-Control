@@ -5,24 +5,22 @@ import { User } from '@/api/entities';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, BarChart3, Beaker, Bell, Building2, Calculator,
-  ClipboardCheck, ClipboardList, Clock, FileCode, FileStack, FileText, FileUp, List, ListChecks,
-  Loader2, Package, PackageCheck, RefreshCw, Server, Settings, Shield, ShoppingCart, SlidersHorizontal,
-  TrendingDown, Truck, Users, Zap
+  AlertTriangle, ArrowLeft,
+  ClipboardCheck, Clock, FileText,
+  Loader2, RefreshCw,
+  TrendingDown, Truck
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { he } from "date-fns/locale";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 import InfoCard from "../components/dashboard/InfoCard";
 import MobileAlerts from "../components/dashboard/MobileAlerts";
 import CriticalActions from "../components/dashboard/CriticalActions";
 import RecentActivity from "../components/dashboard/RecentActivity";
-import { NavGroupAccordion } from "../components/dashboard/NavGroupAccordion";
 
 // Status translation map for orders
 const statusLabels = {
@@ -64,9 +62,6 @@ function formatDate(dateStr) {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
@@ -128,39 +123,6 @@ export default function Dashboard() {
     setIsManualRefreshing(true);
     fetchDashboardData();
   };
-
-  const navItems = [
-    { name: "קליטת משלוח", href: "NewDelivery", icon: Truck, group: "inventory" },
-    { name: "ספירת מלאי", href: "InventoryCount", icon: ListChecks, group: "inventory" },
-    { name: "ניהול נתוני צריכה", href: "UsageDataManagement", icon: SlidersHorizontal, group: "inventory" },
-    { name: "חישוב השלמות מלאי", href: "InventoryReplenishment", icon: Calculator, group: "inventory" },
-    { name: "ניהול אצוות ופגי תוקף", href: "BatchAndExpiryManagement", icon: ClipboardList, group: "inventory" },
-    { name: "הקמת מסמך רכש חדש", href: "NewOrder", icon: FileText, group: "procurement" },
-    { name: "ניהול דרישות רכש", href: "Orders", icon: ShoppingCart, group: "procurement" },
-    { name: "משיכת ריאגנטים", href: "NewWithdrawalRequest", icon: ArrowDownToLine, group: "procurement" },
-    { name: "ניהול בקשות משיכה", href: "WithdrawalRequests", icon: ClipboardList, group: "procurement" },
-    { name: "משלוחים שהתקבלו", href: "Deliveries", icon: FileStack, group: "shipments" },
-    { name: "ניהול משלוחים יוצאים", href: "OutgoingShipments", icon: PackageCheck, group: "shipments" },
-    { name: "שליחת ריאגנטים", href: "NewShipment", icon: Package, group: "shipments" },
-    { name: "מעקב אספקות", href: "SupplyTracking", icon: Truck, group: "shipments" },
-    { name: "העלאת תעודות אנליזה", href: "UploadCOA", icon: FileUp, group: "operations" },
-    { name: "דוחות ומעקב", href: "Reports", icon: BarChart3, group: "operations" },
-    { name: "התראות ותזכורות", href: "AlertsManagement", icon: Bell, group: "operations" },
-    { name: "הערות ומשימות", href: "DashboardNotes", icon: ClipboardCheck, group: "operations" },
-    { name: "ניהול ריאגנטים", href: "ManageReagents", icon: Beaker, group: "operations" },
-    { name: "ניהול ספקים", href: "ManageSuppliers", icon: Building2, group: "operations" },
-    { name: "יומן פעילות", href: "ActivityLog", icon: Activity, group: "operations" },
-    { name: "בקרת איכות", href: "QualityAssurance", icon: Shield, group: "operations" },
-    { name: "ניהול אנשי קשר", href: "Contacts", icon: Users, group: "contacts" },
-    { name: "קליטת אנשי קשר מקובץ", href: "ImportContacts", icon: FileUp, group: "contacts" },
-    { name: "היסטוריית פיתוח", href: "SystemDocumentation", icon: FileCode, group: "documentation" }
-  ];
-
-  const adminNavItems = [
-    { name: "הגדרות מערכת", href: "SystemSettings", icon: Settings },
-    { name: "ניהול מערכת", href: "SystemManagement", icon: Server },
-    { name: "פאנל ניהול מתקדם", href: "AdminPanel", icon: Shield }
-  ];
 
   if (loading && !isManualRefreshing) {
     return (
@@ -255,69 +217,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="px-4">
+      <div className="px-4 space-y-6">
         {/* Mobile: MobileAlerts first */}
-        <div className="md:hidden mb-4">
+        <div className="md:hidden">
           <MobileAlerts actions={criticalActions} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-8">
-          {/* Main Content - InfoCards (right side in RTL = first in DOM) */}
-          <div className="lg:col-span-3 space-y-6 mb-6 lg:mb-0">
-            <InfoCard
-              icon={<Clock />}
-              title="ריאגנטים קצרי תוקף"
-              count={expiringReagents.length}
-              titleLinkTo={createPageUrl('BatchAndExpiryManagement?view=expiring&days=14')}
-              color="red"
-              rows={expiringRows}
-              initialVisibleRows={4}
-              defaultCollapsed
-            />
-
-            <InfoCard
-              icon={<TrendingDown />}
-              title="מלאי נמוך"
-              count={lowStockReagents.length}
-              titleLinkTo={createPageUrl('InventoryReplenishment')}
-              color="orange"
-              rows={lowStockRows}
-              initialVisibleRows={4}
-              defaultCollapsed
-            />
-
-            <InfoCard
-              icon={<Truck />}
-              title="אספקות בדרך"
-              count={pendingSupplies.length}
-              titleLinkTo={createPageUrl('SupplyTracking')}
-              color="blue"
-              rows={pendingSupplyRows}
-              initialVisibleRows={4}
-              defaultCollapsed
-            />
-
-            <InfoCard
-              icon={<FileText />}
-              title="דרישות רכש להשלמה"
-              count={pendingOrders.length}
-              titleLinkTo={createPageUrl('Orders')}
-              color="purple"
-              rows={pendingOrderRows}
-              initialVisibleRows={4}
-              defaultCollapsed
-            />
+        {/* Top section: CriticalActions + Notes side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3 hidden md:block">
+            <CriticalActions actions={criticalActions} />
           </div>
 
-          {/* Sidebar (left side in RTL) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* CriticalActions - desktop only */}
-            <div className="hidden md:block">
-              <CriticalActions actions={criticalActions} />
-            </div>
-
-            {/* Dashboard Notes */}
-            <Card className="bg-white shadow-sm border border-gray-200 rounded-lg">
+          <div className="lg:col-span-2">
+            <Card className="bg-white shadow-sm border border-gray-200 rounded-xl h-full">
               <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
                 <CardTitle className="flex items-center text-base font-semibold text-slate-800">
                   <ClipboardCheck className="h-5 w-5 text-amber-600 me-2" />
@@ -344,20 +257,54 @@ export default function Dashboard() {
                 </ScrollArea>
               </CardContent>
             </Card>
-
-            <RecentActivity activities={dashboardData.recentActivity} />
-
-            <div className="w-full">
-              <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-end">
-                <div className="bg-sky-100 p-2 rounded-lg me-3">
-                  <Zap className="h-5 w-5 text-sky-700" />
-                </div>
-                <span>ניווט מהיר ופעולות</span>
-              </h2>
-              <NavGroupAccordion navItems={navItems} adminNavItems={adminNavItems} userRole={user?.role} />
-            </div>
           </div>
         </div>
+
+        {/* Middle section: 4 InfoCards in responsive grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          <InfoCard
+            icon={<Clock />}
+            title="ריאגנטים קצרי תוקף"
+            count={expiringReagents.length}
+            titleLinkTo={createPageUrl('BatchAndExpiryManagement?view=expiring&days=14')}
+            color="red"
+            rows={expiringRows}
+            initialVisibleRows={3}
+          />
+
+          <InfoCard
+            icon={<TrendingDown />}
+            title="מלאי נמוך"
+            count={lowStockReagents.length}
+            titleLinkTo={createPageUrl('InventoryReplenishment')}
+            color="orange"
+            rows={lowStockRows}
+            initialVisibleRows={3}
+          />
+
+          <InfoCard
+            icon={<Truck />}
+            title="אספקות בדרך"
+            count={pendingSupplies.length}
+            titleLinkTo={createPageUrl('SupplyTracking')}
+            color="blue"
+            rows={pendingSupplyRows}
+            initialVisibleRows={3}
+          />
+
+          <InfoCard
+            icon={<FileText />}
+            title="דרישות רכש להשלמה"
+            count={pendingOrders.length}
+            titleLinkTo={createPageUrl('Orders')}
+            color="purple"
+            rows={pendingOrderRows}
+            initialVisibleRows={3}
+          />
+        </div>
+
+        {/* Bottom section: RecentActivity */}
+        <RecentActivity activities={dashboardData.recentActivity} />
       </div>
     </div>
   );
