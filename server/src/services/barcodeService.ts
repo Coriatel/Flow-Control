@@ -1,13 +1,16 @@
-import prisma from '../utils/prisma';
+import prisma from "../utils/prisma";
 
 // GS1 Application Identifiers
-const GS1_AIS: Record<string, { name: string; length?: number; variable?: boolean }> = {
-  '01': { name: 'gtin', length: 14 },
-  '10': { name: 'lotNumber', variable: true },
-  '17': { name: 'expiryDate', length: 6 },
-  '21': { name: 'serialNumber', variable: true },
-  '30': { name: 'quantity', variable: true },
-  '37': { name: 'quantity', variable: true },
+const GS1_AIS: Record<
+  string,
+  { name: string; length?: number; variable?: boolean }
+> = {
+  "01": { name: "gtin", length: 14 },
+  "10": { name: "lotNumber", variable: true },
+  "17": { name: "expiryDate", length: 6 },
+  "21": { name: "serialNumber", variable: true },
+  "30": { name: "quantity", variable: true },
+  "37": { name: "quantity", variable: true },
 };
 
 const GS_CHAR = String.fromCharCode(29); // Group Separator
@@ -30,13 +33,18 @@ export const barcodeService = {
    * If formatId provided, use that specific format
    * Otherwise try GS1 built-in, then custom formats
    */
-  async parseBarcodeData(rawData: string, formatId?: string): Promise<ParsedBarcodeData> {
+  async parseBarcodeData(
+    rawData: string,
+    formatId?: string,
+  ): Promise<ParsedBarcodeData> {
     const trimmed = rawData.trim();
 
     // If specific format requested, use it
     if (formatId) {
-      const format = await prisma.barcodeFormat.findUnique({ where: { id: formatId } });
-      if (!format) throw new Error('פורמט ברקוד לא נמצא');
+      const format = await prisma.barcodeFormat.findUnique({
+        where: { id: formatId },
+      });
+      if (!format) throw new Error("פורמט ברקוד לא נמצא");
       return this.parseWithFormat(trimmed, format);
     }
 
@@ -59,7 +67,7 @@ export const barcodeService = {
    * Supports both parenthesized format (01)GTIN(10)LOT and FNC1/GS separator format
    */
   parseGS1(rawData: string): ParsedBarcodeData {
-    const result: ParsedBarcodeData = { raw: rawData, formatName: 'GS1' };
+    const result: ParsedBarcodeData = { raw: rawData, formatName: "GS1" };
     const isParenthesized = /\(\d{2}\)/.test(rawData);
 
     if (isParenthesized) {
@@ -88,17 +96,40 @@ export const barcodeService = {
         pos += 2; // skip AI
 
         if (aiDef.variable) {
-          // Variable length - read until GS separator or end
+          // Variable length - read until GS separator or end of string.
+          // Do NOT greedily scan for AI-like digit patterns within the value,
+          // as lot numbers can contain sequences like "10", "17", "21".
+          // The GS1 standard uses Group Separator (GS, ASCII 29) to delimit
+          // variable-length fields. Only the last variable-length field can
+          // omit the GS separator.
           const gsPos = rawData.indexOf(GS_CHAR, pos);
-          // Also check for next AI pattern (2 digits that are valid AIs)
-          let endPos = gsPos !== -1 ? gsPos : rawData.length;
+          let endPos: number;
 
-          // Look for next valid AI before GS
-          for (let i = pos + 1; i < endPos - 1; i++) {
-            const potentialAI = rawData.substring(i, i + 2);
-            if (GS1_AIS[potentialAI] && potentialAI !== ai) {
-              endPos = i;
-              break;
+          if (gsPos !== -1) {
+            // GS separator found - use it as the delimiter
+            endPos = gsPos;
+          } else {
+            // No GS separator - this is the last field, consume rest of string.
+            // However, check if there's a fixed-length AI that could follow.
+            // Only recognize AIs at positions after the minimum variable field length (1 char).
+            endPos = rawData.length;
+            // For safety, look for a known fixed-length AI only after at least 1 char of value
+            for (let i = pos + 1; i <= rawData.length - 2; i++) {
+              const potentialAI = rawData.substring(i, i + 2);
+              const potentialDef = GS1_AIS[potentialAI];
+              // Only split on fixed-length AIs (like '01' with 14 digits, '17' with 6 digits)
+              // Variable-length AIs without GS separator cannot be reliably detected
+              if (potentialDef && !potentialDef.variable) {
+                // Verify this looks like a real AI by checking if enough data follows
+                const remainingAfterAI = rawData.length - i - 2;
+                if (
+                  potentialDef.length &&
+                  remainingAfterAI >= potentialDef.length
+                ) {
+                  endPos = i;
+                  break;
+                }
+              }
             }
           }
 
@@ -122,21 +153,21 @@ export const barcodeService = {
    */
   applyAIValue(result: ParsedBarcodeData, ai: string, value: string) {
     switch (ai) {
-      case '01':
+      case "01":
         result.gtin = value;
         result.catalogNumber = value;
         break;
-      case '10':
+      case "10":
         result.lotNumber = value;
         break;
-      case '17':
+      case "17":
         result.expiryDate = this.parseDateYYMMDD(value);
         break;
-      case '21':
+      case "21":
         result.serialNumber = value;
         break;
-      case '30':
-      case '37':
+      case "30":
+      case "37":
         result.quantity = parseInt(value, 10);
         break;
     }
@@ -158,16 +189,16 @@ export const barcodeService = {
    */
   parseDate(dateStr: string, format: string): Date | undefined {
     switch (format) {
-      case 'YYMMDD':
+      case "YYMMDD":
         return this.parseDateYYMMDD(dateStr);
-      case 'DDMMYY': {
+      case "DDMMYY": {
         if (dateStr.length !== 6) return undefined;
         const day = parseInt(dateStr.substring(0, 2), 10);
         const month = parseInt(dateStr.substring(2, 4), 10) - 1;
         const year = 2000 + parseInt(dateStr.substring(4, 6), 10);
         return new Date(year, month, day);
       }
-      case 'YYYYMMDD': {
+      case "YYYYMMDD": {
         if (dateStr.length !== 8) return undefined;
         const year = parseInt(dateStr.substring(0, 4), 10);
         const month = parseInt(dateStr.substring(4, 6), 10) - 1;
@@ -200,7 +231,10 @@ export const barcodeService = {
         result.lotNumber = match[mapping.lotNumber];
       }
       if (mapping.expiryDate && match[mapping.expiryDate]) {
-        result.expiryDate = this.parseDate(match[mapping.expiryDate], format.dateFormat);
+        result.expiryDate = this.parseDate(
+          match[mapping.expiryDate],
+          format.dateFormat,
+        );
       }
       if (mapping.catalogNumber && match[mapping.catalogNumber]) {
         result.catalogNumber = match[mapping.catalogNumber];
@@ -236,10 +270,15 @@ export const barcodeService = {
   /**
    * Test a pattern against sample data (for admin configuration)
    */
-  testPattern(pattern: string, fieldMapping: string, dateFormat: string, sampleData: string): ParsedBarcodeData {
+  testPattern(
+    pattern: string,
+    fieldMapping: string,
+    dateFormat: string,
+    sampleData: string,
+  ): ParsedBarcodeData {
     const mockFormat = {
-      id: 'test',
-      name: 'Test',
+      id: "test",
+      name: "Test",
       parsePattern: pattern,
       fieldMapping,
       dateFormat,

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { History, ArrowLeft, Package, Beaker, FileText, Truck, User, Activity } from 'lucide-react';
+import { History, ArrowLeft, Package, Beaker, FileText, Truck, User, Activity, AlertTriangle, Settings, Trash2, PackageMinus } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -13,25 +13,25 @@ const getActivityConfig = (activity) => {
   const action = activity.action || '';
 
   const config = {
-    // Inventory
     inventory: { icon: Package, color: 'text-blue-500 bg-blue-50' },
     inventory_count: { icon: History, color: 'text-purple-500 bg-purple-50' },
     reagent: { icon: Beaker, color: 'text-cyan-500 bg-cyan-50' },
-
-    // Orders/Delivery
     order: { icon: FileText, color: 'text-amber-500 bg-amber-50' },
     delivery: { icon: Truck, color: 'text-green-500 bg-green-50' },
-
-    // User
     user: { icon: User, color: 'text-slate-500 bg-slate-50' },
-
-    // Default
+    error: { icon: AlertTriangle, color: 'text-red-500 bg-red-50' },
+    system: { icon: Settings, color: 'text-gray-500 bg-gray-100' },
+    disposal: { icon: Trash2, color: 'text-red-500 bg-red-50' },
+    destruction: { icon: Trash2, color: 'text-red-600 bg-red-50' },
+    dispense: { icon: PackageMinus, color: 'text-orange-500 bg-orange-50' },
     default: { icon: Activity, color: 'text-gray-500 bg-gray-50' }
   };
 
-  // Try to match specific action or entity type
   if (action === 'inventory_count') return config.inventory_count;
   if (action === 'user_login') return config.user;
+  if (action === 'destruction' || action === 'bulk_destroy') return config.destruction;
+  if (action === 'disposal') return config.disposal;
+  if (action === 'dispense') return config.dispense;
 
   return config[type] || config.default;
 };
@@ -44,7 +44,7 @@ const RecentActivity = ({ activities }) => {
           <div className="bg-slate-50 p-2 rounded-lg me-2">
             <History className="h-5 w-5 text-slate-600" />
           </div>
-          פעולות אחרונות
+          יומן פעילות
         </CardTitle>
         <Link to={createPageUrl('ActivityLog')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors">
           הצג הכל <ArrowLeft className="h-4 w-4 me-1" />
@@ -54,11 +54,8 @@ const RecentActivity = ({ activities }) => {
         <ScrollArea className="h-64">
           <div className="space-y-3">
             {activities.length > 0 ? activities.map(activity => {
-              // Handle date/timestamp
               const dateStr = activity.timestamp || activity.date || activity.createdAt;
               const date = dateStr ? new Date(dateStr) : new Date();
-
-              // Handle icon/color
               const { icon: Icon, color } = getActivityConfig(activity);
 
               return (

@@ -1,28 +1,42 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, CameraOff, Keyboard, ScanLine, Volume2, VolumeX, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useRef, useState, useCallback, useId } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import {
+  Camera,
+  CameraOff,
+  Keyboard,
+  ScanLine,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 const SCAN_TYPES = {
-  BARCODE: 'barcode',
-  QR: 'qr',
-  BOTH: 'both',
+  BARCODE: "barcode",
+  QR: "qr",
+  BOTH: "both",
 };
+
+const SCAN_DEBOUNCE_MS = 1500;
 
 export default function BarcodeScanner({
   onScan,
   onError,
   allowManual = true,
   scanType = SCAN_TYPES.BOTH,
-  placeholder = 'הזן נתוני ברקוד ידנית...',
+  placeholder = "הזן נתוני ברקוד ידנית...",
   className,
   disabled = false,
 }) {
+  const reactId = useId();
+  const containerId = useRef(
+    `barcode-scanner-${reactId.replace(/:/g, "")}`,
+  ).current;
   const [cameraActive, setCameraActive] = useState(false);
   const [manualMode, setManualMode] = useState(false);
-  const [manualInput, setManualInput] = useState('');
+  const [manualInput, setManualInput] = useState("");
   const [lastScan, setLastScan] = useState(null);
   const [error, setError] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -30,6 +44,7 @@ export default function BarcodeScanner({
   const scannerRef = useRef(null);
   const containerRef = useRef(null);
   const audioRef = useRef(null);
+  const lastScanTimeRef = useRef(0);
 
   // Create beep sound
   useEffect(() => {
@@ -55,7 +70,7 @@ export default function BarcodeScanner({
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       oscillator.frequency.value = 1200;
-      oscillator.type = 'sine';
+      oscillator.type = "sine";
       gainNode.gain.value = 0.3;
       oscillator.start();
       oscillator.stop(ctx.currentTime + 0.15);
@@ -64,39 +79,50 @@ export default function BarcodeScanner({
     }
   }, [soundEnabled]);
 
-  const handleScanSuccess = useCallback((decodedText) => {
-    setLastScan(decodedText);
-    setError(null);
-    setScanning(true);
-    playBeep();
+  const handleScanSuccess = useCallback(
+    (decodedText) => {
+      // Debounce: ignore scans within cooldown period
+      const now = Date.now();
+      if (now - lastScanTimeRef.current < SCAN_DEBOUNCE_MS) return;
+      lastScanTimeRef.current = now;
 
-    // Visual flash effect
-    if (containerRef.current) {
-      containerRef.current.classList.add('ring-2', 'ring-green-500');
-      setTimeout(() => {
-        containerRef.current?.classList.remove('ring-2', 'ring-green-500');
-        setScanning(false);
-      }, 1000);
-    }
+      setLastScan(decodedText);
+      setError(null);
+      setScanning(true);
+      playBeep();
 
-    if (onScan) onScan(decodedText);
-  }, [onScan, playBeep]);
+      // Visual flash effect
+      if (containerRef.current) {
+        containerRef.current.classList.add("ring-2", "ring-green-500");
+        setTimeout(() => {
+          containerRef.current?.classList.remove("ring-2", "ring-green-500");
+          setScanning(false);
+        }, 1000);
+      }
+
+      if (onScan) onScan(decodedText);
+    },
+    [onScan, playBeep],
+  );
 
   const handleScanError = useCallback((errorMessage) => {
     // Only report actual errors, not "no code found" messages
-    if (errorMessage?.includes?.('No MultiFormat Readers')) return;
-    if (errorMessage?.includes?.('NotFoundException')) return;
+    if (errorMessage?.includes?.("No MultiFormat Readers")) return;
+    if (errorMessage?.includes?.("NotFoundException")) return;
   }, []);
 
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      const containerId = 'barcode-scanner-container';
 
       if (scannerRef.current) {
         try {
-          await scannerRef.current.stop();
-        } catch (e) { /* ignore */ }
+          if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+          }
+        } catch (e) {
+          /* ignore */
+        }
       }
 
       const html5QrCode = new Html5Qrcode(containerId);
@@ -109,25 +135,29 @@ export default function BarcodeScanner({
       };
 
       await html5QrCode.start(
-        { facingMode: 'environment' },
+        { facingMode: "environment" },
         config,
         handleScanSuccess,
-        handleScanError
+        handleScanError,
       );
 
       setCameraActive(true);
       setManualMode(false);
     } catch (err) {
-      setError('לא ניתן לגשת למצלמה. ודא שאישרת גישה למצלמה.');
+      setError("לא ניתן לגשת למצלמה. אנא אשר הרשאת מצלמה בדפדפן");
       if (onError) onError(err);
     }
-  }, [handleScanSuccess, handleScanError, onError]);
+  }, [containerId, handleScanSuccess, handleScanError, onError]);
 
   const stopCamera = useCallback(async () => {
     if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
-      } catch (e) { /* ignore */ }
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+      } catch (e) {
+        /* ignore */
+      }
       scannerRef.current = null;
     }
     setCameraActive(false);
@@ -136,7 +166,13 @@ export default function BarcodeScanner({
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(() => {});
+          }
+        } catch (e) {
+          /* ignore */
+        }
       }
     };
   }, []);
@@ -145,7 +181,7 @@ export default function BarcodeScanner({
     e.preventDefault();
     if (!manualInput.trim()) return;
     handleScanSuccess(manualInput.trim());
-    setManualInput('');
+    setManualInput("");
   };
 
   const toggleManual = () => {
@@ -158,9 +194,9 @@ export default function BarcodeScanner({
     <div
       ref={containerRef}
       className={cn(
-        'rounded-lg border bg-card transition-all duration-300',
-        scanning && 'ring-2 ring-green-500',
-        className
+        "rounded-lg border bg-card transition-all duration-300",
+        scanning && "ring-2 ring-green-500",
+        className,
       )}
     >
       {/* Header controls */}
@@ -176,11 +212,15 @@ export default function BarcodeScanner({
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="h-8 w-8 p-0"
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
           </Button>
           {allowManual && (
             <Button
-              variant={manualMode ? 'default' : 'ghost'}
+              variant={manualMode ? "default" : "ghost"}
               size="sm"
               onClick={toggleManual}
               className="h-8 gap-1"
@@ -191,27 +231,31 @@ export default function BarcodeScanner({
             </Button>
           )}
           <Button
-            variant={cameraActive ? 'destructive' : 'default'}
+            variant={cameraActive ? "destructive" : "default"}
             size="sm"
             onClick={cameraActive ? stopCamera : startCamera}
             className="h-8 gap-1"
             disabled={disabled}
           >
-            {cameraActive ? <CameraOff className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-            <span className="text-xs">{cameraActive ? 'כבה' : 'סרוק'}</span>
+            {cameraActive ? (
+              <CameraOff className="h-4 w-4" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+            <span className="text-xs">{cameraActive ? "כבה" : "סרוק"}</span>
           </Button>
         </div>
       </div>
 
-      {/* Camera view */}
-      <div className={cn('relative', !cameraActive && !manualMode && 'hidden')}>
-        {!manualMode && (
-          <div
-            id="barcode-scanner-container"
-            className="w-full min-h-[200px]"
-          />
-        )}
+      {/* Camera container - always rendered to avoid DOM race, hidden when inactive */}
+      <div
+        id={containerId}
+        className="w-full min-h-[200px]"
+        style={{ display: cameraActive && !manualMode ? "block" : "none" }}
+      />
 
+      {/* Manual input / camera active area */}
+      <div className={cn("relative", !cameraActive && !manualMode && "hidden")}>
         {/* Manual input mode */}
         {manualMode && (
           <form onSubmit={handleManualSubmit} className="p-4">
@@ -225,7 +269,11 @@ export default function BarcodeScanner({
                 autoFocus
                 disabled={disabled}
               />
-              <Button type="submit" size="sm" disabled={!manualInput.trim() || disabled}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!manualInput.trim() || disabled}
+              >
                 שלח
               </Button>
             </div>
@@ -236,7 +284,9 @@ export default function BarcodeScanner({
       {/* Last scan result */}
       {lastScan && (
         <div className="px-3 py-2 bg-green-50 border-t text-xs text-green-800 flex items-center justify-between">
-          <span className="truncate font-mono" dir="ltr">{lastScan}</span>
+          <span className="truncate font-mono" dir="ltr">
+            {lastScan}
+          </span>
           <Button
             variant="ghost"
             size="sm"

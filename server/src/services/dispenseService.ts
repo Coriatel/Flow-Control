@@ -1,7 +1,7 @@
-import prisma from '../utils/prisma';
-import { batchService } from './batchService';
-import { barcodeService } from './barcodeService';
-import { TransactionType } from '../types';
+import prisma from "../utils/prisma";
+import { batchService } from "./batchService";
+import { barcodeService } from "./barcodeService";
+import { TransactionType } from "../types";
 
 export interface DispenseInput {
   reagentId: string;
@@ -44,14 +44,14 @@ export const dispenseService = {
     });
 
     if (!batch) {
-      throw new Error('אצווה לא נמצאה');
+      throw new Error("אצווה לא נמצאה");
     }
 
     if (batch.reagentId !== input.reagentId) {
-      throw new Error('האצווה לא שייכת לריאגנט המבוקש');
+      throw new Error("האצווה לא שייכת לריאגנט המבוקש");
     }
 
-    if (batch.status !== 'ACTIVE') {
+    if (batch.status !== "ACTIVE") {
       throw new Error(`לא ניתן להוציא מאצווה בסטטוס ${batch.status}`);
     }
 
@@ -60,7 +60,7 @@ export const dispenseService = {
     }
 
     const newQuantity = batch.currentQuantity - input.quantity;
-    const newStatus = newQuantity <= 0 ? 'IN_USE' : 'ACTIVE';
+    const newStatus = newQuantity <= 0 ? "IN_USE" : "ACTIVE";
 
     // Update batch quantity and status
     await prisma.reagentBatch.update({
@@ -78,7 +78,7 @@ export const dispenseService = {
         batchId: input.batchId,
         quantity: input.quantity,
         dispensedById: input.dispensedById,
-        scanMethod: input.scanMethod || 'MANUAL',
+        scanMethod: input.scanMethod || "MANUAL",
         rawScanData: input.rawScanData,
         purpose: input.purpose,
         notes: input.notes,
@@ -92,7 +92,7 @@ export const dispenseService = {
         batchId: input.batchId,
         transactionType: TransactionType.CONSUMPTION,
         quantityDelta: -input.quantity,
-        sourceType: 'dispense',
+        sourceType: "dispense",
         sourceId: dispenseEvent.id,
         performedById: input.dispensedById,
         notes: `הוצאה מהמלאי - אצווה ${batch.batchNumber}`,
@@ -117,7 +117,7 @@ export const dispenseService = {
     const parsed = await barcodeService.parseBarcodeData(input.rawScanData);
 
     if (!parsed.lotNumber && !parsed.catalogNumber) {
-      throw new Error('לא ניתן לזהות מספר אצווה או מספר קטלוגי מהברקוד');
+      throw new Error("לא ניתן לזהות מספר אצווה או מספר קטלוגי מהברקוד");
     }
 
     // Find matching batch
@@ -129,7 +129,7 @@ export const dispenseService = {
     const batches = await prisma.reagentBatch.findMany({
       where: {
         ...whereClause,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         currentQuantity: { gt: 0 },
       },
       include: {
@@ -138,13 +138,15 @@ export const dispenseService = {
     });
 
     if (batches.length === 0) {
-      throw new Error('לא נמצאה אצווה פעילה תואמת לברקוד');
+      throw new Error("לא נמצאה אצווה פעילה תואמת לברקוד");
     }
 
     // If catalog number available, narrow down
     let matchedBatch = batches[0];
     if (parsed.catalogNumber && batches.length > 1) {
-      const catalogMatch = batches.find(b => b.reagent.catalogNumber === parsed.catalogNumber);
+      const catalogMatch = batches.find(
+        (b) => b.reagent.catalogNumber === parsed.catalogNumber,
+      );
       if (catalogMatch) matchedBatch = catalogMatch;
     }
 
@@ -153,7 +155,7 @@ export const dispenseService = {
       batchId: matchedBatch.id,
       quantity: input.quantity,
       dispensedById: input.dispensedById,
-      scanMethod: parsed.formatName === 'GS1' ? 'BARCODE' : 'QR',
+      scanMethod: parsed.formatName === "GS1" ? "BARCODE" : "QR",
       rawScanData: input.rawScanData,
       purpose: input.purpose,
       notes: input.notes,
@@ -163,15 +165,17 @@ export const dispenseService = {
   /**
    * Get dispense history with filters
    */
-  async getHistory(filters: {
-    reagentId?: string;
-    batchId?: string;
-    dispensedById?: string;
-    fromDate?: Date;
-    toDate?: Date;
-    limit?: number;
-    offset?: number;
-  } = {}) {
+  async getHistory(
+    filters: {
+      reagentId?: string;
+      batchId?: string;
+      dispensedById?: string;
+      fromDate?: Date;
+      toDate?: Date;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) {
     const where: any = {};
     if (filters.reagentId) where.reagentId = filters.reagentId;
     if (filters.batchId) where.batchId = filters.batchId;
@@ -189,7 +193,7 @@ export const dispenseService = {
           reagent: { include: { supplier: true } },
           batch: true,
         },
-        orderBy: { dispensedAt: 'desc' },
+        orderBy: { dispensedAt: "desc" },
         take: filters.limit || 50,
         skip: filters.offset || 0,
       }),
@@ -204,22 +208,22 @@ export const dispenseService = {
    */
   async getInUseItems() {
     const batches = await prisma.reagentBatch.findMany({
-      where: { status: 'IN_USE' },
+      where: { status: "IN_USE" },
       include: {
         reagent: { include: { supplier: true } },
         dispenseEvents: {
-          orderBy: { dispensedAt: 'desc' },
+          orderBy: { dispensedAt: "desc" },
           take: 1,
         },
       },
-      orderBy: { expiryDate: 'asc' },
+      orderBy: { expiryDate: "asc" },
     });
 
     const now = new Date();
-    return batches.map(batch => {
+    return batches.map((batch) => {
       const lastDispense = batch.dispenseEvents[0];
       const daysUntilExpiry = Math.ceil(
-        (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
       return {
         ...batch,
@@ -240,13 +244,13 @@ export const dispenseService = {
       where: { id: batchId },
     });
 
-    if (!batch) throw new Error('אצווה לא נמצאה');
-    if (batch.status !== 'IN_USE') throw new Error('האצווה לא בסטטוס "בשימוש"');
+    if (!batch) throw new Error("אצווה לא נמצאה");
+    if (batch.status !== "IN_USE") throw new Error('האצווה לא בסטטוס "בשימוש"');
 
     // Get last dispense event to know original quantity
     const lastDispense = await prisma.dispenseEvent.findFirst({
       where: { batchId },
-      orderBy: { dispensedAt: 'desc' },
+      orderBy: { dispensedAt: "desc" },
     });
 
     const returnQuantity = lastDispense?.quantity || batch.initialQuantity;
@@ -255,7 +259,7 @@ export const dispenseService = {
       where: { id: batchId },
       data: {
         currentQuantity: returnQuantity,
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
     });
 
@@ -280,23 +284,32 @@ export const dispenseService = {
    */
   async recordPartialDisposal(input: PartialDisposalInput) {
     if (!VALID_PORTIONS.includes(input.portionDisposed)) {
-      throw new Error('חלק ההשלכה חייב להיות 0.25, 0.50, 0.75, או 1.00');
+      throw new Error("חלק ההשלכה חייב להיות 0.25, 0.50, 0.75, או 1.00");
     }
 
     const batch = await prisma.reagentBatch.findUnique({
       where: { id: input.batchId },
     });
 
-    if (!batch) throw new Error('אצווה לא נמצאה');
-    if (batch.status !== 'IN_USE') throw new Error('האצווה לא בסטטוס "בשימוש"');
+    if (!batch) throw new Error("אצווה לא נמצאה");
 
-    // Get original dispensed quantity
-    const lastDispense = await prisma.dispenseEvent.findFirst({
-      where: { batchId: input.batchId },
-      orderBy: { dispensedAt: 'desc' },
-    });
+    const allowedStatuses = ["IN_USE", "ACTIVE", "EXPIRED"];
+    if (!allowedStatuses.includes(batch.status)) {
+      throw new Error(`לא ניתן להשמיד אצווה בסטטוס ${batch.status}`);
+    }
 
-    const originalQuantity = lastDispense?.quantity || batch.initialQuantity;
+    // For IN_USE batches, get original dispensed quantity from last dispense event
+    // For ACTIVE/EXPIRED batches, use current quantity directly
+    let originalQuantity: number;
+    if (batch.status === "IN_USE") {
+      const lastDispense = await prisma.dispenseEvent.findFirst({
+        where: { batchId: input.batchId },
+        orderBy: { dispensedAt: "desc" },
+      });
+      originalQuantity = lastDispense?.quantity || batch.initialQuantity;
+    } else {
+      originalQuantity = batch.currentQuantity;
+    }
 
     const disposal = await prisma.partialDisposal.create({
       data: {
@@ -314,7 +327,7 @@ export const dispenseService = {
     if (input.portionDisposed === 1.0) {
       await prisma.reagentBatch.update({
         where: { id: input.batchId },
-        data: { status: 'DESTROYED' },
+        data: { status: "DESTROYED" },
       });
     }
 
@@ -332,12 +345,14 @@ export const dispenseService = {
   /**
    * Get disposal history
    */
-  async getDisposalHistory(filters: {
-    batchId?: string;
-    reagentId?: string;
-    limit?: number;
-    offset?: number;
-  } = {}) {
+  async getDisposalHistory(
+    filters: {
+      batchId?: string;
+      reagentId?: string;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) {
     const where: any = {};
     if (filters.batchId) where.batchId = filters.batchId;
     if (filters.reagentId) where.reagentId = filters.reagentId;
@@ -349,7 +364,7 @@ export const dispenseService = {
           reagent: true,
           batch: true,
         },
-        orderBy: { disposedAt: 'desc' },
+        orderBy: { disposedAt: "desc" },
         take: filters.limit || 50,
         skip: filters.offset || 0,
       }),
