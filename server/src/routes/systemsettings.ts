@@ -23,10 +23,15 @@ const DEFAULT_SETTINGS = {
 
 // Helper to flatten settings for frontend
 function flattenSettings(settings: any) {
-  const value =
-    typeof settings.value === "string"
-      ? JSON.parse(settings.value)
-      : settings.value || {};
+  let value = settings.value || {};
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      // value is a plain string (e.g. "barcode"), not JSON — keep as-is
+      value = { raw: value };
+    }
+  }
 
   return {
     ...settings,
