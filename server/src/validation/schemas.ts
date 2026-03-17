@@ -337,6 +337,23 @@ export const createDocumentationNoteSchema = z.object({
 export const updateDocumentationNoteSchema =
   createDocumentationNoteSchema.partial();
 
+// ==================== Message Schemas ====================
+
+export const createMessageSchema = z.object({
+  recipientType: z.enum(["ALL", "SELECTED", "SINGLE"]),
+  recipientIds: z.array(z.string()).optional().default([]),
+  title: z.string().min(1).max(200),
+  content: z.string().min(1).max(5000),
+  messageType: z
+    .enum(["MESSAGE", "ALERT", "NOTIFICATION"])
+    .optional()
+    .default("MESSAGE"),
+  priority: z
+    .enum(["LOW", "NORMAL", "HIGH", "URGENT"])
+    .optional()
+    .default("NORMAL"),
+});
+
 // ==================== Type exports ====================
 
 export type LoginInput = z.infer<typeof loginSchema>;

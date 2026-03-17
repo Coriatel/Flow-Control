@@ -727,6 +727,49 @@ model ArchivedData {
   @@index([archivedAt])
 }
 
+// ============================================================================
+// MESSAGING SYSTEM
+// ============================================================================
+
+/// הודעות בין משתמשים
+model Message {
+  id              String    @id @default(cuid())
+  senderId        String
+  senderName      String
+  recipientType   String    @default("ALL")      // ALL, SELECTED, SINGLE
+  recipientIds    String    @default("[]")        // JSON array
+  title           String
+  content         String
+  messageType     String    @default("MESSAGE")   // MESSAGE, ALERT, NOTIFICATION
+  priority        String    @default("NORMAL")    // LOW, NORMAL, HIGH, URGENT
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  recipients      MessageRecipient[]
+
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+/// נמענים של הודעה
+model MessageRecipient {
+  id          String    @id @default(cuid())
+  messageId   String
+  message     Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId      String
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  isDismissed Boolean   @default(false)
+  dismissedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([isRead])
+  @@map("message_recipients")
+}
+
 /// דוח בארכיון
 model ArchivedReport {
   id          String   @id @default(cuid())

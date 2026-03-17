@@ -1,10 +1,10 @@
-import prisma from '../utils/prisma';
+import prisma from "../utils/prisma";
 import {
   DashboardData,
   ExpiringReagent,
   LowStockReagent,
   CriticalAction,
-} from '../types';
+} from "../types";
 
 class DashboardService {
   /**
@@ -43,14 +43,14 @@ class DashboardService {
     const pendingSupplies = [
       ...pendingOrders.map((o) => ({
         id: o.id,
-        type: 'order' as const,
-        number: o.tempNumber || '',
-        supplier: o.supplier?.name || '',
+        type: "order" as const,
+        number: o.tempNumber || "",
+        supplier: o.supplier?.name || "",
         requestDate: o.orderDate,
       })),
       ...pendingWithdrawals.map((w) => ({
         id: w.id,
-        type: 'withdrawal' as const,
+        type: "withdrawal" as const,
         number: w.withdrawalNumber,
         supplier: w.supplierSnapshot,
         requestDate: w.requestDate,
@@ -62,8 +62,8 @@ class DashboardService {
       lowStockReagents,
       pendingOrders: pendingOrders.map((o) => ({
         id: o.id,
-        tempNumber: o.tempNumber || '',
-        supplier: o.supplier?.name || '',
+        tempNumber: o.tempNumber || "",
+        supplier: o.supplier?.name || "",
         status: o.status,
         orderDate: o.orderDate,
       })),
@@ -98,7 +98,7 @@ class DashboardService {
 
     const batches = await prisma.reagentBatch.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         expiryDate: { lte: threshold },
       },
       include: {
@@ -106,7 +106,7 @@ class DashboardService {
           include: { supplier: true },
         },
       },
-      orderBy: { expiryDate: 'asc' },
+      orderBy: { expiryDate: "asc" },
       take: 20,
     });
 
@@ -114,14 +114,14 @@ class DashboardService {
       .filter((batch) => Number(batch.currentQuantity) > 0)
       .map((batch) => ({
         id: batch.id,
-        name: batch.reagent?.name || '',
+        name: batch.reagent?.name || "",
         batchNumber: batch.batchNumber,
         expiryDate: batch.expiryDate,
         daysUntilExpiry: Math.ceil(
-          (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         ),
         currentQuantity: Number(batch.currentQuantity),
-        supplier: batch.reagent?.supplier?.name || '',
+        supplier: batch.reagent?.supplier?.name || "",
       }));
   }
 
@@ -132,10 +132,10 @@ class DashboardService {
     const reagents = await prisma.reagent.findMany({
       where: {
         isDeleted: false,
-        currentStockStatus: { in: ['LOW', 'CRITICAL', 'OUT_OF_STOCK'] },
+        currentStockStatus: { in: ["LOW", "CRITICAL", "OUT_OF_STOCK"] },
       },
       include: { supplier: true },
-      orderBy: { monthsOfStock: 'asc' },
+      orderBy: { monthsOfStock: "asc" },
       take: 20,
     });
 
@@ -144,10 +144,11 @@ class DashboardService {
       name: r.name,
       currentQuantity: Number(r.totalQuantity),
       monthsOfStock: Number(r.monthsOfStock || 0),
-      averageUsage: Number(
-        r.useManualUsage ? r.manualMonthlyUsage : r.averageMonthlyUsage
-      ) || 0,
-      supplier: r.supplier?.name || '',
+      averageUsage:
+        Number(
+          r.useManualUsage ? r.manualMonthlyUsage : r.averageMonthlyUsage,
+        ) || 0,
+      supplier: r.supplier?.name || "",
     }));
   }
 
@@ -157,10 +158,10 @@ class DashboardService {
   async getPendingOrders() {
     return prisma.order.findMany({
       where: {
-        status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED'] },
+        status: { in: ["DRAFT", "PENDING_SAP", "APPROVED"] },
       },
       include: { supplier: true },
-      orderBy: { orderDate: 'desc' },
+      orderBy: { orderDate: "desc" },
       take: 10,
     });
   }
@@ -171,9 +172,9 @@ class DashboardService {
   async getPendingWithdrawals() {
     return prisma.withdrawalRequest.findMany({
       where: {
-        status: { in: ['SUBMITTED', 'APPROVED', 'SHIPPING'] },
+        status: { in: ["SUBMITTED", "APPROVED", "SHIPPING"] },
       },
-      orderBy: { requestDate: 'desc' },
+      orderBy: { requestDate: "desc" },
       take: 10,
     });
   }
@@ -185,15 +186,22 @@ class DashboardService {
     const items = await prisma.orderItem.findMany({
       where: {
         order: {
-          status: { in: ['DRAFT', 'PENDING_SAP', 'APPROVED', 'PARTIALLY_RECEIVED'] },
+          status: {
+            in: ["DRAFT", "PENDING_SAP", "APPROVED", "PARTIALLY_RECEIVED"],
+          },
         },
       },
       select: { requestedQuantity: true, receivedQuantity: true },
     });
 
     return items.reduce(
-      (sum, item) => sum + Math.max(0, Number(item.requestedQuantity) - Number(item.receivedQuantity)),
-      0
+      (sum, item) =>
+        sum +
+        Math.max(
+          0,
+          Number(item.requestedQuantity) - Number(item.receivedQuantity),
+        ),
+      0,
     );
   }
 
@@ -205,7 +213,11 @@ class DashboardService {
       where: {
         dismissedAt: null,
       },
-      orderBy: [{ isPinned: 'desc' }, { priority: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { isPinned: "desc" },
+        { priority: "desc" },
+        { createdAt: "desc" },
+      ],
       take: 5,
     });
   }
@@ -215,7 +227,7 @@ class DashboardService {
    */
   async getLastInventoryCount() {
     return prisma.completedInventoryCount.findFirst({
-      orderBy: { completedAt: 'desc' },
+      orderBy: { completedAt: "desc" },
     });
   }
 
@@ -224,14 +236,14 @@ class DashboardService {
    */
   async getRecentActivity() {
     const logs = await prisma.activityLog.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: 20,
     });
 
     return logs.map((log) => ({
       id: log.id,
       action: log.action,
-      entityType: log.entityType || '',
+      entityType: log.entityType || "",
       description: this.formatActivityDescription(log),
       timestamp: log.createdAt,
     }));
@@ -244,10 +256,10 @@ class DashboardService {
     const [totalReagents, totalBatches, expiringCount, lowStockCount] =
       await Promise.all([
         prisma.reagent.count({ where: { isDeleted: false } }),
-        prisma.reagentBatch.count({ where: { status: 'ACTIVE' } }),
+        prisma.reagentBatch.count({ where: { status: "ACTIVE" } }),
         prisma.reagentBatch.count({
           where: {
-            status: 'ACTIVE',
+            status: "ACTIVE",
             expiryDate: {
               lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             },
@@ -256,7 +268,7 @@ class DashboardService {
         prisma.reagent.count({
           where: {
             isDeleted: false,
-            currentStockStatus: { in: ['LOW', 'CRITICAL', 'OUT_OF_STOCK'] },
+            currentStockStatus: { in: ["LOW", "CRITICAL", "OUT_OF_STOCK"] },
           },
         }),
       ]);
@@ -282,29 +294,29 @@ class DashboardService {
 
     // Expiring today
     const expiringToday = data.expiringReagents.filter(
-      (r) => r.daysUntilExpiry <= 0
+      (r) => r.daysUntilExpiry <= 0,
     );
     if (expiringToday.length > 0) {
       actions.push({
-        type: 'expiry',
-        title: 'פגי תוקף היום',
+        type: "expiry",
+        title: "פגי תוקף היום",
         description: `${expiringToday.length} אצוות פגו היום`,
-        priority: 'high',
-        route: '/BatchAndExpiryManagement?view=expired',
+        priority: "high",
+        route: "/BatchAndExpiryManagement?view=expired",
       });
     }
 
     // Very low stock
     const criticalStock = data.lowStockReagents.filter(
-      (r) => r.monthsOfStock < 1
+      (r) => r.monthsOfStock < 1,
     );
     if (criticalStock.length > 0) {
       actions.push({
-        type: 'stock',
-        title: 'מלאי קריטי',
+        type: "stock",
+        title: "מלאי קריטי",
         description: `${criticalStock.length} ריאגנטים במלאי קריטי`,
-        priority: 'high',
-        route: '/InventoryReplenishment',
+        priority: "high",
+        route: "/InventoryReplenishment",
       });
     }
 
@@ -312,15 +324,15 @@ class DashboardService {
     if (data.lastInventoryCount) {
       const daysSinceCount = Math.floor(
         (Date.now() - data.lastInventoryCount.countDate.getTime()) /
-          (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24),
       );
       if (daysSinceCount > 30) {
         actions.push({
-          type: 'count',
-          title: 'נדרשת ספירת מלאי',
+          type: "count",
+          title: "נדרשת ספירת מלאי",
           description: `עברו ${daysSinceCount} ימים מהספירה האחרונה`,
-          priority: 'medium',
-          route: '/InventoryCount',
+          priority: "medium",
+          route: "/InventoryCount",
         });
       }
     }
@@ -328,15 +340,58 @@ class DashboardService {
     return actions;
   }
 
+  /**
+   * Get expiry calendar data for a given number of days ahead
+   */
+  async getExpiryCalendarData(days: number = 90) {
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const batches = await prisma.reagentBatch.findMany({
+      where: {
+        status: { in: ["ACTIVE", "IN_USE", "EXPIRED"] },
+        expiryDate: {
+          gte: pastDate,
+          lte: futureDate,
+        },
+      },
+      include: {
+        reagent: {
+          include: { supplier: true },
+        },
+      },
+      orderBy: { expiryDate: "asc" },
+    });
+
+    return batches
+      .filter((batch) => Number(batch.currentQuantity) > 0)
+      .map((batch) => ({
+        id: batch.id,
+        reagentId: batch.reagent?.id || "",
+        name: batch.reagent?.name || "",
+        catalogNumber: batch.reagent?.catalogNumber || "",
+        category: batch.reagent?.category || "",
+        batchNumber: batch.batchNumber,
+        expiryDate: batch.expiryDate,
+        daysUntilExpiry: Math.ceil(
+          (batch.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+        currentQuantity: Number(batch.currentQuantity),
+        status: batch.status,
+        supplier: batch.reagent?.supplier?.name || "",
+      }));
+  }
+
   private formatActivityDescription(log: any): string {
     const details = log.details as any;
     switch (log.action) {
-      case 'delivery_received':
-        return `התקבל משלוח מ-${details?.supplier || 'ספק'}`;
-      case 'inventory_count':
-        return 'הושלמה ספירת מלאי';
-      case 'withdrawal_created':
-        return `נוצרה בקשת משיכה ${details?.number || ''}`;
+      case "delivery_received":
+        return `התקבל משלוח מ-${details?.supplier || "ספק"}`;
+      case "inventory_count":
+        return "הושלמה ספירת מלאי";
+      case "withdrawal_created":
+        return `נוצרה בקשת משיכה ${details?.number || ""}`;
       default:
         return log.action;
     }

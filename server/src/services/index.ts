@@ -7,3 +7,4 @@ export { orderService } from "./orderService";
 export { barcodeService } from "./barcodeService";
 export { dispenseService } from "./dispenseService";
 export { updateReagentAggregates } from "./reagentAggregates";
+export { messageService } from "./messageService";

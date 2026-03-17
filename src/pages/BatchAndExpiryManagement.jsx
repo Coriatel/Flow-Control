@@ -55,6 +55,9 @@ import {
   Printer,
   Calendar as CalendarIcon,
   Columns,
+  MoreHorizontal,
+  Beaker,
+  Truck as TruckIcon,
 } from "lucide-react";
 import {
   format,
@@ -86,6 +89,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
@@ -101,6 +110,8 @@ import { User } from "@/api/entities";
 import { Supplier } from "@/api/entities";
 import { UploadFile } from "@/api/integrations";
 import { getBatchAndExpiryData } from "@/api/functions";
+import { apiClient } from "@/api/client";
+import { toast } from "sonner";
 
 // Helper functions
 const getActionTakenLabel = (action) => {
@@ -2796,6 +2807,73 @@ function UnifiedBatchTable({
                   tooltip="שחזר טיפול"
                 />
               )}
+
+              {/* Quick stock actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1 rounded-md hover:bg-slate-100 transition-colors">
+                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" dir="rtl">
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        await apiClient.post(`/batches/${item.id}/destroy`);
+                        toast.success("האצווה הושמדה בהצלחה");
+                        if (typeof fetchData === "function") fetchData();
+                      } catch (err) {
+                        toast.error("שגיאה בהשמדת האצווה", {
+                          description: err.message,
+                        });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 me-2 text-red-500" />
+                    השמדה
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        await apiClient.post("/dispense", {
+                          reagentId: item.reagent_id,
+                          batchId: item.id,
+                          quantity: item.current_quantity || 1,
+                          scanMethod: "MANUAL",
+                        });
+                        toast.success("הפריט הוצא לשימוש בהצלחה");
+                        if (typeof fetchData === "function") fetchData();
+                      } catch (err) {
+                        toast.error("שגיאה בהוצאה לשימוש", {
+                          description: err.message,
+                        });
+                      }
+                    }}
+                  >
+                    <Beaker className="h-4 w-4 me-2 text-emerald-500" />
+                    הוצאה לשימוש
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        await apiClient.post(`/batches/${item.id}/withdraw`, {
+                          quantity: item.current_quantity || 1,
+                          notes: "",
+                        });
+                        toast.success("הכמות נמשכה בהצלחה");
+                        if (typeof fetchData === "function") fetchData();
+                      } catch (err) {
+                        toast.error("שגיאה במשיכת כמות", {
+                          description: err.message,
+                        });
+                      }
+                    }}
+                  >
+                    <TruckIcon className="h-4 w-4 me-2 text-blue-500" />
+                    הוצאה למשלוח
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </TableCell>
         )}

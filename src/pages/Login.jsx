@@ -1,17 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LogIn, Loader2, Clock } from "lucide-react";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [searchParams] = useSearchParams();
+
+  const oauthStatus = searchParams.get("oauth");
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +29,7 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
@@ -27,13 +37,13 @@ export default function Login() {
     const newErrors = {};
 
     if (!email) {
-      newErrors.email = 'נא להזין כתובת אימייל';
+      newErrors.email = "נא להזין כתובת אימייל";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'כתובת אימייל לא תקינה';
+      newErrors.email = "כתובת אימייל לא תקינה";
     }
 
     if (!password) {
-      newErrors.password = 'נא להזין סיסמה';
+      newErrors.password = "נא להזין סיסמה";
     }
 
     setErrors(newErrors);
@@ -68,6 +78,12 @@ export default function Login() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {oauthStatus === "pending_approval" && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>חשבונך ממתין לאישור מנהל המערכת.</span>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">אימייל</Label>
               <Input
@@ -77,7 +93,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className={errors.email ? 'border-destructive' : ''}
+                className={errors.email ? "border-destructive" : ""}
                 dir="ltr"
               />
               {errors.email && (
@@ -94,7 +110,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className={errors.password ? 'border-destructive' : ''}
+                className={errors.password ? "border-destructive" : ""}
                 dir="ltr"
               />
               {errors.password && (
@@ -116,11 +132,7 @@ export default function Login() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="me-2 h-4 w-4 animate-spin" />
@@ -139,7 +151,9 @@ export default function Login() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">או</span>
+                <span className="bg-background px-2 text-muted-foreground">
+                  או
+                </span>
               </div>
             </div>
 
@@ -148,7 +162,7 @@ export default function Login() {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              אין לך חשבון?{' '}
+              אין לך חשבון?{" "}
               <Link
                 to="/register"
                 className="text-primary font-medium hover:underline"

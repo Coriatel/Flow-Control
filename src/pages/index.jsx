@@ -75,6 +75,7 @@ const Reports = React.lazy(() => import("./Reports"));
 const DispenseItems = React.lazy(() => import("./DispenseItems"));
 const ItemsInUse = React.lazy(() => import("./ItemsInUse"));
 const InventoryRemoval = React.lazy(() => import("./InventoryRemoval"));
+const Messages = React.lazy(() => import("./Messages"));
 
 const PAGES = {
   Dashboard,
@@ -129,6 +130,7 @@ const PAGES = {
   DispenseItems,
   ItemsInUse,
   InventoryRemoval,
+  Messages,
 };
 
 function _getCurrentPage(url) {
@@ -693,6 +695,16 @@ function PagesContent() {
             <ProtectedRoute>
               <Layout currentPageName={currentPage}>
                 <InventoryRemoval />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/Messages"
+          element={
+            <ProtectedRoute>
+              <Layout currentPageName={currentPage}>
+                <Messages />
               </Layout>
             </ProtectedRoute>
           }

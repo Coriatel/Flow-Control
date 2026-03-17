@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getDashboardData } from "@/api/functions";
 import { User } from "@/api/entities";
+import { apiClient } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,6 +33,8 @@ import InfoCard from "../components/dashboard/InfoCard";
 import MobileAlerts from "../components/dashboard/MobileAlerts";
 import CriticalActions from "../components/dashboard/CriticalActions";
 import RecentActivity from "../components/dashboard/RecentActivity";
+import ExpiryCalendar from "../components/dashboard/ExpiryCalendar";
+import MessagesFeed from "../components/dashboard/MessagesFeed";
 
 const statusLabels = {
   DRAFT: "טיוטה",
@@ -89,6 +92,16 @@ export default function Dashboard() {
     statistics: {},
     onOrderQuantity: 0,
   });
+  const [calendarBatches, setCalendarBatches] = useState([]);
+
+  const fetchCalendarData = useCallback(async () => {
+    try {
+      const res = await apiClient.get("/dashboard/expiry-calendar?days=90");
+      setCalendarBatches(res.data || []);
+    } catch {
+      // Calendar data is non-critical
+    }
+  }, []);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -127,7 +140,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchCalendarData();
+  }, [fetchDashboardData, fetchCalendarData]);
 
   const manualRefresh = () => {
     setIsManualRefreshing(true);
@@ -287,18 +301,40 @@ export default function Dashboard() {
             </div>
             תמונת מצב
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-            <InfoCard
-              icon={<Clock />}
-              title="ריאגנטים קצרי תוקף"
-              count={expiringReagents.length}
-              titleLinkTo={createPageUrl(
-                "BatchAndExpiryManagement?view=expiring&days=14",
-              )}
-              color="red"
-              rows={expiringRows}
-              initialVisibleRows={3}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {/* Expiry Calendar - spans 2 cols */}
+            <Card className="md:col-span-2 bg-white shadow-sm border border-gray-200 rounded-xl">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="flex items-center justify-between text-base font-semibold text-slate-800">
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-red-500 me-2" />
+                    לוח שנה - פגי תוקף
+                    {expiringReagents.length > 0 && (
+                      <span className="ms-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                        {expiringReagents.length}
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    to={createPageUrl(
+                      "BatchAndExpiryManagement?view=expiring&days=14",
+                    )}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    הצג הכל
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <ExpiryCalendar
+                  batches={calendarBatches}
+                  onRefresh={() => {
+                    fetchDashboardData();
+                    fetchCalendarData();
+                  }}
+                />
+              </CardContent>
+            </Card>
 
             <InfoCard
               icon={<TrendingDown />}
@@ -319,16 +355,6 @@ export default function Dashboard() {
               rows={pendingSupplyRows}
               initialVisibleRows={3}
             />
-
-            <InfoCard
-              icon={<FileText />}
-              title="דרישות רכש להשלמה"
-              count={pendingOrders.length}
-              titleLinkTo={createPageUrl("Orders")}
-              color="purple"
-              rows={pendingOrderRows}
-              initialVisibleRows={3}
-            />
           </div>
         </div>
 
@@ -346,49 +372,7 @@ export default function Dashboard() {
             </div>
 
             <div className="lg:col-span-2">
-              <Card className="bg-white shadow-sm border border-gray-200 rounded-xl h-full">
-                <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-                  <CardTitle className="flex items-center text-base font-semibold text-slate-800">
-                    <ClipboardCheck className="h-5 w-5 text-amber-600 me-2" />
-                    הערות ומשימות
-                  </CardTitle>
-                  <Link
-                    to={createPageUrl("DashboardNotes")}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center"
-                  >
-                    הצג הכל <ArrowLeft className="h-4 w-4 ms-1" />
-                  </Link>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <ScrollArea className="h-48">
-                    <div className="space-y-2 text-right">
-                      {dashboardData.dashboardNotes.length > 0 ? (
-                        dashboardData.dashboardNotes.map((note) => (
-                          <div
-                            key={note.id}
-                            className={`border-e-4 ${note.noteType === "URGENT" ? "border-red-500 bg-red-50" : "border-amber-400 bg-slate-50"} p-2 rounded-e-lg`}
-                          >
-                            {note.title && (
-                              <p className="font-medium text-slate-800 text-sm mb-1">
-                                {note.title}
-                              </p>
-                            )}
-                            <p className="text-slate-600 text-xs line-clamp-2">
-                              {note.content}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-6">
-                          <p className="text-sm text-slate-500">
-                            אין הערות פעילות.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+              <MessagesFeed />
             </div>
           </div>
         </div>

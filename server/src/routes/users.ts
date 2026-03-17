@@ -1,11 +1,15 @@
-import { Router, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import { prisma } from '../utils/prisma';
-import { AppError, asyncHandler } from '../middleware/errorHandler';
-import { authenticate, authorize } from '../middleware/auth';
-import { validateBody } from '../middleware/validate';
-import { createUserSchema, updateUserSchema, resetPasswordSchema } from '../validation/schemas';
-import { ApiResponse, UserRole } from '../types';
+import { Router, Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import { prisma } from "../utils/prisma";
+import { AppError, asyncHandler } from "../middleware/errorHandler";
+import { authenticate, authorize } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import {
+  createUserSchema,
+  updateUserSchema,
+  resetPasswordSchema,
+} from "../validation/schemas";
+import { ApiResponse, UserRole } from "../types";
 
 const router = Router();
 
@@ -16,390 +20,429 @@ router.use(authenticate);
  * GET /api/users
  * Get all users (Admin only)
  */
-router.get('/', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
-  const { role, isActive, search } = req.query;
+router.get(
+  "/",
+  authorize("ADMIN", "MANAGER"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { role, isActive, search } = req.query;
 
-  const where: any = {};
+    const where: any = {};
 
-  if (role) {
-    where.role = role as UserRole;
-  }
+    if (role) {
+      where.role = role as UserRole;
+    }
 
-  if (isActive !== undefined) {
-    where.isActive = isActive === 'true';
-  }
+    if (isActive !== undefined) {
+      where.isActive = isActive === "true";
+    }
 
-  if (search) {
-    where.OR = [
-      { name: { contains: search as string, mode: 'insensitive' } },
-      { email: { contains: search as string, mode: 'insensitive' } }
-    ];
-  }
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
+      ];
+    }
 
-  const users = await prisma.user.findMany({
-    where,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true,
-      lastLoginAt: true,
-      createdAt: true,
-      updatedAt: true
-    },
-    orderBy: { name: 'asc' }
-  });
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { name: "asc" },
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: users,
-    meta: { total: users.length }
-  };
-  res.json(response);
-}));
+    const response: ApiResponse = {
+      success: true,
+      data: users,
+      meta: { total: users.length },
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * GET /api/users/:id
  * Get user by ID (Admin only)
  */
-router.get('/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+router.get(
+  "/:id",
+  authorize("ADMIN"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true,
-      lastLoginAt: true,
-      createdAt: true,
-      updatedAt: true
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", 404);
     }
-  });
 
-  if (!user) {
-    throw new AppError('User not found', 404);
-  }
-
-  const response: ApiResponse = {
-    success: true,
-    data: user
-  };
-  res.json(response);
-}));
+    const response: ApiResponse = {
+      success: true,
+      data: user,
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * POST /api/users
  * Create new user (Admin only)
  */
-router.post('/', authorize('ADMIN'), validateBody(createUserSchema), asyncHandler(async (req: Request, res: Response) => {
-  const { email, name, password, role } = req.body;
+router.post(
+  "/",
+  authorize("ADMIN"),
+  validateBody(createUserSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email, name, password, role } = req.body;
 
-  // Check if email already exists
-  const existing = await prisma.user.findUnique({
-    where: { email }
-  });
+    // Check if email already exists
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
 
-  if (existing) {
-    throw new AppError('Email already in use', 400);
-  }
-
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name,
-      password: hashedPassword,
-      role: role || 'USER'
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true,
-      createdAt: true
+    if (existing) {
+      throw new AppError("Email already in use", 400);
     }
-  });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'CREATE_USER',
-      entityType: 'User',
-      entityId: user.id,
-      details: JSON.stringify({ email: user.email, role: user.role })
-    }
-  });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const response: ApiResponse = {
-    success: true,
-    data: user,
-    message: 'User created successfully'
-  };
-  res.status(201).json(response);
-}));
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+        role: role || "USER",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "CREATE_USER",
+        entityType: "User",
+        entityId: user.id,
+        details: JSON.stringify({ email: user.email, role: user.role }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      data: user,
+      message: "User created successfully",
+    };
+    res.status(201).json(response);
+  }),
+);
 
 /**
  * PUT /api/users/:id
  * Update user (Admin only)
  */
-router.put('/:id', authorize('ADMIN'), validateBody(updateUserSchema), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { email, name, role, isActive } = req.body;
+router.put(
+  "/:id",
+  authorize("ADMIN"),
+  validateBody(updateUserSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { email, name, role, isActive } = req.body;
 
-  const existing = await prisma.user.findUnique({
-    where: { id }
-  });
-
-  if (!existing) {
-    throw new AppError('User not found', 404);
-  }
-
-  // Check if new email is already in use by another user
-  if (email && email !== existing.email) {
-    const emailInUse = await prisma.user.findUnique({
-      where: { email }
+    const existing = await prisma.user.findUnique({
+      where: { id },
     });
 
-    if (emailInUse) {
-      throw new AppError('Email already in use', 400);
+    if (!existing) {
+      throw new AppError("User not found", 404);
     }
-  }
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: {
-      email,
-      name,
-      role,
-      isActive
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true,
-      updatedAt: true
+    // Check if new email is already in use by another user
+    if (email && email !== existing.email) {
+      const emailInUse = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (emailInUse) {
+        throw new AppError("Email already in use", 400);
+      }
     }
-  });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'UPDATE_USER',
-      entityType: 'User',
-      entityId: user.id,
-      details: JSON.stringify({ changes: { email, name, role, isActive } })
-    }
-  });
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        email,
+        name,
+        role,
+        isActive,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: user,
-    message: 'User updated successfully'
-  };
-  res.json(response);
-}));
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "UPDATE_USER",
+        entityType: "User",
+        entityId: user.id,
+        details: JSON.stringify({ changes: { email, name, role, isActive } }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      data: user,
+      message: "User updated successfully",
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * DELETE /api/users/:id
  * Deactivate user (Admin only)
  */
-router.delete('/:id', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+router.delete(
+  "/:id",
+  authorize("ADMIN"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-  // Prevent deleting self
-  if (id === req.user?.id) {
-    throw new AppError('Cannot deactivate your own account', 400);
-  }
-
-  const existing = await prisma.user.findUnique({
-    where: { id }
-  });
-
-  if (!existing) {
-    throw new AppError('User not found', 404);
-  }
-
-  await prisma.user.update({
-    where: { id },
-    data: { isActive: false }
-  });
-
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'DEACTIVATE_USER',
-      entityType: 'User',
-      entityId: id,
-      details: JSON.stringify({ email: existing.email })
+    // Prevent deleting self
+    if (id === req.user?.id) {
+      throw new AppError("Cannot deactivate your own account", 400);
     }
-  });
 
-  const response: ApiResponse = {
-    success: true,
-    message: 'User deactivated successfully'
-  };
-  res.json(response);
-}));
+    const existing = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new AppError("User not found", 404);
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "DEACTIVATE_USER",
+        entityType: "User",
+        entityId: id,
+        details: JSON.stringify({ email: existing.email }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: "User deactivated successfully",
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * POST /api/users/:id/activate
  * Reactivate user (Admin only)
  */
-router.post('/:id/activate', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+router.post(
+  "/:id/activate",
+  authorize("ADMIN"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-  const existing = await prisma.user.findUnique({
-    where: { id }
-  });
+    const existing = await prisma.user.findUnique({
+      where: { id },
+    });
 
-  if (!existing) {
-    throw new AppError('User not found', 404);
-  }
-
-  const user = await prisma.user.update({
-    where: { id },
-    data: { isActive: true },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true
+    if (!existing) {
+      throw new AppError("User not found", 404);
     }
-  });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'ACTIVATE_USER',
-      entityType: 'User',
-      entityId: id,
-      details: JSON.stringify({ email: user.email })
-    }
-  });
+    const user = await prisma.user.update({
+      where: { id },
+      data: { isActive: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+      },
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: user,
-    message: 'User activated successfully'
-  };
-  res.json(response);
-}));
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "ACTIVATE_USER",
+        entityType: "User",
+        entityId: id,
+        details: JSON.stringify({ email: user.email }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      data: user,
+      message: "User activated successfully",
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * POST /api/users/:id/reset-password
  * Reset user password (Admin only)
  */
-router.post('/:id/reset-password', authorize('ADMIN'), validateBody(resetPasswordSchema), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { newPassword } = req.body;
+router.post(
+  "/:id/reset-password",
+  authorize("ADMIN"),
+  validateBody(resetPasswordSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { newPassword } = req.body;
 
-  const existing = await prisma.user.findUnique({
-    where: { id }
-  });
+    const existing = await prisma.user.findUnique({
+      where: { id },
+    });
 
-  if (!existing) {
-    throw new AppError('User not found', 404);
-  }
-
-  // Hash new password
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-  await prisma.user.update({
-    where: { id },
-    data: { password: hashedPassword }
-  });
-
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'RESET_USER_PASSWORD',
-      entityType: 'User',
-      entityId: id,
-      details: JSON.stringify({ email: existing.email })
+    if (!existing) {
+      throw new AppError("User not found", 404);
     }
-  });
 
-  const response: ApiResponse = {
-    success: true,
-    message: 'Password reset successfully'
-  };
-  res.json(response);
-}));
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "RESET_USER_PASSWORD",
+        entityType: "User",
+        entityId: id,
+        details: JSON.stringify({ email: existing.email }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: "Password reset successfully",
+    };
+    res.json(response);
+  }),
+);
 
 /**
  * PUT /api/users/:id/role
  * Change user role (Admin only)
  */
-router.put('/:id/role', authorize('ADMIN'), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { role } = req.body;
+router.put(
+  "/:id/role",
+  authorize("ADMIN"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { role } = req.body;
 
-  if (!role) {
-    throw new AppError('role is required', 400);
-  }
-
-  const validRoles = ['ADMIN', 'MANAGER', 'USER', 'READONLY'];
-  if (!validRoles.includes(role)) {
-    throw new AppError('Invalid role', 400);
-  }
-
-  // Prevent demoting self from admin
-  if (id === req.user?.id && role !== 'ADMIN') {
-    throw new AppError('Cannot change your own role', 400);
-  }
-
-  const existing = await prisma.user.findUnique({
-    where: { id }
-  });
-
-  if (!existing) {
-    throw new AppError('User not found', 404);
-  }
-
-  const user = await prisma.user.update({
-    where: { id },
-    data: { role },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true
+    if (!role) {
+      throw new AppError("role is required", 400);
     }
-  });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user?.id,
-      action: 'CHANGE_USER_ROLE',
-      entityType: 'User',
-      entityId: id,
-      details: JSON.stringify({ email: user.email, oldRole: existing.role, newRole: role })
+    const validRoles = ["ADMIN", "MANAGER", "USER", "READONLY"];
+    if (!validRoles.includes(role)) {
+      throw new AppError("Invalid role", 400);
     }
-  });
 
-  const response: ApiResponse = {
-    success: true,
-    data: user,
-    message: 'User role updated successfully'
-  };
-  res.json(response);
-}));
+    // Prevent demoting self from admin
+    if (id === req.user?.id && role !== "ADMIN") {
+      throw new AppError("Cannot change your own role", 400);
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new AppError("User not found", 404);
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user?.id,
+        action: "CHANGE_USER_ROLE",
+        entityType: "User",
+        entityId: id,
+        details: JSON.stringify({
+          email: user.email,
+          oldRole: existing.role,
+          newRole: role,
+        }),
+      },
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      data: user,
+      message: "User role updated successfully",
+    };
+    res.json(response);
+  }),
+);
 
 export default router;

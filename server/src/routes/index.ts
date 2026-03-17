@@ -25,6 +25,7 @@ import systemSettingsRoutes from "./systemsettings";
 import barcodeRoutes from "./barcode";
 import dispenseRoutes from "./dispense";
 import disposalRoutes from "./disposal";
+import messagesRoutes from "./messages";
 
 const router = Router();
 
@@ -70,6 +71,7 @@ router.use("/disposal", disposalRoutes);
 router.use("/admin/sessions", adminSessionsRoutes);
 router.use("/users", usersRoutes);
 router.use("/alerts", alertsRoutes);
+router.use("/messages", messagesRoutes);
 router.use("/activity", activityRoutes);
 
 // Health check at API level

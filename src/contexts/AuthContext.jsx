@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User } from '@/api/entities';
-import { useToast } from '@/components/ui/use-toast';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { User } from "@/api/entities";
+import { useToast } from "@/components/ui/use-toast";
 
 const AuthContext = createContext(null);
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
@@ -50,18 +50,19 @@ export function AuthProvider({ children }) {
       if (userData) {
         setUser(userData);
         toast({
-          title: 'התחברות הצליחה',
+          title: "התחברות הצליחה",
           description: `ברוך הבא, ${userData.name || userData.email}!`,
         });
-        navigate('/dashboard');
+        navigate("/dashboard");
         return { success: true };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'התחברות נכשלה';
+      const errorMessage =
+        error.response?.data?.message || error.message || "התחברות נכשלה";
       toast({
-        title: 'שגיאת התחברות',
+        title: "שגיאת התחברות",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return { success: false, error: errorMessage };
     }
@@ -71,24 +72,20 @@ export function AuthProvider({ children }) {
     try {
       const response = await User.register(data);
 
-      // Handle both response formats
-      const userData = response.data?.user || response.user;
+      const message = response.data?.message || response.message;
 
-      if (userData) {
-        setUser(userData);
-        toast({
-          title: 'הרשמה הצליחה',
-          description: `ברוך הבא, ${userData.name}!`,
-        });
-        navigate('/dashboard');
-        return { success: true };
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'הרשמה נכשלה';
       toast({
-        title: 'שגיאת הרשמה',
+        title: "בקשת ההרשמה נשלחה",
+        description: message || "חשבונך ממתין לאישור מנהל המערכת.",
+      });
+      return { success: true, pendingApproval: true };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "הרשמה נכשלה";
+      toast({
+        title: "שגיאת הרשמה",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return { success: false, error: errorMessage };
     }
@@ -102,10 +99,10 @@ export function AuthProvider({ children }) {
     } finally {
       setUser(null);
       toast({
-        title: 'התנתקת בהצלחה',
-        description: 'להתראות!',
+        title: "התנתקת בהצלחה",
+        description: "להתראות!",
       });
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -119,9 +116,5 @@ export function AuthProvider({ children }) {
     checkAuth,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

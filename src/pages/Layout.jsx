@@ -350,6 +350,12 @@ export default function Layout({ children, currentPageName }) {
       group: "reports",
     },
     {
+      name: "הודעות",
+      href: "Messages",
+      icon: Bell,
+      group: "reports",
+    },
+    {
       name: "הערות ומשימות",
       href: "DashboardNotes",
       icon: ClipboardCheck,
