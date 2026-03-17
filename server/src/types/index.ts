@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
 // Re-export Prisma types (when generated)
 // export * from '../../generated/prisma';
@@ -7,118 +7,119 @@ import { Request, Response, NextFunction } from 'express';
 // These match the enums in prisma/schema.prisma
 
 export enum Category {
-  REAGENT = 'REAGENT',
-  CELLS = 'CELLS',
-  CONSUMABLE = 'CONSUMABLE'
+  REAGENT = "REAGENT",
+  CELLS = "CELLS",
+  CONSUMABLE = "CONSUMABLE",
 }
 
 export enum StockStatus {
-  NORMAL = 'NORMAL',
-  LOW = 'LOW',
-  CRITICAL = 'CRITICAL',
-  OUT_OF_STOCK = 'OUT_OF_STOCK'
+  NORMAL = "NORMAL",
+  LOW = "LOW",
+  CRITICAL = "CRITICAL",
+  OUT_OF_STOCK = "OUT_OF_STOCK",
 }
 
 export enum BatchStatus {
-  INCOMING = 'INCOMING',
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  CONSUMED = 'CONSUMED',
-  ON_HOLD = 'ON_HOLD',
-  DESTROYED = 'DESTROYED'
+  INCOMING = "INCOMING",
+  ACTIVE = "ACTIVE",
+  IN_USE = "IN_USE",
+  EXPIRED = "EXPIRED",
+  CONSUMED = "CONSUMED",
+  ON_HOLD = "ON_HOLD",
+  DESTROYED = "DESTROYED",
 }
 
 export enum QCStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  REQUIRES_REVIEW = 'REQUIRES_REVIEW'
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  REQUIRES_REVIEW = "REQUIRES_REVIEW",
 }
 
 export enum OrderType {
-  IMMEDIATE = 'IMMEDIATE',
-  FRAMEWORK = 'FRAMEWORK'
+  IMMEDIATE = "IMMEDIATE",
+  FRAMEWORK = "FRAMEWORK",
 }
 
 export enum OrderStatus {
-  DRAFT = 'DRAFT',
-  PENDING_SAP = 'PENDING_SAP',
-  APPROVED = 'APPROVED',
-  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
-  FULLY_RECEIVED = 'FULLY_RECEIVED',
-  CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED'
+  DRAFT = "DRAFT",
+  PENDING_SAP = "PENDING_SAP",
+  APPROVED = "APPROVED",
+  PARTIALLY_RECEIVED = "PARTIALLY_RECEIVED",
+  FULLY_RECEIVED = "FULLY_RECEIVED",
+  CLOSED = "CLOSED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum DeliveryStatus {
-  NEW = 'NEW',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  NEW = "NEW",
+  PROCESSING = "PROCESSING",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum WithdrawalStatus {
-  DRAFT = 'DRAFT',
-  SUBMITTED = 'SUBMITTED',
-  APPROVED = 'APPROVED',
-  PARTIAL = 'PARTIAL',
-  SHIPPING = 'SHIPPING',
-  CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED'
+  DRAFT = "DRAFT",
+  SUBMITTED = "SUBMITTED",
+  APPROVED = "APPROVED",
+  PARTIAL = "PARTIAL",
+  SHIPPING = "SHIPPING",
+  CLOSED = "CLOSED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum ShipmentStatus {
-  DRAFT = 'DRAFT',
-  SENT = 'SENT',
-  RECEIVED = 'RECEIVED',
-  CANCELLED = 'CANCELLED'
+  DRAFT = "DRAFT",
+  SENT = "SENT",
+  RECEIVED = "RECEIVED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  USER = 'USER',
-  READONLY = 'READONLY'
+  ADMIN = "ADMIN",
+  MANAGER = "MANAGER",
+  USER = "USER",
+  READONLY = "READONLY",
 }
 
 export enum TransactionType {
-  RECEIPT = 'RECEIPT',
-  CONSUMPTION = 'CONSUMPTION',
-  WITHDRAWAL = 'WITHDRAWAL',
-  ADJUSTMENT = 'ADJUSTMENT',
-  DESTRUCTION = 'DESTRUCTION',
-  TRANSFER_IN = 'TRANSFER_IN',
-  TRANSFER_OUT = 'TRANSFER_OUT'
+  RECEIPT = "RECEIPT",
+  CONSUMPTION = "CONSUMPTION",
+  WITHDRAWAL = "WITHDRAWAL",
+  ADJUSTMENT = "ADJUSTMENT",
+  DESTRUCTION = "DESTRUCTION",
+  TRANSFER_IN = "TRANSFER_IN",
+  TRANSFER_OUT = "TRANSFER_OUT",
 }
 
 export enum AlertRuleType {
-  EXPIRY_WARNING = 'EXPIRY_WARNING',
-  LOW_STOCK = 'LOW_STOCK',
-  PENDING_SUPPLY = 'PENDING_SUPPLY',
-  COUNT_REQUIRED = 'COUNT_REQUIRED',
-  COA_MISSING = 'COA_MISSING',
-  CUSTOM = 'CUSTOM'
+  EXPIRY_WARNING = "EXPIRY_WARNING",
+  LOW_STOCK = "LOW_STOCK",
+  PENDING_SUPPLY = "PENDING_SUPPLY",
+  COUNT_REQUIRED = "COUNT_REQUIRED",
+  COA_MISSING = "COA_MISSING",
+  CUSTOM = "CUSTOM",
 }
 
 export enum AlertSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
 }
 
 export enum AlertStatus {
-  NEW = 'NEW',
-  IN_PROGRESS = 'IN_PROGRESS',
-  RESOLVED = 'RESOLVED',
-  DISMISSED = 'DISMISSED'
+  NEW = "NEW",
+  IN_PROGRESS = "IN_PROGRESS",
+  RESOLVED = "RESOLVED",
+  DISMISSED = "DISMISSED",
 }
 
 export enum NoteType {
-  GENERAL = 'GENERAL',
-  URGENT = 'URGENT',
-  REMINDER = 'REMINDER',
-  SYSTEM = 'SYSTEM'
+  GENERAL = "GENERAL",
+  URGENT = "URGENT",
+  REMINDER = "REMINDER",
+  SYSTEM = "SYSTEM",
 }
 
 // Placeholder interfaces for Prisma models (for type checking when Prisma is not generated)
@@ -176,7 +177,7 @@ export interface AuthenticatedRequest extends Request {
 export type AsyncController = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => Promise<void>;
 
 // Pagination params
@@ -184,7 +185,7 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 // Filter params for reagents
@@ -238,7 +239,7 @@ export interface PendingOrder {
 
 export interface PendingSupply {
   id: string;
-  type: 'withdrawal' | 'order';
+  type: "withdrawal" | "order";
   number: string;
   supplier: string;
   requestDate: Date;
@@ -270,7 +271,7 @@ export interface CriticalAction {
   type: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   route: string;
 }
 

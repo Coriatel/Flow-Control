@@ -1,7 +1,8 @@
-import prisma from '../utils/prisma';
-import { reagentService } from './reagentService';
-import { AppError } from '../middleware/errorHandler';
-import { BatchStatus, TransactionType } from '../types';
+import prisma from "../utils/prisma";
+import { reagentService } from "./reagentService";
+import { AppError } from "../middleware/errorHandler";
+import { BatchStatus, TransactionType } from "../types";
+import { updateReagentAggregates } from "./reagentAggregates";
 
 export interface CountEntry {
   reagentId: string;
@@ -28,16 +29,16 @@ class InventoryService {
    */
   async getCurrentDraft(userId?: string) {
     let draft = await prisma.inventoryCountDraft.findFirst({
-      where: { status: 'DRAFT' },
+      where: { status: "DRAFT" },
       include: { entries: true },
-      orderBy: { startedAt: 'desc' },
+      orderBy: { startedAt: "desc" },
     });
 
     if (!draft) {
       draft = await prisma.inventoryCountDraft.create({
         data: {
           startedById: userId,
-          status: 'DRAFT',
+          status: "DRAFT",
         },
         include: { entries: true },
       });
@@ -51,7 +52,7 @@ class InventoryService {
    */
   async saveCountEntries(
     draftId: string,
-    entries: CountEntry[]
+    entries: CountEntry[],
   ): Promise<void> {
     // Delete existing entries for this draft
     await prisma.inventoryCountEntry.deleteMany({
@@ -73,7 +74,7 @@ class InventoryService {
     // Update draft status
     await prisma.inventoryCountDraft.update({
       where: { id: draftId },
-      data: { status: 'IN_PROGRESS' },
+      data: { status: "IN_PROGRESS" },
     });
   }
 
@@ -87,12 +88,12 @@ class InventoryService {
     });
 
     if (!draft) {
-      throw new AppError('Draft not found', 404);
+      throw new AppError("Draft not found", 404);
     }
 
     const entries = draft.entries || [];
     if (entries.length === 0) {
-      throw new AppError('No entries in draft', 400);
+      throw new AppError("No entries in draft", 400);
     }
 
     // Start transaction
@@ -123,7 +124,8 @@ class InventoryService {
             });
 
             if (existingBatch) {
-              const delta = entry.countedQuantity - Number(existingBatch.currentQuantity);
+              const delta =
+                entry.countedQuantity - Number(existingBatch.currentQuantity);
 
               await tx.reagentBatch.update({
                 where: { id: existingBatch.id },
@@ -135,12 +137,12 @@ class InventoryService {
                 data: {
                   reagentId,
                   batchId: existingBatch.id,
-                  transactionType: 'ADJUSTMENT',
+                  transactionType: "ADJUSTMENT",
                   quantityDelta: delta,
-                  sourceType: 'inventory_count',
+                  sourceType: "inventory_count",
                   sourceId: draftId,
                   performedById: userId,
-                  notes: 'Inventory count adjustment',
+                  notes: "Inventory count adjustment",
                 },
               });
             } else if (entry.expiryDate) {
@@ -153,7 +155,7 @@ class InventoryService {
                   initialQuantity: entry.countedQuantity,
                   currentQuantity: entry.countedQuantity,
                   receivedDate: new Date(),
-                  status: 'ACTIVE',
+                  status: "ACTIVE",
                 },
               });
 
@@ -161,12 +163,12 @@ class InventoryService {
                 data: {
                   reagentId,
                   batchId: newBatch.id,
-                  transactionType: 'ADJUSTMENT',
+                  transactionType: "ADJUSTMENT",
                   quantityDelta: entry.countedQuantity,
-                  sourceType: 'inventory_count',
+                  sourceType: "inventory_count",
                   sourceId: draftId,
                   performedById: userId,
-                  notes: 'New batch from inventory count',
+                  notes: "New batch from inventory count",
                 },
               });
             }
@@ -190,15 +192,15 @@ class InventoryService {
       // Mark draft as completed
       await tx.inventoryCountDraft.update({
         where: { id: draftId },
-        data: { status: 'COMPLETED' },
+        data: { status: "COMPLETED" },
       });
 
       // Log activity
       await tx.activityLog.create({
         data: {
           userId,
-          action: 'inventory_count',
-          entityType: 'inventory_count',
+          action: "inventory_count",
+          entityType: "inventory_count",
           entityId: completed.id,
           details: JSON.stringify({
             reagentsCount: entriesByReagent.size,
@@ -216,7 +218,7 @@ class InventoryService {
    */
   async getCountHistory(limit = 10) {
     return prisma.completedInventoryCount.findMany({
-      orderBy: { completedAt: 'desc' },
+      orderBy: { completedAt: "desc" },
       take: limit,
     });
   }
@@ -252,7 +254,7 @@ class InventoryService {
         return {
           reagentId: r.id,
           name: r.name,
-          supplier: r.supplier?.name || '',
+          supplier: r.supplier?.name || "",
           currentQuantity: currentQty,
           averageUsage: avgUsage,
           monthsOfStock: Math.round(monthsOfStock * 10) / 10,
@@ -269,11 +271,11 @@ class InventoryService {
    */
   async getTransactions(
     reagentId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number },
   ) {
     return prisma.inventoryTransaction.findMany({
       where: { reagentId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: options?.limit || 50,
       skip: options?.offset || 0,
       include: {
@@ -283,48 +285,10 @@ class InventoryService {
   }
 
   /**
-   * Update reagent aggregates (internal helper)
+   * Update reagent aggregates (internal helper) — delegates to canonical implementation
    */
   private async updateReagentAggregates(tx: any, reagentId: string) {
-    const batches = await tx.reagentBatch.findMany({
-      where: {
-        reagentId,
-        status: 'ACTIVE',
-      },
-      orderBy: { expiryDate: 'asc' },
-    });
-
-    const totalQuantity = batches.reduce(
-      (sum: number, b: any) => sum + Number(b.currentQuantity),
-      0
-    );
-
-    const reagent = await tx.reagent.findUnique({ where: { id: reagentId } });
-    const monthlyUsage = reagent?.useManualUsage
-      ? Number(reagent.manualMonthlyUsage || 0)
-      : Number(reagent?.averageMonthlyUsage || 0);
-
-    let stockStatus = 'NORMAL';
-    let monthsOfStock = null;
-
-    if (totalQuantity === 0) {
-      stockStatus = 'OUT_OF_STOCK';
-    } else if (monthlyUsage > 0) {
-      monthsOfStock = totalQuantity / monthlyUsage;
-      if (monthsOfStock < 1) stockStatus = 'CRITICAL';
-      else if (monthsOfStock < 2) stockStatus = 'LOW';
-    }
-
-    await tx.reagent.update({
-      where: { id: reagentId },
-      data: {
-        totalQuantity,
-        activeBatchesCount: batches.length,
-        nearestExpiryDate: batches[0]?.expiryDate || null,
-        currentStockStatus: stockStatus,
-        monthsOfStock,
-      },
-    });
+    await updateReagentAggregates(reagentId, tx);
   }
 }
 

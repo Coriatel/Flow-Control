@@ -1,17 +1,28 @@
-
 import React, { useState, useEffect, useCallback } from "react";
-import { getDashboardData } from '@/api/functions';
-import { User } from '@/api/entities';
+import { getDashboardData } from "@/api/functions";
+import { User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  AlertTriangle, ArrowLeft, ArrowDownToLine,
-  ClipboardCheck, Clock, FileText,
-  Loader2, PackageMinus, RefreshCw,
-  TrendingDown, Truck, Trash2, Beaker, Package, ScanLine, Clipboard
+  AlertTriangle,
+  ArrowLeft,
+  ArrowDownToLine,
+  ClipboardCheck,
+  Clock,
+  FileText,
+  Loader2,
+  PackageMinus,
+  RefreshCw,
+  TrendingDown,
+  Truck,
+  Trash2,
+  Beaker,
+  Package,
+  ScanLine,
+  Clipboard,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { he } from "date-fns/locale";
@@ -23,40 +34,41 @@ import CriticalActions from "../components/dashboard/CriticalActions";
 import RecentActivity from "../components/dashboard/RecentActivity";
 
 const statusLabels = {
-  DRAFT: 'טיוטה',
-  PENDING_SAP: 'ממתין ל-SAP',
-  APPROVED: 'מאושר',
-  PARTIALLY_RECEIVED: 'התקבל חלקית',
-  SUBMITTED: 'הוגש',
-  SHIPPING: 'בשילוח',
+  DRAFT: "טיוטה",
+  PENDING_SAP: "ממתין ל-SAP",
+  APPROVED: "מאושר",
+  PARTIALLY_RECEIVED: "התקבל חלקית",
+  SUBMITTED: "הוגש",
+  SHIPPING: "בשילוח",
 };
 
 function formatDaysUntilExpiry(days) {
-  if (days <= 0) return '!פג תוקף';
-  if (days === 1) return 'יום אחד';
+  if (days <= 0) return "!פג תוקף";
+  if (days === 1) return "יום אחד";
   return `${days} ימים`;
 }
 
 function formatMonthsOfStock(months) {
-  if (months <= 0) return 'אזל';
+  if (months <= 0) return "אזל";
   const weeks = Math.round(months * 4.33);
   if (weeks <= 4) return `${weeks} שבועות`;
   return `${months.toFixed(1)} חודשים`;
 }
 
 function expiryColorClass(days) {
-  if (days <= 0) return 'text-red-600 font-bold';
-  if (days <= 7) return 'text-red-500 font-semibold';
-  return 'text-amber-600';
+  if (days <= 0) return "text-red-600 font-bold";
+  if (days <= 7) return "text-red-500 font-semibold";
+  return "text-amber-600";
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '-';
+  if (!dateStr) return "-";
   try {
-    const d = typeof dateStr === 'string' ? parseISO(dateStr) : new Date(dateStr);
-    return format(d, 'dd/MM/yy', { locale: he });
+    const d =
+      typeof dateStr === "string" ? parseISO(dateStr) : new Date(dateStr);
+    return format(d, "dd/MM/yy", { locale: he });
   } catch {
-    return '-';
+    return "-";
   }
 }
 
@@ -75,7 +87,7 @@ export default function Dashboard() {
     recentActivity: [],
     criticalActions: [],
     statistics: {},
-    onOrderQuantity: 0
+    onOrderQuantity: 0,
   });
 
   const fetchDashboardData = useCallback(async () => {
@@ -102,12 +114,11 @@ export default function Dashboard() {
         recentActivity: payload.recentActivity || [],
         criticalActions: payload.criticalActions || [],
         statistics: payload.statistics || {},
-        onOrderQuantity: payload.onOrderQuantity || 0
+        onOrderQuantity: payload.onOrderQuantity || 0,
       });
-
     } catch (err) {
       setError(`שגיאה בטעינת הדשבורד: ${err.message}`);
-      toast.error('שגיאה בטעינת הדשבורד', { description: err.message });
+      toast.error("שגיאה בטעינת הדשבורד", { description: err.message });
     } finally {
       setLoading(false);
       setIsManualRefreshing(false);
@@ -145,10 +156,18 @@ export default function Dashboard() {
     );
   }
 
-  const { expiringReagents, lowStockReagents, pendingSupplies, pendingOrders, criticalActions } = dashboardData;
+  const {
+    expiringReagents,
+    lowStockReagents,
+    pendingSupplies,
+    pendingOrders,
+    criticalActions,
+  } = dashboardData;
 
   // Count expired items for badge
-  const expiredCount = expiringReagents.filter(item => item.daysUntilExpiry <= 0).length;
+  const expiredCount = expiringReagents.filter(
+    (item) => item.daysUntilExpiry <= 0,
+  ).length;
 
   // === Data transformation for InfoCards ===
 
@@ -157,9 +176,18 @@ export default function Dashboard() {
     linkTo: createPageUrl(`EditReagentBatch?id=${item.id}`),
     cells: [
       { text: item.name, fullText: item.name },
-      { text: formatDaysUntilExpiry(item.daysUntilExpiry), className: expiryColorClass(item.daysUntilExpiry) },
-      { text: `${item.currentQuantity} יח'`, className: 'text-slate-500 text-xs' },
-      { text: item.batchNumber || '', className: 'text-slate-400 text-xs font-mono' },
+      {
+        text: formatDaysUntilExpiry(item.daysUntilExpiry),
+        className: expiryColorClass(item.daysUntilExpiry),
+      },
+      {
+        text: `${item.currentQuantity} יח'`,
+        className: "text-slate-500 text-xs",
+      },
+      {
+        text: item.batchNumber || "",
+        className: "text-slate-400 text-xs font-mono",
+      },
     ],
   }));
 
@@ -168,22 +196,39 @@ export default function Dashboard() {
     linkTo: createPageUrl(`InventoryReplenishment?reagent_id=${item.id}`),
     cells: [
       { text: item.name, fullText: item.name },
-      { text: `${item.currentQuantity} יח'`, className: 'text-slate-600' },
-      { text: formatMonthsOfStock(item.monthsOfStock), className: item.monthsOfStock < 1 ? 'text-red-600 font-semibold' : 'text-amber-600' },
-      { text: item.supplier || '', className: 'text-slate-400 text-xs' },
+      { text: `${item.currentQuantity} יח'`, className: "text-slate-600" },
+      {
+        text: formatMonthsOfStock(item.monthsOfStock),
+        className:
+          item.monthsOfStock < 1
+            ? "text-red-600 font-semibold"
+            : "text-amber-600",
+      },
+      { text: item.supplier || "", className: "text-slate-400 text-xs" },
     ],
   }));
 
   const pendingSupplyRows = pendingSupplies.map((item) => {
-    const isOrder = item.type === 'order';
+    const isOrder = item.type === "order";
+    const deliveryParam = isOrder
+      ? `order_id=${item.id}`
+      : `withdrawal_id=${item.id}`;
     return {
       key: item.id,
-      linkTo: createPageUrl(`${isOrder ? 'EditOrder' : 'EditWithdrawalRequest'}?id=${item.id}`),
+      linkTo: createPageUrl(
+        `${isOrder ? "EditOrder" : "EditWithdrawalRequest"}?id=${item.id}`,
+      ),
       cells: [
-        { text: item.number || '-', className: 'font-mono' },
-        { text: item.supplier || '-' },
-        { text: formatDate(item.requestDate), className: 'text-slate-500 text-xs' },
+        { text: item.number || "-", className: "font-mono" },
+        { text: item.supplier || "-" },
+        {
+          text: formatDate(item.requestDate),
+          className: "text-slate-500 text-xs",
+        },
       ],
+      actionLinkTo: createPageUrl(`NewDelivery?${deliveryParam}`),
+      actionIcon: "receive",
+      actionTitle: "קלוט משלוח",
     };
   });
 
@@ -191,9 +236,12 @@ export default function Dashboard() {
     key: item.id,
     linkTo: createPageUrl(`EditOrder?id=${item.id}`),
     cells: [
-      { text: item.tempNumber || '-', className: 'font-mono' },
-      { text: item.supplier || '-' },
-      { text: statusLabels[item.status] || item.status, className: 'text-slate-500 text-xs' },
+      { text: item.tempNumber || "-", className: "font-mono" },
+      { text: item.supplier || "-" },
+      {
+        text: statusLabels[item.status] || item.status,
+        className: "text-slate-500 text-xs",
+      },
     ],
   }));
 
@@ -204,7 +252,9 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">מרכז הבקרה</h1>
-            <p className="text-sm text-slate-600 mt-1">מידע מבצעי ופעולות לניהול המלאי</p>
+            <p className="text-sm text-slate-600 mt-1">
+              מידע מבצעי ופעולות לניהול המלאי
+            </p>
           </div>
           <Button
             variant="outline"
@@ -213,7 +263,11 @@ export default function Dashboard() {
             disabled={isManualRefreshing}
             className="bg-white border-slate-300 hover:bg-slate-50"
           >
-            {isManualRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {isManualRefreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             <span className="ms-2">רענון</span>
           </Button>
         </div>
@@ -238,7 +292,9 @@ export default function Dashboard() {
               icon={<Clock />}
               title="ריאגנטים קצרי תוקף"
               count={expiringReagents.length}
-              titleLinkTo={createPageUrl('BatchAndExpiryManagement?view=expiring&days=14')}
+              titleLinkTo={createPageUrl(
+                "BatchAndExpiryManagement?view=expiring&days=14",
+              )}
               color="red"
               rows={expiringRows}
               initialVisibleRows={3}
@@ -248,7 +304,7 @@ export default function Dashboard() {
               icon={<TrendingDown />}
               title="מלאי נמוך"
               count={lowStockReagents.length}
-              titleLinkTo={createPageUrl('InventoryReplenishment')}
+              titleLinkTo={createPageUrl("InventoryReplenishment")}
               color="orange"
               rows={lowStockRows}
               initialVisibleRows={3}
@@ -258,7 +314,7 @@ export default function Dashboard() {
               icon={<Truck />}
               title="אספקות בדרך"
               count={pendingSupplies.length}
-              titleLinkTo={createPageUrl('SupplyTracking')}
+              titleLinkTo={createPageUrl("SupplyTracking")}
               color="blue"
               rows={pendingSupplyRows}
               initialVisibleRows={3}
@@ -268,7 +324,7 @@ export default function Dashboard() {
               icon={<FileText />}
               title="דרישות רכש להשלמה"
               count={pendingOrders.length}
-              titleLinkTo={createPageUrl('Orders')}
+              titleLinkTo={createPageUrl("Orders")}
               color="purple"
               rows={pendingOrderRows}
               initialVisibleRows={3}
@@ -296,23 +352,39 @@ export default function Dashboard() {
                     <ClipboardCheck className="h-5 w-5 text-amber-600 me-2" />
                     הערות ומשימות
                   </CardTitle>
-                  <Link to={createPageUrl('DashboardNotes')} className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center">
+                  <Link
+                    to={createPageUrl("DashboardNotes")}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center"
+                  >
                     הצג הכל <ArrowLeft className="h-4 w-4 ms-1" />
                   </Link>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <ScrollArea className="h-48">
                     <div className="space-y-2 text-right">
-                      {dashboardData.dashboardNotes.length > 0 ? dashboardData.dashboardNotes.map((note) =>
-                        <div key={note.id} className={`border-e-4 ${note.noteType === 'URGENT' ? 'border-red-500 bg-red-50' : 'border-amber-400 bg-slate-50'} p-2 rounded-e-lg`}>
-                          {note.title && <p className="font-medium text-slate-800 text-sm mb-1">{note.title}</p>}
-                          <p className="text-slate-600 text-xs line-clamp-2">{note.content}</p>
-                        </div>
-                      ) :
+                      {dashboardData.dashboardNotes.length > 0 ? (
+                        dashboardData.dashboardNotes.map((note) => (
+                          <div
+                            key={note.id}
+                            className={`border-e-4 ${note.noteType === "URGENT" ? "border-red-500 bg-red-50" : "border-amber-400 bg-slate-50"} p-2 rounded-e-lg`}
+                          >
+                            {note.title && (
+                              <p className="font-medium text-slate-800 text-sm mb-1">
+                                {note.title}
+                              </p>
+                            )}
+                            <p className="text-slate-600 text-xs line-clamp-2">
+                              {note.content}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
                         <div className="text-center py-6">
-                          <p className="text-sm text-slate-500">אין הערות פעילות.</p>
+                          <p className="text-sm text-slate-500">
+                            אין הערות פעילות.
+                          </p>
                         </div>
-                      }
+                      )}
                     </div>
                   </ScrollArea>
                 </CardContent>
@@ -348,23 +420,31 @@ export default function Dashboard() {
               <CardContent className="px-4 pb-4">
                 <div className="space-y-2">
                   <Link
-                    to={createPageUrl('NewDelivery')}
+                    to={createPageUrl("NewDelivery")}
                     className="flex items-center gap-3 p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors group"
                   >
                     <Truck className="h-5 w-5 text-green-600 group-hover:text-green-700" />
                     <div>
-                      <p className="text-sm font-medium text-slate-800">קליטת משלוח חדש</p>
-                      <p className="text-xs text-slate-500">רישום משלוח שהתקבל מספק</p>
+                      <p className="text-sm font-medium text-slate-800">
+                        קליטת משלוח חדש
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        רישום משלוח שהתקבל מספק
+                      </p>
                     </div>
                   </Link>
                   <Link
-                    to={createPageUrl('InventoryCount')}
+                    to={createPageUrl("InventoryCount")}
                     className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors group"
                   >
                     <Clipboard className="h-5 w-5 text-slate-600 group-hover:text-slate-700" />
                     <div>
-                      <p className="text-sm font-medium text-slate-800">ספירת מלאי</p>
-                      <p className="text-xs text-slate-500">עדכון כמויות לפי ספירה פיזית</p>
+                      <p className="text-sm font-medium text-slate-800">
+                        ספירת מלאי
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        עדכון כמויות לפי ספירה פיזית
+                      </p>
                     </div>
                   </Link>
                 </div>
@@ -389,15 +469,17 @@ export default function Dashboard() {
               <CardContent className="px-4 pb-4">
                 <div className="grid grid-cols-2 gap-2">
                   <Link
-                    to={createPageUrl('InventoryRemoval?preset=destroy')}
+                    to={createPageUrl("InventoryRemoval?preset=destroy")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors group text-center"
                   >
                     <Trash2 className="h-5 w-5 text-red-600 group-hover:text-red-700" />
                     <p className="text-xs font-medium text-slate-800">השמדה</p>
-                    <p className="text-[10px] text-slate-500">פגי תוקף / פגומים</p>
+                    <p className="text-[10px] text-slate-500">
+                      פגי תוקף / פגומים
+                    </p>
                   </Link>
                   <Link
-                    to={createPageUrl('InventoryRemoval?preset=usage')}
+                    to={createPageUrl("InventoryRemoval?preset=usage")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors group text-center"
                   >
                     <Beaker className="h-5 w-5 text-emerald-600 group-hover:text-emerald-700" />
@@ -405,7 +487,7 @@ export default function Dashboard() {
                     <p className="text-[10px] text-slate-500">מעבדה / בדיקות</p>
                   </Link>
                   <Link
-                    to={createPageUrl('InventoryRemoval?preset=shipment')}
+                    to={createPageUrl("InventoryRemoval?preset=shipment")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group text-center"
                   >
                     <Truck className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
@@ -413,11 +495,13 @@ export default function Dashboard() {
                     <p className="text-[10px] text-slate-500">העברה לגוף אחר</p>
                   </Link>
                   <Link
-                    to={createPageUrl('InventoryRemoval?preset=other')}
+                    to={createPageUrl("InventoryRemoval?preset=other")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors group text-center"
                   >
                     <FileText className="h-5 w-5 text-slate-600 group-hover:text-slate-700" />
-                    <p className="text-xs font-medium text-slate-800">סיבה אחרת</p>
+                    <p className="text-xs font-medium text-slate-800">
+                      סיבה אחרת
+                    </p>
                     <p className="text-[10px] text-slate-500">מחקר / פנימי</p>
                   </Link>
                 </div>

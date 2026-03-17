@@ -1,58 +1,154 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { getDeliveriesData } from '@/api/functions';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { getDeliveriesData } from "@/api/functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
-  Plus, Search, Printer, Edit, Loader2, RefreshCw, Columns, MoreHorizontal, Truck, ExternalLink, Filter, X
-} from 'lucide-react';
-import { format, parseISO, isValid } from 'date-fns';
-import { he } from 'date-fns/locale';
+  Plus,
+  Search,
+  Printer,
+  Edit,
+  Loader2,
+  RefreshCw,
+  Columns,
+  MoreHorizontal,
+  Truck,
+  ExternalLink,
+  Filter,
+  X,
+} from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
+import { he } from "date-fns/locale";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import BackButton from '@/components/ui/BackButton';
-import ResizableTable from '@/components/ui/ResizableTable';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import BackButton from "@/components/ui/BackButton";
+import ResizableTable from "@/components/ui/ResizableTable";
 
 export default function DeliveriesPage() {
   const [deliveries, setDeliveries] = useState([]);
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [sortField, setSortField] = useState('delivery_date');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortField, setSortField] = useState(
+    () => localStorage.getItem("deliveries_sortField") || "delivery_date",
+  );
+  const [sortDirection, setSortDirection] = useState(
+    () => localStorage.getItem("deliveries_sortDirection") || "desc",
+  );
+  useEffect(() => {
+    localStorage.setItem("deliveries_sortField", sortField);
+    localStorage.setItem("deliveries_sortDirection", sortDirection);
+  }, [sortField, sortDirection]);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  const allColumns = useMemo(() => [
-    { key: 'delivery_number', label: 'מס\' תעודה', alwaysVisible: true, defaultWidth: 140, sortable: true },
-    { key: 'delivery_date', label: 'תאריך קבלה', alwaysVisible: true, defaultWidth: 120, sortable: true },
-    { key: 'supplier', label: 'ספק', defaultWidth: 150, sortable: true },
-    { key: 'order_number_temp', label: 'מס\' הזמנה זמני', defaultWidth: 140, sortable: true },
-    { key: 'order_number_permanent', label: 'מס\' הזמנה קבוע', defaultWidth: 140, sortable: true },
-    { key: 'purchase_order_number_sap', label: 'מס\' דרישת רכש SAP', defaultWidth: 160, sortable: true },
-    { key: 'linked_withdrawals', label: 'משיכות מקושרות', defaultWidth: 160, sortable: false },
-    { key: 'delivery_type', label: 'סוג משלוח', defaultWidth: 130, sortable: true },
-    { key: 'status', label: 'סטטוס', defaultWidth: 110, sortable: true },
-    { key: 'total_items_received', label: 'פריטים שהתקבלו', defaultWidth: 120, sortable: true },
-    { key: 'completion_type', label: 'סוג השלמה', defaultWidth: 110, sortable: true },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 100, sortable: false }
-  ], []);
+  const allColumns = useMemo(
+    () => [
+      {
+        key: "delivery_number",
+        label: "מס' תעודה",
+        alwaysVisible: true,
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "delivery_date",
+        label: "תאריך קבלה",
+        alwaysVisible: true,
+        defaultWidth: 120,
+        sortable: true,
+      },
+      { key: "supplier", label: "ספק", defaultWidth: 150, sortable: true },
+      {
+        key: "order_number_temp",
+        label: "מס' הזמנה זמני",
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "order_number_permanent",
+        label: "מס' הזמנה קבוע",
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "purchase_order_number_sap",
+        label: "מס' דרישת רכש SAP",
+        defaultWidth: 160,
+        sortable: true,
+      },
+      {
+        key: "linked_withdrawals",
+        label: "משיכות מקושרות",
+        defaultWidth: 160,
+        sortable: false,
+      },
+      {
+        key: "delivery_type",
+        label: "סוג משלוח",
+        defaultWidth: 130,
+        sortable: true,
+      },
+      { key: "status", label: "סטטוס", defaultWidth: 110, sortable: true },
+      {
+        key: "total_items_received",
+        label: "פריטים שהתקבלו",
+        defaultWidth: 120,
+        sortable: true,
+      },
+      {
+        key: "completion_type",
+        label: "סוג השלמה",
+        defaultWidth: 110,
+        sortable: true,
+      },
+      {
+        key: "actions",
+        label: "פעולות",
+        alwaysVisible: true,
+        defaultWidth: 100,
+        sortable: false,
+      },
+    ],
+    [],
+  );
 
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    const alwaysVisibleKeys = allColumns.filter(col => col.alwaysVisible).map(col => col.key);
-    const saved = localStorage.getItem('deliveriesVisibleColumns');
+    const alwaysVisibleKeys = allColumns
+      .filter((col) => col.alwaysVisible)
+      .map((col) => col.key);
+    const saved = localStorage.getItem("deliveriesVisibleColumns");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -65,21 +161,23 @@ export default function DeliveriesPage() {
   });
 
   useEffect(() => {
-    const savableColumns = visibleColumns.filter(colKey => {
-      const columnDef = allColumns.find(c => c.key === colKey);
+    const savableColumns = visibleColumns.filter((colKey) => {
+      const columnDef = allColumns.find((c) => c.key === colKey);
       return columnDef ? !columnDef.alwaysVisible : true;
     });
-    localStorage.setItem('deliveriesVisibleColumns', JSON.stringify(savableColumns));
+    localStorage.setItem(
+      "deliveriesVisibleColumns",
+      JSON.stringify(savableColumns),
+    );
   }, [visibleColumns, allColumns]);
 
   const loadDeliveries = useCallback(async () => {
     setLoading(true);
     try {
-
       const response = await getDeliveriesData({
-        status: statusFilter !== 'all' ? statusFilter : null,
-        type: typeFilter !== 'all' ? typeFilter : null,
-        limit: '500'
+        status: statusFilter !== "all" ? statusFilter : null,
+        type: typeFilter !== "all" ? typeFilter : null,
+        limit: "500",
       });
 
       const success = response?.success ?? response?.data?.success;
@@ -89,11 +187,15 @@ export default function DeliveriesPage() {
         setDeliveries(payload.deliveries || []);
         setSummary(payload.summary || {});
       } else {
-        throw new Error(response?.error || response?.data?.error || 'Failed to fetch deliveries');
+        throw new Error(
+          response?.error ||
+            response?.data?.error ||
+            "Failed to fetch deliveries",
+        );
       }
     } catch (err) {
-      toast.error('שגיאה בטעינת משלוחים', {
-        description: err.message
+      toast.error("שגיאה בטעינת משלוחים", {
+        description: err.message,
       });
     } finally {
       setLoading(false);
@@ -115,13 +217,14 @@ export default function DeliveriesPage() {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(delivery =>
-        delivery.delivery_number?.toLowerCase().includes(term) ||
-        delivery.supplier?.toLowerCase().includes(term) ||
-        delivery.order_number?.toLowerCase().includes(term) ||
-        delivery.order_number_temp?.toLowerCase().includes(term) ||
-        delivery.order_number_permanent?.toLowerCase().includes(term) ||
-        delivery.purchase_order_number_sap?.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (delivery) =>
+          delivery.delivery_number?.toLowerCase().includes(term) ||
+          delivery.supplier?.toLowerCase().includes(term) ||
+          delivery.order_number?.toLowerCase().includes(term) ||
+          delivery.order_number_temp?.toLowerCase().includes(term) ||
+          delivery.order_number_permanent?.toLowerCase().includes(term) ||
+          delivery.purchase_order_number_sap?.toLowerCase().includes(term),
       );
     }
 
@@ -129,17 +232,17 @@ export default function DeliveriesPage() {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      if (sortField.includes('date')) {
+      if (sortField.includes("date")) {
         aValue = aValue ? parseISO(aValue) : new Date(0);
         bValue = bValue ? parseISO(bValue) : new Date(0);
       }
-      
-      if (typeof aValue === 'string') {
+
+      if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
-        bValue = bValue?.toLowerCase() || '';
+        bValue = bValue?.toLowerCase() || "";
       }
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -151,64 +254,68 @@ export default function DeliveriesPage() {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleColumnToggle = (columnKey) => {
-    setVisibleColumns(prev => {
-      const column = allColumns.find(c => c.key === columnKey);
+    setVisibleColumns((prev) => {
+      const column = allColumns.find((c) => c.key === columnKey);
       if (column && column.alwaysVisible) {
         return prev;
       }
-      return prev.includes(columnKey) 
-        ? prev.filter(col => col !== columnKey)
-        : [...prev, columnKey]
+      return prev.includes(columnKey)
+        ? prev.filter((col) => col !== columnKey)
+        : [...prev, columnKey];
     });
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'open': { label: 'פתוח', variant: 'info' },
-      'processing': { label: 'בעיבוד', variant: 'warning' },
-      'processed': { label: 'עובד', variant: 'success' },
-      'closed': { label: 'סגור', variant: 'secondary' }
+      open: { label: "פתוח", variant: "info" },
+      processing: { label: "בעיבוד", variant: "warning" },
+      processed: { label: "עובד", variant: "success" },
+      closed: { label: "סגור", variant: "secondary" },
     };
 
-    const config = statusConfig[status] || statusConfig['open'];
+    const config = statusConfig[status] || statusConfig["open"];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'לא זמין';
+    if (!dateString) return "לא זמין";
     const date = parseISO(dateString);
-    return isValid(date) ? format(date, 'dd/MM/yyyy', { locale: he }) : 'תאריך לא תקין';
+    return isValid(date)
+      ? format(date, "dd/MM/yyyy", { locale: he })
+      : "תאריך לא תקין";
   };
 
   const renderCell = useCallback((delivery, columnKey) => {
     switch (columnKey) {
-      case 'delivery_number':
+      case "delivery_number":
         return (
-          <Link 
-            to={createPageUrl('EditDelivery') + `?id=${delivery.id}`}
+          <Link
+            to={createPageUrl("EditDelivery") + `?id=${delivery.id}`}
             className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
           >
             {delivery.delivery_number}
             <ExternalLink className="h-3 w-3" />
           </Link>
         );
-      case 'delivery_date':
+      case "delivery_date":
         return formatDate(delivery.delivery_date);
-      case 'supplier':
-        return delivery.supplier || 'לא צוין';
-      case 'order_number_temp':
+      case "supplier":
+        return delivery.supplier || "לא צוין";
+      case "order_number_temp":
         return delivery.order_number_temp ? (
           delivery.linked_order_id ? (
-            <Link 
-              to={createPageUrl('EditOrder') + `?id=${delivery.linked_order_id}`}
+            <Link
+              to={
+                createPageUrl("EditOrder") + `?id=${delivery.linked_order_id}`
+              }
               className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
             >
               {delivery.order_number_temp}
@@ -217,13 +324,16 @@ export default function DeliveriesPage() {
           ) : (
             delivery.order_number_temp
           )
-        ) : 'ללא הזמנה';
-      case 'order_number_permanent':
-        return delivery.order_number_permanent || '-';
-      case 'purchase_order_number_sap':
-        return delivery.purchase_order_number_sap || '-';
-      case 'linked_withdrawals':
-        return delivery.linked_withdrawal_numbers && delivery.linked_withdrawal_numbers.length > 0 ? (
+        ) : (
+          "ללא הזמנה"
+        );
+      case "order_number_permanent":
+        return delivery.order_number_permanent || "-";
+      case "purchase_order_number_sap":
+        return delivery.purchase_order_number_sap || "-";
+      case "linked_withdrawals":
+        return delivery.linked_withdrawal_numbers &&
+          delivery.linked_withdrawal_numbers.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {delivery.linked_withdrawal_numbers.map((withdrawalNumber, idx) => {
               const withdrawalId = delivery.linked_withdrawal_request_ids[idx];
@@ -239,29 +349,35 @@ export default function DeliveriesPage() {
               );
             })}
           </div>
-        ) : '-';
-      case 'delivery_type':
+        ) : (
+          "-"
+        );
+      case "delivery_type":
         const types = {
-          'with_order': 'עם הזמנה',
-          'no_charge': 'ללא תמורה', 
-          'replacement': 'החלפה',
-          'other': 'אחר'
+          with_order: "עם הזמנה",
+          no_charge: "ללא תמורה",
+          replacement: "החלפה",
+          other: "אחר",
         };
-        return types[delivery.delivery_type] || delivery.delivery_type || '';
-      case 'status':
+        return types[delivery.delivery_type] || delivery.delivery_type || "";
+      case "status":
         return getStatusBadge(delivery.status);
-      case 'total_items_received':
+      case "total_items_received":
         return delivery.total_items_received || 0;
-      case 'completion_type':
+      case "completion_type":
         const completionTypes = {
-          'full': 'מלא',
-          'partial': 'חלקי'
+          full: "מלא",
+          partial: "חלקי",
         };
-        return completionTypes[delivery.completion_type] || delivery.completion_type || '';
-      case 'actions':
+        return (
+          completionTypes[delivery.completion_type] ||
+          delivery.completion_type ||
+          ""
+        );
+      case "actions":
         return (
           <div className="flex items-center gap-2">
-            <Link to={createPageUrl('EditDelivery') + `?id=${delivery.id}`}>
+            <Link to={createPageUrl("EditDelivery") + `?id=${delivery.id}`}>
               <Button variant="ghost" size="sm">
                 <Edit className="h-4 w-4" />
               </Button>
@@ -269,12 +385,12 @@ export default function DeliveriesPage() {
           </div>
         );
       default:
-        return delivery[columnKey] || '';
+        return delivery[columnKey] || "";
     }
   }, []);
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -298,7 +414,7 @@ export default function DeliveriesPage() {
         </style>
       </head>
       <body>
-        <div class="print-date">הופק בתאריך: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: he })}</div>
+        <div class="print-date">הופק בתאריך: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: he })}</div>
         <div class="header">
           <h1>דוח משלוחים נכנסים</h1>
           <p>מערכת ניהול מלאי ריאגנטים</p>
@@ -310,83 +426,108 @@ export default function DeliveriesPage() {
         <table>
           <thead>
             <tr>
-              ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_withdrawals').map(col => {
-                const column = allColumns.find(c => c.key === col);
-                return `<th>${column?.label || col}</th>`;
-              }).join('')}
+              ${visibleColumns
+                .filter(
+                  (col) => col !== "actions" && col !== "linked_withdrawals",
+                )
+                .map((col) => {
+                  const column = allColumns.find((c) => c.key === col);
+                  return `<th>${column?.label || col}</th>`;
+                })
+                .join("")}
             </tr>
           </thead>
           <tbody>
-            ${filteredAndSortedDeliveries.map(delivery => `
+            ${filteredAndSortedDeliveries
+              .map(
+                (delivery) => `
               <tr>
-                ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_withdrawals').map(col => {
-                  let value = '';
-                  switch (col) {
-                    case 'delivery_date':
-                      value = formatDate(delivery.delivery_date);
-                      break;
-                    case 'status':
-                      const statusLabels = { 'open': 'פתוח', 'processing': 'בעיבוד', 'processed': 'עובד', 'closed': 'סגור' };
-                      value = `<span class="badge badge-${delivery.status}">${statusLabels[delivery.status] || delivery.status}</span>`;
-                      break;
-                    case 'delivery_type':
-                      const types = {
-                        'with_order': 'עם הזמנה',
-                        'no_charge': 'ללא תמורה', 
-                        'replacement': 'החלפה',
-                        'other': 'אחר'
-                      };
-                      value = types[delivery.delivery_type] || delivery.delivery_type || '';
-                      break;
-                    case 'completion_type':
-                      const completionTypes = {
-                        'full': 'מלא',
-                        'partial': 'חלקי'
-                      };
-                      value = completionTypes[delivery.completion_type] || delivery.completion_type || '';
-                      break;
-                    default:
-                      value = delivery[col] || '';
-                  }
-                  return `<td>${value}</td>`;
-                }).join('')}
+                ${visibleColumns
+                  .filter(
+                    (col) => col !== "actions" && col !== "linked_withdrawals",
+                  )
+                  .map((col) => {
+                    let value = "";
+                    switch (col) {
+                      case "delivery_date":
+                        value = formatDate(delivery.delivery_date);
+                        break;
+                      case "status":
+                        const statusLabels = {
+                          open: "פתוח",
+                          processing: "בעיבוד",
+                          processed: "עובד",
+                          closed: "סגור",
+                        };
+                        value = `<span class="badge badge-${delivery.status}">${statusLabels[delivery.status] || delivery.status}</span>`;
+                        break;
+                      case "delivery_type":
+                        const types = {
+                          with_order: "עם הזמנה",
+                          no_charge: "ללא תמורה",
+                          replacement: "החלפה",
+                          other: "אחר",
+                        };
+                        value =
+                          types[delivery.delivery_type] ||
+                          delivery.delivery_type ||
+                          "";
+                        break;
+                      case "completion_type":
+                        const completionTypes = {
+                          full: "מלא",
+                          partial: "חלקי",
+                        };
+                        value =
+                          completionTypes[delivery.completion_type] ||
+                          delivery.completion_type ||
+                          "";
+                        break;
+                      default:
+                        value = delivery[col] || "";
+                    }
+                    return `<td>${value}</td>`;
+                  })
+                  .join("")}
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
       </body>
       </html>
     `;
-    
+
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.print();
   };
 
   const statusLabels = {
-    'open': 'פתוח',
-    'processing': 'בעיבוד',
-    'processed': 'עובד',
-    'closed': 'סגור'
+    open: "פתוח",
+    processing: "בעיבוד",
+    processed: "עובד",
+    closed: "סגור",
   };
 
   const typeLabels = {
-    'with_order': 'עם הזמנה',
-    'no_charge': 'ללא תמורה',
-    'replacement': 'החלפה',
-    'other': 'אחר'
+    with_order: "עם הזמנה",
+    no_charge: "ללא תמורה",
+    replacement: "החלפה",
+    other: "אחר",
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setTypeFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setTypeFilter("all");
     setMobileFilterOpen(false);
   };
 
   const activeFiltersCount = [
-    statusFilter !== 'all',
-    typeFilter !== 'all'
+    statusFilter !== "all",
+    typeFilter !== "all",
   ].filter(Boolean).length;
 
   if (loading) {
@@ -412,9 +553,12 @@ export default function DeliveriesPage() {
               </h1>
             </div>
           </div>
-          
+
           {/* Desktop: Full Button */}
-          <Link to={createPageUrl('NewDelivery')} className="hidden sm:block flex-shrink-0">
+          <Link
+            to={createPageUrl("NewDelivery")}
+            className="hidden sm:block flex-shrink-0"
+          >
             <Button className="bg-amber-500 hover:bg-amber-600 text-white">
               <Plus className="h-4 w-4 me-2" />
               תעודת משלוח חדשה
@@ -422,8 +566,14 @@ export default function DeliveriesPage() {
           </Link>
 
           {/* Mobile: Icon Only Button */}
-          <Link to={createPageUrl('NewDelivery')} className="sm:hidden flex-shrink-0">
-            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white px-3">
+          <Link
+            to={createPageUrl("NewDelivery")}
+            className="sm:hidden flex-shrink-0"
+          >
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-3"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </Link>
@@ -459,7 +609,7 @@ export default function DeliveriesPage() {
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => setSearchTerm("")}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-4 w-4" />
@@ -476,7 +626,9 @@ export default function DeliveriesPage() {
             <SelectContent>
               <SelectItem value="all">כל הסטטוסים</SelectItem>
               {Object.entries(statusLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -488,7 +640,9 @@ export default function DeliveriesPage() {
             <SelectContent>
               <SelectItem value="all">כל הסוגים</SelectItem>
               {Object.entries(typeLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -501,8 +655,15 @@ export default function DeliveriesPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
@@ -523,14 +684,20 @@ export default function DeliveriesPage() {
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">הצג עמודות</h4>
                 {allColumns.map((column) => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={column.key}
                       checked={visibleColumns.includes(column.key)}
                       onCheckedChange={() => handleColumnToggle(column.key)}
                       disabled={column.alwaysVisible}
                     />
-                    <label htmlFor={column.key} className="text-sm cursor-pointer">
+                    <label
+                      htmlFor={column.key}
+                      className="text-sm cursor-pointer"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -556,7 +723,7 @@ export default function DeliveriesPage() {
               </Badge>
             )}
           </Button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -564,8 +731,15 @@ export default function DeliveriesPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
@@ -579,14 +753,14 @@ export default function DeliveriesPage() {
 
       {/* Mobile Filter Sheet with Glassmorphism */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-md"
           style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            background: "rgba(30, 41, 59, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <SheetHeader>
@@ -595,7 +769,7 @@ export default function DeliveriesPage() {
               בחר אפשרויות לסינון רשימת המשלוחים
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6 space-y-4">
             <div>
               <Label className="text-white">סטטוס</Label>
@@ -606,7 +780,9 @@ export default function DeliveriesPage() {
                 <SelectContent>
                   <SelectItem value="all">כל הסטטוסים</SelectItem>
                   {Object.entries(statusLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -621,7 +797,9 @@ export default function DeliveriesPage() {
                 <SelectContent>
                   <SelectItem value="all">כל הסוגים</SelectItem>
                   {Object.entries(typeLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -630,8 +808,11 @@ export default function DeliveriesPage() {
             <div>
               <Label className="text-white">עמודות גלויות</Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                {allColumns.map(column => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                {allColumns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={`mobile-${column.key}`}
                       checked={visibleColumns.includes(column.key)}
@@ -639,7 +820,10 @@ export default function DeliveriesPage() {
                       disabled={column.alwaysVisible}
                       className="border-white/30"
                     />
-                    <label htmlFor={`mobile-${column.key}`} className="text-sm text-white cursor-pointer flex-1">
+                    <label
+                      htmlFor={`mobile-${column.key}`}
+                      className="text-sm text-white cursor-pointer flex-1"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -648,15 +832,15 @@ export default function DeliveriesPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={clearFilters} 
+              <Button
+                variant="outline"
+                onClick={clearFilters}
                 className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 נקה
               </Button>
-              <Button 
-                onClick={() => setMobileFilterOpen(false)} 
+              <Button
+                onClick={() => setMobileFilterOpen(false)}
                 className="flex-1 bg-white text-gray-900 hover:bg-white/90"
               >
                 החל
@@ -679,14 +863,18 @@ export default function DeliveriesPage() {
               onSort={handleSort}
               renderCell={renderCell}
             />
-            
+
             {filteredAndSortedDeliveries.length === 0 && (
               <div className="text-center py-16">
                 <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                   <Truck className="h-7 w-7 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
-                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
+                <p className="text-slate-600 font-medium mb-1">
+                  לא נמצאו משלוחים
+                </p>
+                <p className="text-sm text-slate-400">
+                  נסה לשנות את מילות החיפוש או להסיר מסננים
+                </p>
               </div>
             )}
           </CardContent>
@@ -701,17 +889,24 @@ export default function DeliveriesPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <Truck className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
-              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
+              <p className="text-slate-600 font-medium mb-1">
+                לא נמצאו משלוחים
+              </p>
+              <p className="text-sm text-slate-400">
+                נסה לשנות את החיפוש או להסיר מסננים
+              </p>
             </div>
           </Card>
         ) : (
-          filteredAndSortedDeliveries.map(delivery => (
-            <Card key={delivery.id} className="p-4 hover:shadow-md transition-shadow">
+          filteredAndSortedDeliveries.map((delivery) => (
+            <Card
+              key={delivery.id}
+              className="p-4 hover:shadow-md transition-shadow"
+            >
               <div className="space-y-3">
                 {/* Header: Delivery Number + Actions */}
                 <div className="flex justify-between items-start gap-2">
-                  <Link 
+                  <Link
                     to={createPageUrl(`EditDelivery?id=${delivery.id}`)}
                     className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                   >
@@ -725,7 +920,13 @@ export default function DeliveriesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl(`EditDelivery?id=${delivery.id}`)}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          (window.location.href = createPageUrl(
+                            `EditDelivery?id=${delivery.id}`,
+                          ))
+                        }
+                      >
                         <Edit className="h-4 w-4 ms-2" />
                         עריכה
                       </DropdownMenuItem>
@@ -737,20 +938,25 @@ export default function DeliveriesPage() {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{delivery.supplier || 'לא צוין'}</span>
+                    <span className="font-medium text-gray-900">
+                      {delivery.supplier || "לא צוין"}
+                    </span>
                   </div>
-                  <span className="text-gray-500">{formatDate(delivery.delivery_date)}</span>
+                  <span className="text-gray-500">
+                    {formatDate(delivery.delivery_date)}
+                  </span>
                 </div>
 
                 {/* Status and Type Badges */}
                 <div className="flex flex-wrap gap-2">
                   {getStatusBadge(delivery.status)}
                   <Badge variant="outline" className="text-xs">
-                    {typeLabels[delivery.delivery_type] || delivery.delivery_type}
+                    {typeLabels[delivery.delivery_type] ||
+                      delivery.delivery_type}
                   </Badge>
                   {delivery.completion_type && (
                     <Badge variant="outline" className="text-xs">
-                      {delivery.completion_type === 'full' ? 'מלא' : 'חלקי'}
+                      {delivery.completion_type === "full" ? "מלא" : "חלקי"}
                     </Badge>
                   )}
                 </div>
@@ -758,42 +964,57 @@ export default function DeliveriesPage() {
                 {/* Details Grid */}
                 <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
                   <div>
-                    <span className="text-gray-500 text-xs block">פריטים שהתקבלו</span>
-                    <span className="font-semibold text-gray-900">{delivery.total_items_received || 0}</span>
+                    <span className="text-gray-500 text-xs block">
+                      פריטים שהתקבלו
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {delivery.total_items_received || 0}
+                    </span>
                   </div>
                   {delivery.order_number_temp && (
                     <div>
                       <span className="text-gray-500 text-xs block">הזמנה</span>
                       {delivery.linked_order_id ? (
-                        <Link 
-                          to={createPageUrl(`EditOrder?id=${delivery.linked_order_id}`)}
+                        <Link
+                          to={createPageUrl(
+                            `EditOrder?id=${delivery.linked_order_id}`,
+                          )}
                           className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
                         >
                           {delivery.order_number_temp}
                           <ExternalLink className="h-3 w-3" />
                         </Link>
                       ) : (
-                        <span className="font-medium text-gray-900">{delivery.order_number_temp}</span>
+                        <span className="font-medium text-gray-900">
+                          {delivery.order_number_temp}
+                        </span>
                       )}
                     </div>
                   )}
                   {delivery.linked_withdrawal_count > 0 && (
                     <div className="col-span-2">
-                      <span className="text-gray-500 text-xs block mb-1">משיכות מקושרות</span>
+                      <span className="text-gray-500 text-xs block mb-1">
+                        משיכות מקושרות
+                      </span>
                       <div className="flex flex-wrap gap-1">
-                        {delivery.linked_withdrawal_numbers.map((withdrawalNumber, idx) => {
-                          const withdrawalId = delivery.linked_withdrawal_request_ids[idx];
-                          return (
-                            <Link
-                              key={withdrawalId}
-                              to={createPageUrl(`EditWithdrawalRequest?id=${withdrawalId}`)}
-                              className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded hover:bg-purple-200 flex items-center gap-1"
-                            >
-                              {withdrawalNumber}
-                              <ExternalLink className="h-2 w-2" />
-                            </Link>
-                          );
-                        })}
+                        {delivery.linked_withdrawal_numbers.map(
+                          (withdrawalNumber, idx) => {
+                            const withdrawalId =
+                              delivery.linked_withdrawal_request_ids[idx];
+                            return (
+                              <Link
+                                key={withdrawalId}
+                                to={createPageUrl(
+                                  `EditWithdrawalRequest?id=${withdrawalId}`,
+                                )}
+                                className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded hover:bg-purple-200 flex items-center gap-1"
+                              >
+                                {withdrawalNumber}
+                                <ExternalLink className="h-2 w-2" />
+                              </Link>
+                            );
+                          },
+                        )}
                       </div>
                     </div>
                   )}

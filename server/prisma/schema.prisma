@@ -317,6 +317,11 @@ model WithdrawalRequest {
   requesterNotes      String?
   approverNotes       String?
 
+  // שדות נוספים
+  urgencyLevel          String?       // routine, urgent, emergency
+  requestedDeliveryDate DateTime?
+  specialInstructions   String?
+
   // משתמשים
   requestedById       String?
   approvedById        String?

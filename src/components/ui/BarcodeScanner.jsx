@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback, useId } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import {
   Camera,
   CameraOff,
   Keyboard,
   ScanLine,
+  QrCode,
   Volume2,
   VolumeX,
   RotateCcw,
@@ -18,6 +19,22 @@ const SCAN_TYPES = {
   QR: "qr",
   BOTH: "both",
 };
+
+const BARCODE_FORMATS = [
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A,
+  Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.ITF,
+  Html5QrcodeSupportedFormats.CODABAR,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+];
+
+const QR_FORMATS = [Html5QrcodeSupportedFormats.QR_CODE];
+
+const ALL_FORMATS = [...BARCODE_FORMATS, ...QR_FORMATS];
 
 const SCAN_DEBOUNCE_MS = 1500;
 
@@ -125,12 +142,32 @@ export default function BarcodeScanner({
         }
       }
 
-      const html5QrCode = new Html5Qrcode(containerId);
+      const formatsToSupport =
+        scanType === SCAN_TYPES.QR
+          ? QR_FORMATS
+          : scanType === SCAN_TYPES.BARCODE
+            ? BARCODE_FORMATS
+            : ALL_FORMATS;
+
+      const html5QrCode = new Html5Qrcode(containerId, {
+        formatsToSupport,
+        useBarCodeDetectorIfSupported: true,
+      });
       scannerRef.current = html5QrCode;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 280, height: 150 },
+        fps: 15,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+          if (scanType === SCAN_TYPES.QR) {
+            const size = Math.floor(minDim * 0.7);
+            return { width: size, height: size };
+          }
+          return {
+            width: Math.floor(viewfinderWidth * 0.8),
+            height: Math.floor(viewfinderHeight * 0.4),
+          };
+        },
         aspectRatio: 1.5,
       };
 
@@ -147,7 +184,7 @@ export default function BarcodeScanner({
       setError("לא ניתן לגשת למצלמה. אנא אשר הרשאת מצלמה בדפדפן");
       if (onError) onError(err);
     }
-  }, [containerId, handleScanSuccess, handleScanError, onError]);
+  }, [containerId, handleScanSuccess, handleScanError, onError, scanType]);
 
   const stopCamera = useCallback(async () => {
     if (scannerRef.current) {
@@ -202,8 +239,18 @@ export default function BarcodeScanner({
       {/* Header controls */}
       <div className="flex items-center justify-between p-3 border-b">
         <div className="flex items-center gap-2">
-          <ScanLine className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-sm">סורק ברקוד</span>
+          {scanType === SCAN_TYPES.QR ? (
+            <QrCode className="h-5 w-5 text-purple-600" />
+          ) : (
+            <ScanLine className="h-5 w-5 text-blue-600" />
+          )}
+          <span className="font-medium text-sm">
+            {scanType === SCAN_TYPES.QR
+              ? "סורק QR"
+              : scanType === SCAN_TYPES.BARCODE
+                ? "סורק ברקוד"
+                : "סורק ברקוד / QR"}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <Button

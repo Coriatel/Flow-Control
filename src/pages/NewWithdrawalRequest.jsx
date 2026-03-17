@@ -1,24 +1,35 @@
-
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Save, Send, Loader2 } from 'lucide-react'; // Removed ArrowLeft
-import { format } from 'date-fns';
+import { Save, Send, Loader2 } from "lucide-react"; // Removed ArrowLeft
+import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 
-import { Order } from '@/api/entities';
-import { OrderItem } from '@/api/entities';
-import { WithdrawalRequest } from '@/api/entities';
-import WithdrawalItemRow from '../components/withdrawal/WithdrawalItemRow';
-import BackButton from '@/components/ui/BackButton'; // Added import
-import PrintDialog from '@/components/ui/PrintDialog'; // Added import
+import { Order } from "@/api/entities";
+import { OrderItem } from "@/api/entities";
+import { WithdrawalRequest } from "@/api/entities";
+import WithdrawalItemRow from "../components/withdrawal/WithdrawalItemRow";
+import BackButton from "@/components/ui/BackButton"; // Added import
+import PrintDialog from "@/components/ui/PrintDialog"; // Added import
 
 export default function NewWithdrawalRequestPage() {
   const { toast } = useToast();
@@ -26,13 +37,13 @@ export default function NewWithdrawalRequestPage() {
   const location = useLocation();
 
   const [withdrawalForm, setWithdrawalForm] = useState({
-    withdrawal_number: '',
-    framework_order_id: '',
-    request_date: format(new Date(), 'yyyy-MM-dd'),
-    requested_delivery_date: '',
-    urgency_level: 'routine',
-    requester_notes: '',
-    contact_person_delivery: ''
+    withdrawal_number: "",
+    framework_order_id: "",
+    request_date: format(new Date(), "yyyy-MM-dd"),
+    requested_delivery_date: "",
+    urgency_level: "routine",
+    requester_notes: "",
+    contact_person_delivery: "",
   });
 
   const [frameworkOrders, setFrameworkOrders] = useState([]);
@@ -49,45 +60,47 @@ export default function NewWithdrawalRequestPage() {
   const allFrameworkOrderItemsRef = useRef([]);
 
   const urgencyLevels = {
-    "routine": "שגרתי", "urgent": "דחוף", "emergency": "חירום"
+    routine: "שגרתי",
+    urgent: "דחוף",
+    emergency: "חירום",
   };
 
-  const generateWithdrawalNumber = () => {
-    const today = format(new Date(), 'yyyyMMdd');
-    const randomSuffix = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    return `WD-${today}-${randomSuffix}`;
-  };
+  const handleFrameworkOrderChange = useCallback(
+    (orderId) => {
+      const selectedOrder = frameworkOrders.find(
+        (order) => order.id === orderId,
+      );
+      if (!selectedOrder) return;
 
-  useEffect(() => {
-    setWithdrawalForm(prev => ({
-      ...prev,
-      withdrawal_number: generateWithdrawalNumber()
-    }));
-  }, []);
+      setWithdrawalForm((prev) => ({ ...prev, framework_order_id: orderId }));
 
-  const handleFrameworkOrderChange = useCallback((orderId) => {
-    const selectedOrder = frameworkOrders.find(order => order.id === orderId);
-    if (!selectedOrder) return;
+      const orderItems = allFrameworkOrderItemsRef.current.filter(
+        (item) => item.order_id === orderId,
+      );
 
-    setWithdrawalForm(prev => ({ ...prev, framework_order_id: orderId }));
+      const itemsWithQuantities = (orderItems || [])
+        .filter((item) => {
+          const isUsableStatus = [
+            "open",
+            "partially_received",
+            "approved",
+          ].includes(item.line_status);
+          const remaining =
+            (item.quantity_ordered || 0) - (item.quantity_received || 0);
+          return isUsableStatus && remaining > 0;
+        })
+        .map((item) => ({
+          ...item,
+          requested_quantity: 0,
+          max_quantity:
+            (item.quantity_ordered || 0) - (item.quantity_received || 0),
+          is_prefilled: false,
+        }));
 
-    const orderItems = allFrameworkOrderItemsRef.current.filter(item => item.order_id === orderId);
-
-    const itemsWithQuantities = (orderItems || [])
-      .filter(item => {
-        const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
-        const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
-        return isUsableStatus && remaining > 0;
-      })
-      .map(item => ({
-        ...item,
-        requested_quantity: 0,
-        max_quantity: (item.quantity_ordered || 0) - (item.quantity_received || 0),
-        is_prefilled: false,
-      }));
-
-    setAvailableItems(itemsWithQuantities);
-  }, [frameworkOrders]);
+      setAvailableItems(itemsWithQuantities);
+    },
+    [frameworkOrders],
+  );
 
   useEffect(() => {
     const initializePage = async () => {
@@ -95,72 +108,102 @@ export default function NewWithdrawalRequestPage() {
       setError(null);
       try {
         const queryParams = new URLSearchParams(location.search);
-        const source = queryParams.get('source');
-        const prefilledFrameworkOrderId = queryParams.get('framework_order_id');
-        const prefilledItemsRaw = queryParams.get('items');
+        const source = queryParams.get("source");
+        const prefilledFrameworkOrderId = queryParams.get("framework_order_id");
+        const prefilledItemsRaw = queryParams.get("items");
         let prefilledItemsData = [];
         if (prefilledItemsRaw) {
           try {
-            prefilledItemsData = JSON.parse(decodeURIComponent(prefilledItemsRaw));
-          } catch (e) {
-          }
+            prefilledItemsData = JSON.parse(
+              decodeURIComponent(prefilledItemsRaw),
+            );
+          } catch (e) {}
         }
 
         // Step 1: Fetch all raw data once
         const [allOrders, allItems] = await Promise.all([
           Order.filter({
-            order_type: 'framework',
+            order_type: "framework",
             status: {
               $in: [
-                'draft',
-                'pending_sap_details',
-                'pending_sap_permanent_id',
-                'pending_sap_po_number',
-                'approved',
-                'partially_received'
-              ]
-            }
+                "draft",
+                "pending_sap_details",
+                "pending_sap_permanent_id",
+                "pending_sap_po_number",
+                "approved",
+                "partially_received",
+              ],
+            },
           }),
-          OrderItem.list()
+          OrderItem.list(),
         ]);
 
         setFrameworkOrders(allOrders);
         allFrameworkOrderItemsRef.current = allItems;
 
         // Step 2: Process prefilled data if it exists
-        if (source === 'inventory_replenishment' && prefilledFrameworkOrderId && prefilledItemsData.length > 0) {
-          const selectedOrder = allOrders.find(o => o.id === prefilledFrameworkOrderId);
+        if (
+          source === "inventory_replenishment" &&
+          prefilledFrameworkOrderId &&
+          prefilledItemsData.length > 0
+        ) {
+          const selectedOrder = allOrders.find(
+            (o) => o.id === prefilledFrameworkOrderId,
+          );
           if (selectedOrder) {
-            setWithdrawalForm(prev => ({ ...prev, framework_order_id: prefilledFrameworkOrderId }));
+            setWithdrawalForm((prev) => ({
+              ...prev,
+              framework_order_id: prefilledFrameworkOrderId,
+            }));
 
-            const orderItems = allItems.filter(item => item.order_id === prefilledFrameworkOrderId);
+            const orderItems = allItems.filter(
+              (item) => item.order_id === prefilledFrameworkOrderId,
+            );
             const itemsWithQuantities = (orderItems || [])
-              .filter(item => {
-                const isUsableStatus = ['open', 'partially_received', 'approved'].includes(item.line_status);
-                const remaining = (item.quantity_ordered || 0) - (item.quantity_received || 0);
+              .filter((item) => {
+                const isUsableStatus = [
+                  "open",
+                  "partially_received",
+                  "approved",
+                ].includes(item.line_status);
+                const remaining =
+                  (item.quantity_ordered || 0) - (item.quantity_received || 0);
                 return isUsableStatus && remaining > 0;
               })
-              .map(item => {
-                const matchingPrefilled = prefilledItemsData.find(p => p.reagent_id === item.reagent_id);
-                const maxQuantity = (item.quantity_ordered || 0) - (item.quantity_received || 0);
-                const requestedQuantity = matchingPrefilled ? Math.min(matchingPrefilled.quantity || 0, maxQuantity) : 0;
+              .map((item) => {
+                const matchingPrefilled = prefilledItemsData.find(
+                  (p) => p.reagent_id === item.reagent_id,
+                );
+                const maxQuantity =
+                  (item.quantity_ordered || 0) - (item.quantity_received || 0);
+                const requestedQuantity = matchingPrefilled
+                  ? Math.min(matchingPrefilled.quantity || 0, maxQuantity)
+                  : 0;
 
                 return {
                   ...item,
                   requested_quantity: requestedQuantity,
                   max_quantity: maxQuantity,
-                  is_prefilled: !!matchingPrefilled
+                  is_prefilled: !!matchingPrefilled,
                 };
               });
 
             setAvailableItems(itemsWithQuantities);
           } else {
-            toast({ title: "שגיאה", description: "הזמנת המסגרת שצוינה לא נמצאה או שאינה פעילה.", variant: "destructive" });
+            toast({
+              title: "שגיאה",
+              description: "הזמנת המסגרת שצוינה לא נמצאה או שאינה פעילה.",
+              variant: "destructive",
+            });
           }
         }
       } catch (err) {
         setError("שגיאה בטעינת נתוני הדף.");
-        toast({ title: "שגיאת טעינה", description: err.message, variant: "destructive" });
+        toast({
+          title: "שגיאת טעינה",
+          description: err.message,
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -170,32 +213,49 @@ export default function NewWithdrawalRequestPage() {
   }, [location.search, toast]);
 
   const handleItemQuantityChange = useCallback((itemId, newQuantity) => {
-    setAvailableItems(prevItems => prevItems.map(item => {
-      if (item.id === itemId) {
-        const maxQuant = item.max_quantity || 0;
-        const quantity = Math.max(0, Math.min(parseInt(newQuantity, 10) || 0, maxQuant));
-        return { ...item, requested_quantity: quantity };
-      }
-      return item;
-    }));
+    setAvailableItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id === itemId) {
+          const maxQuant = item.max_quantity || 0;
+          const quantity = Math.max(
+            0,
+            Math.min(parseInt(newQuantity, 10) || 0, maxQuant),
+          );
+          return { ...item, requested_quantity: quantity };
+        }
+        return item;
+      }),
+    );
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSavingRequest(true);
 
-    const itemsToSubmit = availableItems.filter(item => item.requested_quantity > 0);
+    const itemsToSubmit = availableItems.filter(
+      (item) => item.requested_quantity > 0,
+    );
 
     if (itemsToSubmit.length === 0) {
-      toast({ title: "אין פריטים למשיכה", description: "יש להזין כמות לפחות לפריט אחד.", variant: "destructive" });
+      toast({
+        title: "אין פריטים למשיכה",
+        description: "יש להזין כמות לפחות לפריט אחד.",
+        variant: "destructive",
+      });
       setSavingRequest(false);
       return;
     }
 
     // Get the selected framework order to extract supplier info
-    const selectedOrder = frameworkOrders.find(order => order.id === withdrawalForm.framework_order_id);
+    const selectedOrder = frameworkOrders.find(
+      (order) => order.id === withdrawalForm.framework_order_id,
+    );
     if (!selectedOrder) {
-      toast({ title: "שגיאה", description: "יש לבחור הזמנת מסגרת.", variant: "destructive" });
+      toast({
+        title: "שגיאה",
+        description: "יש לבחור הזמנת מסגרת.",
+        variant: "destructive",
+      });
       setSavingRequest(false);
       return;
     }
@@ -203,17 +263,21 @@ export default function NewWithdrawalRequestPage() {
     // Get supplierId from the selected framework order
     const supplierId = selectedOrder.supplier_id || selectedOrder.supplierId;
     if (!supplierId) {
-      toast({ title: "שגיאה", description: "לא נמצא ספק להזמנת המסגרת שנבחרה.", variant: "destructive" });
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא ספק להזמנת המסגרת שנבחרה.",
+        variant: "destructive",
+      });
       setSavingRequest(false);
       return;
     }
 
     try {
       // Format items for backend (camelCase, correct structure)
-      const formattedItems = itemsToSubmit.map(item => ({
+      const formattedItems = itemsToSubmit.map((item) => ({
         reagentId: item.reagent_id || item.reagentId,
         requestedQuantity: item.requested_quantity,
-        unitPrice: item.unit_price || item.unitPrice || undefined
+        unitPrice: item.unit_price || item.unitPrice || undefined,
       }));
 
       // Create withdrawal with all required fields in camelCase format
@@ -221,27 +285,30 @@ export default function NewWithdrawalRequestPage() {
         supplierId: supplierId,
         frameworkOrderId: withdrawalForm.framework_order_id,
         items: formattedItems,
-        requesterNotes: withdrawalForm.requester_notes || undefined
+        requesterNotes: withdrawalForm.requester_notes || undefined,
       });
 
       // Check if we got a valid ID back
       const createdId = withdrawalReq?.id;
       if (!createdId) {
-        throw new Error('לא התקבל מזהה לבקשה שנוצרה');
+        throw new Error("לא התקבל מזהה לבקשה שנוצרה");
       }
 
       toast({
         title: "בקשת משיכה נשלחה בהצלחה",
-        description: `בקשה מספר ${withdrawalReq.withdrawalNumber || withdrawalForm.withdrawal_number} נוצרה ונשלחה.`,
+        description: `בקשה מספר ${withdrawalReq.withdrawalNumber || withdrawalReq.withdrawal_number || ""} נוצרה ונשלחה.`,
         variant: "success",
       });
 
       // Open print dialog
       setCreatedWithdrawalId(createdId);
       setShowPrintDialog(true);
-
     } catch (err) {
-      toast({ title: "שגיאה ביצירת הבקשה", description: err.message, variant: "destructive" });
+      toast({
+        title: "שגיאה ביצירת הבקשה",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSavingRequest(false);
     }
@@ -250,11 +317,14 @@ export default function NewWithdrawalRequestPage() {
   const handlePrintDialogClose = () => {
     setShowPrintDialog(false);
     setCreatedWithdrawalId(null);
-    navigate(createPageUrl('WithdrawalRequests'));
+    navigate(createPageUrl("WithdrawalRequests"));
   };
 
   const totalItemsSelected = useMemo(() => {
-    return availableItems.reduce((count, item) => item.requested_quantity > 0 ? count + 1 : count, 0);
+    return availableItems.reduce(
+      (count, item) => (item.requested_quantity > 0 ? count + 1 : count),
+      0,
+    );
   }, [availableItems]);
 
   if (loading) {
@@ -288,19 +358,43 @@ export default function NewWithdrawalRequestPage() {
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <Label>מספר בקשה</Label>
-                <Input value={withdrawalForm.withdrawal_number} disabled className="bg-gray-100" />
+                <Input
+                  value="אוטומטי"
+                  disabled
+                  className="bg-gray-100 text-gray-500"
+                  placeholder="ייווצר אוטומטית"
+                />
               </div>
               <div>
                 <Label htmlFor="request_date">תאריך בקשה</Label>
-                <Input id="request_date" type="date" value={withdrawalForm.request_date} onChange={(e) => setWithdrawalForm(f => ({ ...f, request_date: e.target.value }))} />
+                <Input
+                  id="request_date"
+                  type="date"
+                  value={withdrawalForm.request_date}
+                  onChange={(e) =>
+                    setWithdrawalForm((f) => ({
+                      ...f,
+                      request_date: e.target.value,
+                    }))
+                  }
+                />
               </div>
               <div>
                 <Label htmlFor="urgency_level">רמת דחיפות</Label>
-                <Select value={withdrawalForm.urgency_level} onValueChange={(val) => setWithdrawalForm(f => ({ ...f, urgency_level: val }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={withdrawalForm.urgency_level}
+                  onValueChange={(val) =>
+                    setWithdrawalForm((f) => ({ ...f, urgency_level: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {Object.entries(urgencyLevels).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>{value}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {value}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -317,25 +411,59 @@ export default function NewWithdrawalRequestPage() {
                     <SelectValue placeholder="בחר הזמנת מסגרת..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {frameworkOrders.map(order => (
+                    {frameworkOrders.map((order) => (
                       <SelectItem key={order.id} value={order.id}>
-                        {order.order_number_permanent || order.order_number_temp} - {order.supplier_name_snapshot}
+                        {order.order_number_permanent ||
+                          order.order_number_temp}{" "}
+                        - {order.supplier_name_snapshot}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="requested_delivery_date">תאריך אספקה מבוקש</Label>
-                <Input id="requested_delivery_date" type="date" value={withdrawalForm.requested_delivery_date} onChange={(e) => setWithdrawalForm(f => ({ ...f, requested_delivery_date: e.target.value }))} />
+                <Label htmlFor="requested_delivery_date">
+                  תאריך אספקה מבוקש
+                </Label>
+                <Input
+                  id="requested_delivery_date"
+                  type="date"
+                  value={withdrawalForm.requested_delivery_date}
+                  onChange={(e) =>
+                    setWithdrawalForm((f) => ({
+                      ...f,
+                      requested_delivery_date: e.target.value,
+                    }))
+                  }
+                />
               </div>
               <div>
-                <Label htmlFor="contact_person_delivery">איש קשר לקבלת האספקה</Label>
-                <Input id="contact_person_delivery" value={withdrawalForm.contact_person_delivery} onChange={(e) => setWithdrawalForm(f => ({ ...f, contact_person_delivery: e.target.value }))} />
+                <Label htmlFor="contact_person_delivery">
+                  איש קשר לקבלת האספקה
+                </Label>
+                <Input
+                  id="contact_person_delivery"
+                  value={withdrawalForm.contact_person_delivery}
+                  onChange={(e) =>
+                    setWithdrawalForm((f) => ({
+                      ...f,
+                      contact_person_delivery: e.target.value,
+                    }))
+                  }
+                />
               </div>
               <div className="md:col-span-2 lg:col-span-3">
                 <Label htmlFor="requester_notes">הערות כלליות לבקשה</Label>
-                <Input id="requester_notes" value={withdrawalForm.requester_notes} onChange={(e) => setWithdrawalForm(f => ({ ...f, requester_notes: e.target.value }))} />
+                <Input
+                  id="requester_notes"
+                  value={withdrawalForm.requester_notes}
+                  onChange={(e) =>
+                    setWithdrawalForm((f) => ({
+                      ...f,
+                      requester_notes: e.target.value,
+                    }))
+                  }
+                />
               </div>
             </CardContent>
           </Card>
@@ -369,11 +497,23 @@ export default function NewWithdrawalRequestPage() {
 
           <div className="mt-8 flex justify-between items-center">
             <div>
-              <Button type="submit" disabled={savingRequest || totalItemsSelected === 0}>
-                {savingRequest ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : <Send className="h-4 w-4 ms-2" />}
+              <Button
+                type="submit"
+                disabled={savingRequest || totalItemsSelected === 0}
+              >
+                {savingRequest ? (
+                  <Loader2 className="h-4 w-4 animate-spin ms-2" />
+                ) : (
+                  <Send className="h-4 w-4 ms-2" />
+                )}
                 שלח לאישור
               </Button>
-              <Button type="button" variant="outline" className="me-3" onClick={() => navigate(createPageUrl('WithdrawalRequests'))}>
+              <Button
+                type="button"
+                variant="outline"
+                className="me-3"
+                onClick={() => navigate(createPageUrl("WithdrawalRequests"))}
+              >
                 ביטול
               </Button>
             </div>

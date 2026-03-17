@@ -67,6 +67,7 @@ import {
   Download,
   PackagePlus,
   ListPlus,
+  Camera,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { UploadFile } from "@/api/integrations";
@@ -88,6 +89,9 @@ import { updateReagentInventory } from "@/api/functions";
 
 import DateField from "@/components/ui/DateField";
 import BarcodeScanner from "@/components/ui/BarcodeScanner";
+import BarcodeScannerDialog from "@/components/ui/BarcodeScannerDialog";
+import ScanOrTypeField from "@/components/ui/ScanOrTypeField";
+import CameraCapture from "@/components/ui/CameraCapture";
 import { apiClient } from "@/api/client";
 import {
   AlertDialog,
@@ -133,6 +137,9 @@ const DeliveryItemRow = ({
   setShowItemSearch,
   deliveryData,
   toast,
+  onOpenScanDialog,
+  onOpenScanBothDialog,
+  onOpenCOACamera,
 }) => {
   const selectedReagentDetails = reagents.find((r) => r.id === item.reagent_id);
   const isLinked = item.isPreFilled;
@@ -258,13 +265,18 @@ const DeliveryItemRow = ({
               <div className="space-y-2">
                 <Label>{requiresBatches ? "מס' אצווה *" : "סוג פריט"}</Label>
                 {requiresBatches ? (
-                  <Input
+                  <ScanOrTypeField
                     value={item.batch_number}
-                    onChange={(e) =>
-                      updateItem(item.key, "batch_number", e.target.value)
+                    onChange={(val) =>
+                      updateItem(item.key, "batch_number", val)
                     }
+                    onScanRequest={(scanMode) =>
+                      onOpenScanDialog(item.key, "batch_number", scanMode)
+                    }
+                    onScanBothRequest={() => onOpenScanBothDialog(item.key)}
+                    type="text"
                     placeholder="מספר אצווה"
-                    className={`text-right placeholder:text-right ${itemValidation.batch_number ? "border-2 border-red-500" : ""}`}
+                    error={!!itemValidation.batch_number}
                   />
                 ) : (
                   <div className="p-2 bg-gray-100 border rounded text-sm text-gray-600">
@@ -277,10 +289,14 @@ const DeliveryItemRow = ({
               <div className="space-y-2">
                 <Label>{requiresExpiryDate ? "תאריך תפוגה *" : "תוקף"}</Label>
                 {requiresExpiryDate ? (
-                  <DateField
+                  <ScanOrTypeField
                     value={item.expiry_date || ""}
                     onChange={(val) => updateItem(item.key, "expiry_date", val)}
-                    className={`${itemValidation.expiry_date ? "border-2 border-red-500" : ""}`}
+                    onScanRequest={(scanMode) =>
+                      onOpenScanDialog(item.key, "expiry_date", scanMode)
+                    }
+                    type="date"
+                    error={!!itemValidation.expiry_date}
                   />
                 ) : (
                   <div className="p-2 bg-gray-100 border rounded text-sm text-gray-600">
@@ -365,13 +381,22 @@ const DeliveryItemRow = ({
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 gap-1.5"
+                    onClick={() => onOpenCOACamera(item.key)}
+                  >
+                    <Camera className="h-4 w-4" />
+                    צלם תמונה
+                  </Button>
                   <Button asChild variant="outline" className="flex-1">
                     <Label
                       htmlFor={`coa_file_${item.key}`}
-                      className="cursor-pointer flex items-center justify-center"
+                      className="cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      <Upload className="h-4 w-4 ms-2" />
-                      {item.coaFileName ? "החלף קובץ" : "בחר קובץ COA"}
+                      <Paperclip className="h-4 w-4" />
+                      {item.coaFileName ? "החלף קובץ" : "צרף קובץ"}
                     </Label>
                   </Button>
                   <Input
@@ -408,8 +433,8 @@ const DeliveryItemRow = ({
                   </div>
                 )}
                 <p className="text-xs text-gray-600">
-                  קבצים נתמכים: PDF, JPG, PNG. תעודת האנליזה תישמר עם פרטי
-                  האצווה.
+                  צלם תמונה מהמצלמה או צרף קובץ (PDF, JPG, PNG). תעודת האנליזה
+                  תישמר עם פרטי האצווה.
                 </p>
               </div>
             )}
@@ -512,6 +537,16 @@ export default function NewDeliveryPage() {
   const [itemToApprove, setItemToApprove] = useState(null);
 
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+
+  // Scan dialog state for field-level barcode scanning
+  const [fieldScanDialogOpen, setFieldScanDialogOpen] = useState(false);
+  const [fieldScanTarget, setFieldScanTarget] = useState(null); // { itemKey, field }
+  const [fieldScanMode, setFieldScanMode] = useState("both"); // "barcode"/"qr"/"both"
+  const [fieldScanBothMode, setFieldScanBothMode] = useState(false);
+
+  // COA camera capture state
+  const [coaCameraOpen, setCoaCameraOpen] = useState(false);
+  const [coaCameraItemKey, setCoaCameraItemKey] = useState(null);
 
   // New state for mobile filters as per outline (though not used in this specific change)
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -864,6 +899,97 @@ export default function NewDeliveryPage() {
       });
     });
   };
+
+  const openFieldScanDialog = useCallback(
+    (itemKey, field, scanMode = "both") => {
+      setFieldScanTarget({ itemKey, field });
+      setFieldScanMode(scanMode);
+      setFieldScanBothMode(false);
+      setFieldScanDialogOpen(true);
+    },
+    [],
+  );
+
+  const openScanBothDialog = useCallback((itemKey) => {
+    setFieldScanTarget({ itemKey, field: "both" });
+    setFieldScanMode("both");
+    setFieldScanBothMode(true);
+    setFieldScanDialogOpen(true);
+  }, []);
+
+  const openCOACamera = useCallback((itemKey) => {
+    setCoaCameraItemKey(itemKey);
+    setCoaCameraOpen(true);
+  }, []);
+
+  const handleFieldBarcodeScan = useCallback(
+    async (rawData) => {
+      if (!fieldScanTarget) return;
+      try {
+        const res = await apiClient.post("/barcode/parse", { rawData });
+        const parsed = res.data || res;
+        const { lotNumber, expiryDate } = parsed;
+        const { itemKey, field } = fieldScanTarget;
+
+        if (field === "both") {
+          const parts = [];
+          if (lotNumber) {
+            updateItem(itemKey, "batch_number", lotNumber);
+            parts.push(`אצווה: ${lotNumber}`);
+          }
+          if (expiryDate) {
+            updateItem(itemKey, "expiry_date", expiryDate);
+            parts.push(`תפוגה: ${expiryDate}`);
+          }
+          if (parts.length > 0) {
+            toast({
+              title: "נסרקו שדות",
+              description: parts.join(" | "),
+            });
+          } else {
+            toast({
+              title: "לא נמצאו נתונים בברקוד",
+              variant: "destructive",
+            });
+          }
+        } else if (field === "batch_number") {
+          if (lotNumber) {
+            updateItem(itemKey, "batch_number", lotNumber);
+            toast({
+              title: "אצווה נסרקה",
+              description: `מס' אצווה: ${lotNumber}`,
+            });
+          } else {
+            toast({
+              title: "לא נמצא מספר אצווה בברקוד",
+              variant: "destructive",
+            });
+          }
+          if (expiryDate) {
+            updateItem(itemKey, "expiry_date", expiryDate);
+          }
+        } else if (field === "expiry_date") {
+          if (expiryDate) {
+            updateItem(itemKey, "expiry_date", expiryDate);
+            toast({ title: "תאריך תפוגה נסרק", description: expiryDate });
+          } else {
+            toast({
+              title: "לא נמצא תאריך תפוגה בברקוד",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Field barcode parse error:", err);
+        toast({
+          title: "שגיאה בפענוח ברקוד",
+          description: err?.message || "לא ניתן לפענח את הברקוד",
+          variant: "destructive",
+        });
+      }
+    },
+    [fieldScanTarget, toast, updateItem],
+  );
 
   const addItem = () => {
     if (!deliveryData.supplier) {
@@ -2433,6 +2559,9 @@ export default function NewDeliveryPage() {
                     setShowItemSearch={setShowItemSearch}
                     deliveryData={deliveryData}
                     toast={toast}
+                    onOpenScanDialog={openFieldScanDialog}
+                    onOpenScanBothDialog={openScanBothDialog}
+                    onOpenCOACamera={openCOACamera}
                   />
                 ))
               )}
@@ -2580,6 +2709,36 @@ export default function NewDeliveryPage() {
           </Button>
         </div>
       </div>
+
+      {/* Field-level Barcode Scanner Dialog */}
+      <BarcodeScannerDialog
+        open={fieldScanDialogOpen}
+        onOpenChange={setFieldScanDialogOpen}
+        onScan={handleFieldBarcodeScan}
+        scanType={fieldScanMode}
+        scanBothFields={fieldScanBothMode}
+        title={
+          fieldScanBothMode
+            ? "סרוק אצווה + תפוגה"
+            : fieldScanTarget?.field === "batch_number"
+              ? "סרוק ברקוד לאצווה"
+              : "סרוק ברקוד לתאריך תפוגה"
+        }
+      />
+
+      {/* COA Camera Capture Dialog */}
+      <CameraCapture
+        open={coaCameraOpen}
+        onCapture={(file) => {
+          if (coaCameraItemKey) {
+            updateItem(coaCameraItemKey, "coa_file", file);
+          }
+        }}
+        onClose={() => {
+          setCoaCameraOpen(false);
+          setCoaCameraItemKey(null);
+        }}
+      />
 
       {/* Add Print Dialog */}
       <PrintDialog

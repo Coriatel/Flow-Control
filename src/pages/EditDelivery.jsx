@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { getEditDeliveryData } from '@/api/functions';
-import { Delivery } from '@/api/entities';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { getEditDeliveryData } from "@/api/functions";
+import { Delivery } from "@/api/entities";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -16,9 +22,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { createPageUrl } from '@/utils';
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { createPageUrl } from "@/utils";
 import {
   Save,
   X,
@@ -29,48 +35,50 @@ import {
   Package,
   FileText,
   TrendingDown,
-  ExternalLink
-} from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { he } from 'date-fns/locale';
-import BackButton from '@/components/ui/BackButton';
+  ExternalLink,
+  ArrowDownToLine,
+} from "lucide-react";
+import { apiClient } from "@/api/client";
+import { format, parseISO } from "date-fns";
+import { he } from "date-fns/locale";
+import BackButton from "@/components/ui/BackButton";
 
 const statusLabels = {
-  open: 'פתוח',
-  processing: 'בעיבוד',
-  processed: 'עובד',
-  closed: 'סגור'
+  open: "פתוח",
+  processing: "בעיבוד",
+  processed: "עובד",
+  closed: "סגור",
 };
 
 const statusColors = {
-  open: 'bg-blue-100 text-blue-800 border-blue-300',
-  processing: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  processed: 'bg-green-100 text-green-800 border-green-300',
-  closed: 'bg-gray-100 text-gray-800 border-gray-300'
+  open: "bg-blue-100 text-blue-800 border-blue-300",
+  processing: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  processed: "bg-green-100 text-green-800 border-green-300",
+  closed: "bg-gray-100 text-gray-800 border-gray-300",
 };
 
 const deliveryTypeLabels = {
-  with_order: 'עם הזמנה',
-  no_charge: 'ללא תמורה',
-  replacement: 'החלפה',
-  other: 'אחר'
+  with_order: "עם הזמנה",
+  no_charge: "ללא תמורה",
+  replacement: "החלפה",
+  other: "אחר",
 };
 
 const completionTypeLabels = {
-  full: 'מלאה',
-  partial: 'חלקית'
+  full: "מלאה",
+  partial: "חלקית",
 };
 
 export default function EditDeliveryPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const deliveryId = searchParams.get('id');
+  const deliveryId = searchParams.get("id");
 
   // States
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  
+
   // Data states
   const [delivery, setDelivery] = useState(null);
   const [deliveryItems, setDeliveryItems] = useState([]);
@@ -79,69 +87,76 @@ export default function EditDeliveryPage() {
 
   // Form states (for edit mode)
   const [formData, setFormData] = useState({
-    notes: '',
-    completion_notes: '',
-    delivery_reason_text: '',
-    status: ''
+    notes: "",
+    completion_notes: "",
+    delivery_reason_text: "",
+    status: "",
   });
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [showReceiveDialog, setShowReceiveDialog] = useState(false);
+  const [receiving, setReceiving] = useState(false);
 
-  // Load delivery data
-  useEffect(() => {
-    if (!deliveryId) {
-      toast.error('שגיאה', { description: 'מזהה משלוח חסר' });
-      navigate(createPageUrl('Deliveries'));
-      return;
-    }
-    fetchDeliveryData();
-  }, [deliveryId, navigate]);
-
-  const fetchDeliveryData = async () => {
+  const fetchDeliveryData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getEditDeliveryData({
-        delivery_id: deliveryId
+        delivery_id: deliveryId,
       });
 
       const success = response?.success ?? response?.data?.success;
       const payload = response?.data?.data ?? response?.data ?? response ?? {};
 
       if (success) {
-        const { delivery, deliveryItems, linkedOrder, linkedWithdrawals } = payload;
-        
+        const { delivery, deliveryItems, linkedOrder, linkedWithdrawals } =
+          payload;
+
         setDelivery(delivery);
         setDeliveryItems(deliveryItems || []);
         setLinkedOrder(linkedOrder);
-        setLinkedWithdrawals(linkedWithdrawals || []); // ✅ תיקון: וידוא שזה מערך
+        setLinkedWithdrawals(linkedWithdrawals || []);
 
         // Initialize form data
         setFormData({
-          notes: delivery.notes || '',
-          completion_notes: delivery.completion_notes || '',
-          delivery_reason_text: delivery.delivery_reason_text || '',
-          status: delivery.status || 'open'
+          notes: delivery.notes || "",
+          completion_notes: delivery.completion_notes || "",
+          delivery_reason_text: delivery.delivery_reason_text || "",
+          status: delivery.status || "open",
         });
       } else {
-        throw new Error(response?.error || response?.data?.error || 'Failed to load delivery data');
+        throw new Error(
+          response?.error ||
+            response?.data?.error ||
+            "Failed to load delivery data",
+        );
       }
     } catch (error) {
-      toast.error('שגיאה בטעינת נתוני משלוח', {
-        description: error.message
+      toast.error("שגיאה בטעינת נתוני משלוח", {
+        description: error.message,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [deliveryId]);
+
+  // Load delivery data
+  useEffect(() => {
+    if (!deliveryId) {
+      toast.error("שגיאה", { description: "מזהה משלוח חסר" });
+      navigate(createPageUrl("Deliveries"));
+      return;
+    }
+    fetchDeliveryData();
+  }, [deliveryId, navigate, fetchDeliveryData]);
 
   const handleSave = async () => {
     // Check if status changed and needs confirmation
     if (formData.status !== delivery.status) {
       // Critical status changes require confirmation
-      if (formData.status === 'processed' || formData.status === 'closed') {
+      if (formData.status === "processed" || formData.status === "closed") {
         setPendingStatusChange(formData.status);
         setShowStatusChangeDialog(true);
         return;
@@ -158,17 +173,17 @@ export default function EditDeliveryPage() {
         notes: formData.notes,
         completion_notes: formData.completion_notes,
         delivery_reason_text: formData.delivery_reason_text,
-        status: formData.status
+        status: formData.status,
       };
 
       await Delivery.update(deliveryId, updateData);
 
-      toast.success('המשלוח עודכן בהצלחה');
+      toast.success("המשלוח עודכן בהצלחה");
       setIsEditMode(false);
       await fetchDeliveryData(); // Reload to get fresh data
     } catch (error) {
-      toast.error('שגיאה בשמירת המשלוח', {
-        description: error.message
+      toast.error("שגיאה בשמירת המשלוח", {
+        description: error.message,
       });
     } finally {
       setSaving(false);
@@ -180,11 +195,11 @@ export default function EditDeliveryPage() {
   const handleDelete = async () => {
     try {
       await Delivery.delete(deliveryId);
-      toast.success('המשלוח נמחק בהצלחה');
-      navigate(createPageUrl('Deliveries'));
+      toast.success("המשלוח נמחק בהצלחה");
+      navigate(createPageUrl("Deliveries"));
     } catch (error) {
-      toast.error('שגיאה במחיקת המשלוח', {
-        description: error.message
+      toast.error("שגיאה במחיקת המשלוח", {
+        description: error.message,
       });
     } finally {
       setShowDeleteDialog(false);
@@ -193,12 +208,47 @@ export default function EditDeliveryPage() {
 
   const handleCancel = () => {
     setFormData({
-      notes: delivery.notes || '',
-      completion_notes: delivery.completion_notes || '',
-      delivery_reason_text: delivery.delivery_reason_text || '',
-      status: delivery.status || 'open'
+      notes: delivery.notes || "",
+      completion_notes: delivery.completion_notes || "",
+      delivery_reason_text: delivery.delivery_reason_text || "",
+      status: delivery.status || "open",
     });
     setIsEditMode(false);
+  };
+
+  const canReceiveDelivery =
+    delivery && ["open", "processing"].includes(delivery.status);
+
+  const handleReceive = async () => {
+    if (!deliveryItems || deliveryItems.length === 0) {
+      toast.error("אין פריטים לקליטה", {
+        description: "המשלוח לא מכיל פריטים לעיבוד.",
+      });
+      setShowReceiveDialog(false);
+      return;
+    }
+
+    setReceiving(true);
+    try {
+      const items = deliveryItems.map((item) => ({
+        deliveryItemId: item.id,
+        acceptedQuantity: item.quantity_received || 0,
+      }));
+
+      await apiClient.post(`/deliveries/${deliveryId}/receive`, { items });
+
+      toast.success("המשלוח עובד ונקלט בהצלחה", {
+        description: "אצוות חדשות נוצרו והמלאי עודכן.",
+      });
+      setShowReceiveDialog(false);
+      await fetchDeliveryData();
+    } catch (error) {
+      toast.error("שגיאה בקליטת המשלוח", {
+        description: error.message || "אירעה שגיאה בעיבוד המשלוח.",
+      });
+    } finally {
+      setReceiving(false);
+    }
   };
 
   if (loading) {
@@ -215,7 +265,10 @@ export default function EditDeliveryPage() {
       <div className="text-center py-12" dir="rtl">
         <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
         <p className="text-red-600 text-lg">משלוח לא נמצא</p>
-        <Button onClick={() => navigate(createPageUrl('Deliveries'))} className="mt-4">
+        <Button
+          onClick={() => navigate(createPageUrl("Deliveries"))}
+          className="mt-4"
+        >
           חזור לרשימת משלוחים
         </Button>
       </div>
@@ -231,10 +284,11 @@ export default function EditDeliveryPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
               <Package className="h-7 w-7 text-amber-600" />
-              {isEditMode ? 'עריכת משלוח' : 'פרטי משלוח'}
+              {isEditMode ? "עריכת משלוח" : "פרטי משלוח"}
             </h1>
             <p className="text-sm text-gray-600 mt-1">
-              תעודת משלוח: <span className="font-semibold">{delivery.delivery_number}</span>
+              תעודת משלוח:{" "}
+              <span className="font-semibold">{delivery.delivery_number}</span>
             </p>
           </div>
         </div>
@@ -258,6 +312,15 @@ export default function EditDeliveryPage() {
                 <Trash2 className="h-4 w-4" />
                 <span className="hidden sm:inline">מחיקה</span>
               </Button>
+              {canReceiveDelivery && (
+                <Button
+                  onClick={() => setShowReceiveDialog(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                >
+                  <ArrowDownToLine className="h-4 w-4" />
+                  עבד וקלוט
+                </Button>
+              )}
             </>
           ) : (
             <>
@@ -289,10 +352,8 @@ export default function EditDeliveryPage() {
 
       {/* Main Content - Cards Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Right Column - Main Details (2/3 width on large screens) */}
         <div className="lg:col-span-2 space-y-6">
-          
           {/* Basic Information Card */}
           <Card className="shadow-sm border-slate-200">
             <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-slate-200">
@@ -305,7 +366,9 @@ export default function EditDeliveryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Delivery Number - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">מספר תעודת משלוח</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    מספר תעודת משלוח
+                  </Label>
                   <Input
                     value={delivery.delivery_number}
                     disabled
@@ -315,9 +378,11 @@ export default function EditDeliveryPage() {
 
                 {/* Supplier - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">ספק</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    ספק
+                  </Label>
                   <Input
-                    value={delivery.supplier || ''}
+                    value={delivery.supplier || ""}
                     disabled
                     className="mt-1 bg-slate-50"
                   />
@@ -325,9 +390,19 @@ export default function EditDeliveryPage() {
 
                 {/* Delivery Date - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">תאריך קבלה</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    תאריך קבלה
+                  </Label>
                   <Input
-                    value={delivery.delivery_date ? format(parseISO(delivery.delivery_date), 'dd/MM/yyyy', { locale: he }) : ''}
+                    value={
+                      delivery.delivery_date
+                        ? format(
+                            parseISO(delivery.delivery_date),
+                            "dd/MM/yyyy",
+                            { locale: he },
+                          )
+                        : ""
+                    }
                     disabled
                     className="mt-1 bg-slate-50"
                   />
@@ -335,9 +410,15 @@ export default function EditDeliveryPage() {
 
                 {/* Delivery Type - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">סוג משלוח</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    סוג משלוח
+                  </Label>
                   <Input
-                    value={deliveryTypeLabels[delivery.delivery_type] || delivery.delivery_type || ''}
+                    value={
+                      deliveryTypeLabels[delivery.delivery_type] ||
+                      delivery.delivery_type ||
+                      ""
+                    }
                     disabled
                     className="mt-1 bg-slate-50"
                   />
@@ -345,24 +426,32 @@ export default function EditDeliveryPage() {
 
                 {/* Status - Editable with Warning */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">סטטוס</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    סטטוס
+                  </Label>
                   {!isEditMode ? (
                     <div className="mt-1">
-                      <Badge className={`${statusColors[delivery.status]} px-3 py-1 text-sm`}>
+                      <Badge
+                        className={`${statusColors[delivery.status]} px-3 py-1 text-sm`}
+                      >
                         {statusLabels[delivery.status]}
                       </Badge>
                     </div>
                   ) : (
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, status: value }))
+                      }
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(statusLabels).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -377,9 +466,15 @@ export default function EditDeliveryPage() {
 
                 {/* ✅ תוספת: Completion Type - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">סוג השלמה</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    סוג השלמה
+                  </Label>
                   <Input
-                    value={completionTypeLabels[delivery.completion_type] || delivery.completion_type || 'לא צוין'}
+                    value={
+                      completionTypeLabels[delivery.completion_type] ||
+                      delivery.completion_type ||
+                      "לא צוין"
+                    }
                     disabled
                     className="mt-1 bg-slate-50"
                   />
@@ -387,7 +482,9 @@ export default function EditDeliveryPage() {
 
                 {/* Total Items Received - Read Only */}
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">סה"כ פריטים שהתקבלו</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    סה"כ פריטים שהתקבלו
+                  </Label>
                   <Input
                     value={delivery.total_items_received || 0}
                     disabled
@@ -397,17 +494,24 @@ export default function EditDeliveryPage() {
               </div>
 
               {/* Delivery Reason Text - Editable */}
-              {delivery.delivery_type !== 'with_order' && (
+              {delivery.delivery_type !== "with_order" && (
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">סיבת המשלוח</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    סיבת המשלוח
+                  </Label>
                   {!isEditMode ? (
                     <p className="mt-1 p-3 bg-slate-50 rounded-md text-sm text-slate-700">
-                      {delivery.delivery_reason_text || 'לא צוין'}
+                      {delivery.delivery_reason_text || "לא צוין"}
                     </p>
                   ) : (
                     <Textarea
                       value={formData.delivery_reason_text}
-                      onChange={(e) => setFormData(prev => ({ ...prev, delivery_reason_text: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          delivery_reason_text: e.target.value,
+                        }))
+                      }
                       className="mt-1"
                       rows={2}
                       placeholder="הזן סיבת משלוח..."
@@ -418,15 +522,22 @@ export default function EditDeliveryPage() {
 
               {/* Notes - Editable */}
               <div>
-                <Label className="text-sm font-medium text-slate-700">הערות</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  הערות
+                </Label>
                 {!isEditMode ? (
                   <p className="mt-1 p-3 bg-slate-50 rounded-md text-sm text-slate-700">
-                    {delivery.notes || 'אין הערות'}
+                    {delivery.notes || "אין הערות"}
                   </p>
                 ) : (
                   <Textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
                     className="mt-1"
                     rows={3}
                     placeholder="הזן הערות..."
@@ -436,15 +547,22 @@ export default function EditDeliveryPage() {
 
               {/* Completion Notes - Editable */}
               <div>
-                <Label className="text-sm font-medium text-slate-700">הערות השלמה</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  הערות השלמה
+                </Label>
                 {!isEditMode ? (
                   <p className="mt-1 p-3 bg-slate-50 rounded-md text-sm text-slate-700">
-                    {delivery.completion_notes || 'אין הערות השלמה'}
+                    {delivery.completion_notes || "אין הערות השלמה"}
                   </p>
                 ) : (
                   <Textarea
                     value={formData.completion_notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, completion_notes: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        completion_notes: e.target.value,
+                      }))
+                    }
                     className="mt-1"
                     rows={2}
                     placeholder="הזן הערות השלמה..."
@@ -472,28 +590,60 @@ export default function EditDeliveryPage() {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">שם ריאגנט</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">מק"ט</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">מספר אצווה</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">תאריך תפוגה</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">כמות שהתקבלה</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">סטטוס</th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          שם ריאגנט
+                        </th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          מק"ט
+                        </th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          מספר אצווה
+                        </th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          תאריך תפוגה
+                        </th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          כמות שהתקבלה
+                        </th>
+                        <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">
+                          סטטוס
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {deliveryItems.map((item, index) => (
-                        <tr key={item.id || index} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="px-4 py-3 text-sm text-slate-700">{item.reagent_current_name || item.reagent_name_snapshot}</td>
-                          <td className="px-4 py-3 text-sm text-slate-600">{item.reagent_catalog_number || '-'}</td>
-                          <td className="px-4 py-3 text-sm text-slate-600">{item.batch_number}</td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            {item.expiry_date ? format(parseISO(item.expiry_date), 'dd/MM/yyyy', { locale: he }) : '-'}
+                        <tr
+                          key={item.id || index}
+                          className="border-b border-slate-100 hover:bg-slate-50"
+                        >
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            {item.reagent_current_name ||
+                              item.reagent_name_snapshot}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-700">{item.quantity_received}</td>
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {item.reagent_catalog_number || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {item.batch_number}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {item.expiry_date
+                              ? format(
+                                  parseISO(item.expiry_date),
+                                  "dd/MM/yyyy",
+                                  { locale: he },
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                            {item.quantity_received}
+                          </td>
                           <td className="px-4 py-3 text-xs">
                             {/* ✅ תוספת: הצגת is_replacement */}
                             {item.is_replacement && (
-                              <Badge className="bg-purple-100 text-purple-800 text-xs">החלפה</Badge>
+                              <Badge className="bg-purple-100 text-purple-800 text-xs">
+                                החלפה
+                              </Badge>
                             )}
                           </td>
                         </tr>
@@ -508,7 +658,6 @@ export default function EditDeliveryPage() {
 
         {/* Left Column - Related Information (1/3 width on large screens) */}
         <div className="space-y-6">
-          
           {/* Linked Order Card */}
           {linkedOrder && (
             <Card className="shadow-sm border-amber-200 bg-gradient-to-br from-white to-amber-50">
@@ -520,7 +669,9 @@ export default function EditDeliveryPage() {
               </CardHeader>
               <CardContent className="pt-4 space-y-2">
                 <div>
-                  <Label className="text-xs font-medium text-amber-700">מספר הזמנה זמני</Label>
+                  <Label className="text-xs font-medium text-amber-700">
+                    מספר הזמנה זמני
+                  </Label>
                   <Link
                     to={createPageUrl(`EditOrder?id=${linkedOrder.id}`)}
                     className="text-sm font-semibold text-amber-700 hover:text-amber-900 hover:underline flex items-center gap-1 mt-1"
@@ -532,25 +683,41 @@ export default function EditDeliveryPage() {
                 {/* ✅ תוספת: מספר הזמנה קבוע */}
                 {linkedOrder.order_number_permanent && (
                   <div>
-                    <Label className="text-xs font-medium text-amber-700">מספר הזמנה קבוע</Label>
-                    <p className="text-sm text-amber-900 mt-1">{linkedOrder.order_number_permanent}</p>
+                    <Label className="text-xs font-medium text-amber-700">
+                      מספר הזמנה קבוע
+                    </Label>
+                    <p className="text-sm text-amber-900 mt-1">
+                      {linkedOrder.order_number_permanent}
+                    </p>
                   </div>
                 )}
                 {/* ✅ תוספת: מספר דרישת רכש SAP */}
                 {linkedOrder.purchase_order_number_sap && (
                   <div>
-                    <Label className="text-xs font-medium text-amber-700">מס' דרישת רכש SAP</Label>
-                    <p className="text-sm text-amber-900 mt-1">{linkedOrder.purchase_order_number_sap}</p>
+                    <Label className="text-xs font-medium text-amber-700">
+                      מס' דרישת רכש SAP
+                    </Label>
+                    <p className="text-sm text-amber-900 mt-1">
+                      {linkedOrder.purchase_order_number_sap}
+                    </p>
                   </div>
                 )}
                 <div>
-                  <Label className="text-xs font-medium text-amber-700">תאריך הזמנה</Label>
+                  <Label className="text-xs font-medium text-amber-700">
+                    תאריך הזמנה
+                  </Label>
                   <p className="text-sm text-amber-900 mt-1">
-                    {linkedOrder.order_date ? format(parseISO(linkedOrder.order_date), 'dd/MM/yyyy', { locale: he }) : '-'}
+                    {linkedOrder.order_date
+                      ? format(parseISO(linkedOrder.order_date), "dd/MM/yyyy", {
+                          locale: he,
+                        })
+                      : "-"}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-amber-700">סטטוס</Label>
+                  <Label className="text-xs font-medium text-amber-700">
+                    סטטוס
+                  </Label>
                   <Badge className="mt-1 text-xs bg-amber-100 text-amber-800 border-amber-300">
                     {linkedOrder.status}
                   </Badge>
@@ -571,16 +738,28 @@ export default function EditDeliveryPage() {
               </CardHeader>
               <CardContent className="pt-4 space-y-3">
                 {linkedWithdrawals.map((withdrawal) => (
-                  <div key={withdrawal.id} className="p-3 bg-white rounded-lg border border-purple-200">
+                  <div
+                    key={withdrawal.id}
+                    className="p-3 bg-white rounded-lg border border-purple-200"
+                  >
                     <Link
-                      to={createPageUrl(`EditWithdrawalRequest?id=${withdrawal.id}`)}
+                      to={createPageUrl(
+                        `EditWithdrawalRequest?id=${withdrawal.id}`,
+                      )}
                       className="text-sm font-semibold text-purple-700 hover:text-purple-900 hover:underline flex items-center gap-1"
                     >
                       {withdrawal.withdrawal_number}
                       <ExternalLink className="h-3 w-3" />
                     </Link>
                     <p className="text-xs text-purple-600 mt-1">
-                      תאריך: {withdrawal.request_date ? format(parseISO(withdrawal.request_date), 'dd/MM/yyyy', { locale: he }) : '-'}
+                      תאריך:{" "}
+                      {withdrawal.request_date
+                        ? format(
+                            parseISO(withdrawal.request_date),
+                            "dd/MM/yyyy",
+                            { locale: he },
+                          )
+                        : "-"}
                     </p>
                     <Badge className="mt-1 text-xs bg-purple-100 text-purple-800 border-purple-300">
                       {withdrawal.status}
@@ -594,24 +773,44 @@ export default function EditDeliveryPage() {
           {/* Metadata Card */}
           <Card className="shadow-sm border-slate-200">
             <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-slate-200 pb-3">
-              <CardTitle className="text-base font-semibold text-slate-800">מטא נתונים</CardTitle>
+              <CardTitle className="text-base font-semibold text-slate-800">
+                מטא נתונים
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-2 text-sm">
               <div>
-                <Label className="text-xs font-medium text-slate-600">נוצר בתאריך</Label>
+                <Label className="text-xs font-medium text-slate-600">
+                  נוצר בתאריך
+                </Label>
                 <p className="text-slate-700 mt-1">
-                  {delivery.created_date ? format(parseISO(delivery.created_date), 'dd/MM/yyyy HH:mm', { locale: he }) : '-'}
+                  {delivery.created_date
+                    ? format(
+                        parseISO(delivery.created_date),
+                        "dd/MM/yyyy HH:mm",
+                        { locale: he },
+                      )
+                    : "-"}
                 </p>
               </div>
               <div>
-                <Label className="text-xs font-medium text-slate-600">נוצר על ידי</Label>
-                <p className="text-slate-700 mt-1">{delivery.created_by || '-'}</p>
+                <Label className="text-xs font-medium text-slate-600">
+                  נוצר על ידי
+                </Label>
+                <p className="text-slate-700 mt-1">
+                  {delivery.created_by || "-"}
+                </p>
               </div>
               {delivery.updated_date && (
                 <div>
-                  <Label className="text-xs font-medium text-slate-600">עודכן לאחרונה</Label>
+                  <Label className="text-xs font-medium text-slate-600">
+                    עודכן לאחרונה
+                  </Label>
                   <p className="text-slate-700 mt-1">
-                    {format(parseISO(delivery.updated_date), 'dd/MM/yyyy HH:mm', { locale: he })}
+                    {format(
+                      parseISO(delivery.updated_date),
+                      "dd/MM/yyyy HH:mm",
+                      { locale: he },
+                    )}
                   </p>
                 </div>
               )}
@@ -635,7 +834,10 @@ export default function EditDeliveryPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               ביטול
             </Button>
             <Button
@@ -650,7 +852,10 @@ export default function EditDeliveryPage() {
       </Dialog>
 
       {/* Status Change Warning Dialog */}
-      <Dialog open={showStatusChangeDialog} onOpenChange={setShowStatusChangeDialog}>
+      <Dialog
+        open={showStatusChangeDialog}
+        onOpenChange={setShowStatusChangeDialog}
+      >
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600">
@@ -660,14 +865,18 @@ export default function EditDeliveryPage() {
             <DialogDescription className="text-right space-y-2">
               <p>
                 אתה עומד לשנות את סטטוס המשלוח ל-
-                <span className="font-semibold"> {statusLabels[pendingStatusChange]}</span>.
+                <span className="font-semibold">
+                  {" "}
+                  {statusLabels[pendingStatusChange]}
+                </span>
+                .
               </p>
-              {pendingStatusChange === 'processed' && (
+              {pendingStatusChange === "processed" && (
                 <p className="text-amber-700 font-medium">
                   שינוי זה ישפיע על זמינות המשלוח ויסמן אותו כמעובד.
                 </p>
               )}
-              {pendingStatusChange === 'closed' && (
+              {pendingStatusChange === "closed" && (
                 <p className="text-amber-700 font-medium">
                   שינוי זה יסגור את המשלוח ולא ניתן יהיה לבצע בו שינויים נוספים.
                 </p>
@@ -676,10 +885,13 @@ export default function EditDeliveryPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => {
-              setShowStatusChangeDialog(false);
-              setPendingStatusChange(null);
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowStatusChangeDialog(false);
+                setPendingStatusChange(null);
+              }}
+            >
               ביטול
             </Button>
             <Button
@@ -687,8 +899,51 @@ export default function EditDeliveryPage() {
               disabled={saving}
               className="bg-amber-500 hover:bg-amber-600 text-white"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin ms-2" /> : null}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin ms-2" />
+              ) : null}
               אישור שינוי
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receive Delivery Confirmation Dialog */}
+      <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <ArrowDownToLine className="h-5 w-5" />
+              עיבוד וקליטת משלוח
+            </DialogTitle>
+            <DialogDescription className="text-right space-y-2">
+              <p>פעולה זו תעבד את המשלוח ותקלוט את כל הפריטים למלאי.</p>
+              <p className="text-green-700 font-medium">
+                ייווצרו אצוות חדשות עבור {deliveryItems.length} פריטים וכמויות
+                המלאי יעודכנו בהתאם.
+              </p>
+              <p className="font-semibold">האם להמשיך?</p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowReceiveDialog(false)}
+              disabled={receiving}
+            >
+              ביטול
+            </Button>
+            <Button
+              onClick={handleReceive}
+              disabled={receiving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {receiving ? (
+                <Loader2 className="h-4 w-4 animate-spin ms-2" />
+              ) : (
+                <ArrowDownToLine className="h-4 w-4 ms-2" />
+              )}
+              עבד וקלוט
             </Button>
           </DialogFooter>
         </DialogContent>

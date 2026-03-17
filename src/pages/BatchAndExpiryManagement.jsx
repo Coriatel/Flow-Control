@@ -1,18 +1,34 @@
-
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl } from "@/utils";
-import BackButton from '@/components/ui/BackButton';
+import BackButton from "@/components/ui/BackButton";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   Loader2,
@@ -38,12 +54,31 @@ import {
   FlaskConical,
   Printer,
   Calendar as CalendarIcon,
-  Columns
+  Columns,
 } from "lucide-react";
-import { format, parseISO, isValid, addDays, isAfter, isBefore, startOfToday, differenceInDays } from "date-fns";
-import { he } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  format,
+  parseISO,
+  isValid,
+  addDays,
+  isAfter,
+  isBefore,
+  startOfToday,
+  differenceInDays,
+} from "date-fns";
+import { he } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -55,117 +90,130 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { formatQuantity } from '../components/utils/formatters';
-import { AnimatePresence, motion } from 'framer-motion';
+import { formatQuantity } from "../components/utils/formatters";
+import { AnimatePresence, motion } from "framer-motion";
 
-import { Reagent } from '@/api/entities';
-import { ReagentBatch } from '@/api/entities';
-import { InventoryTransaction } from '@/api/entities';
-import { ExpiredProductLog } from '@/api/entities';
-import { User } from '@/api/entities';
-import { Supplier } from '@/api/entities';
+import { Reagent } from "@/api/entities";
+import { ReagentBatch } from "@/api/entities";
+import { InventoryTransaction } from "@/api/entities";
+import { ExpiredProductLog } from "@/api/entities";
+import { User } from "@/api/entities";
+import { Supplier } from "@/api/entities";
 import { UploadFile } from "@/api/integrations";
-import { getBatchAndExpiryData } from '@/api/functions';
+import { getBatchAndExpiryData } from "@/api/functions";
 
 // Helper functions
 const getActionTakenLabel = (action) => {
   const labels = {
-    'disposed': 'כמות הושמדה',
-    'other_use': 'שימוש אחר',
-    'consumed_by_expiry': 'כמות שנצרכה לפני זמן התפוגה'
+    disposed: "כמות הושמדה",
+    other_use: "שימוש אחר",
+    consumed_by_expiry: "כמות שנצרכה לפני זמן התפוגה",
   };
   return labels[action] || action;
 };
 
 const getStatusDisplay = (status) => {
   switch (status) {
-    case 'active': return 'פעיל';
-    case 'IN_USE':
-    case 'in_use': return 'בשימוש';
-    case 'expired': return 'פג תוקף';
-    case 'disposed': return 'הושמד';
-    case 'consumed': return 'נצרך';
-    case 'quarantine': return 'בהסגר';
-    case 'consumed_by_expiry': return 'נצרך (עקב תפוגה)';
-    case 'other_use': return 'שימוש אחר';
-    default: return status;
+    case "active":
+      return "פעיל";
+    case "IN_USE":
+    case "in_use":
+      return "בשימוש";
+    case "expired":
+      return "פג תוקף";
+    case "disposed":
+      return "הושמד";
+    case "consumed":
+      return "נצרך";
+    case "quarantine":
+      return "בהסגר";
+    case "consumed_by_expiry":
+      return "נצרך (עקב תפוגה)";
+    case "other_use":
+      return "שימוש אחר";
+    default:
+      return status;
   }
 };
 
 // Refined color styling
 const getExpiryColorClasses = (daysToExpiry) => {
   if (daysToExpiry === null || daysToExpiry === undefined) {
-    return { bgColor: 'bg-slate-50 border-slate-200', textColor: 'text-slate-600', border: 'border-slate-300' };
+    return {
+      bgColor: "bg-slate-50 border-slate-200",
+      textColor: "text-slate-600",
+      border: "border-slate-300",
+    };
   }
 
   if (daysToExpiry < 0) {
     return {
-      bgColor: 'bg-red-100 border-red-300 shadow-sm',
-      textColor: 'text-red-800 font-semibold',
-      border: 'border-red-500'
+      bgColor: "bg-red-100 border-red-300 shadow-sm",
+      textColor: "text-red-800 font-semibold",
+      border: "border-red-500",
     };
   } else if (daysToExpiry <= 3) {
     return {
-      bgColor: 'bg-red-50 border-red-200 shadow-sm',
-      textColor: 'text-red-700 font-medium',
-      border: 'border-red-400'
+      bgColor: "bg-red-50 border-red-200 shadow-sm",
+      textColor: "text-red-700 font-medium",
+      border: "border-red-400",
     };
   } else if (daysToExpiry <= 7) {
     return {
-      bgColor: 'bg-orange-50 border-orange-200 shadow-sm',
-      textColor: 'text-orange-700 font-medium',
-      border: 'border-orange-300'
+      bgColor: "bg-orange-50 border-orange-200 shadow-sm",
+      textColor: "text-orange-700 font-medium",
+      border: "border-orange-300",
     };
   } else if (daysToExpiry <= 14) {
     return {
-      bgColor: 'bg-amber-50 border-amber-200 shadow-sm',
-      textColor: 'text-amber-700',
-      border: 'border-amber-300'
+      bgColor: "bg-amber-50 border-amber-200 shadow-sm",
+      textColor: "text-amber-700",
+      border: "border-amber-300",
     };
   } else if (daysToExpiry <= 30) {
     return {
-      bgColor: 'bg-blue-50 border-blue-200 shadow-sm',
-      textColor: 'text-blue-700',
-      border: 'border-blue-300'
+      bgColor: "bg-blue-50 border-blue-200 shadow-sm",
+      textColor: "text-blue-700",
+      border: "border-blue-300",
     };
   } else {
     return {
-      bgColor: 'bg-slate-50 border-slate-200',
-      textColor: 'text-slate-600',
-      border: 'border-slate-300'
+      bgColor: "bg-slate-50 border-slate-200",
+      textColor: "text-slate-600",
+      border: "border-slate-300",
     };
   }
 };
 
 const getStatusBadgeVariant = (status) => {
   switch (status) {
-    case 'active':
-      return 'success';
-    case 'IN_USE':
-    case 'in_use':
-      return 'warning';
-    case 'expired':
-      return 'danger';
-    case 'disposed':
-      return 'secondary';
-    case 'consumed':
-      return 'info';
-    case 'quarantine':
-      return 'warning';
-    case 'consumed_by_expiry':
-    case 'other_use':
-      return 'secondary';
+    case "active":
+      return "success";
+    case "IN_USE":
+    case "in_use":
+      return "warning";
+    case "expired":
+      return "danger";
+    case "disposed":
+      return "secondary";
+    case "consumed":
+      return "info";
+    case "quarantine":
+      return "warning";
+    case "consumed_by_expiry":
+    case "other_use":
+      return "secondary";
     default:
-      return 'secondary';
+      return "secondary";
   }
 };
 
 const categories = {
-  "reagents": "ריאגנטים",
-  "cells": "כדוריות",
-  "controls": "בקרות",
-  "solutions": "תמיסות",
-  "consumables": "מתכלים"
+  reagents: "ריאגנטים",
+  cells: "כדוריות",
+  controls: "בקרות",
+  solutions: "תמיסות",
+  consumables: "מתכלים",
 };
 
 // DatePicker component for filter controls
@@ -177,10 +225,14 @@ const DatePicker = ({ selected, onChange, placeholderText }) => {
           variant={"outline"}
           className={cn(
             "w-full justify-start text-right font-normal bg-white/50 backdrop-blur-sm border-slate-300 text-slate-800 hover:bg-white/70",
-            !selected && "text-muted-foreground"
+            !selected && "text-muted-foreground",
           )}
         >
-          {selected ? format(selected, "PPP", { locale: he }) : <span>{placeholderText}</span>}
+          {selected ? (
+            format(selected, "PPP", { locale: he })
+          ) : (
+            <span>{placeholderText}</span>
+          )}
           <CalendarIcon className="me-auto ms-2 h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -197,19 +249,18 @@ const DatePicker = ({ selected, onChange, placeholderText }) => {
   );
 };
 
-
 // הגדרת שמות העמודות
 const columns = {
-  select: 'בחירה',
-  reagent_name: 'שם ריאגנט',
-  supplier: 'ספק',
-  batch_number: 'מספר אצווה',
-  expiry_date: 'תאריך תפוגה',
-  days_to_expiry: 'ימים לתפוגה',
-  current_quantity: 'כמות נוכחית',
-  status: 'סטטוס',
-  coa_status: 'ת. אנליזה',
-  actions: 'פעולות',
+  select: "בחירה",
+  reagent_name: "שם ריאגנט",
+  supplier: "ספק",
+  batch_number: "מספר אצווה",
+  expiry_date: "תאריך תפוגה",
+  days_to_expiry: "ימים לתפוגה",
+  current_quantity: "כמות נוכחית",
+  status: "סטטוס",
+  coa_status: "ת. אנליזה",
+  actions: "פעולות",
 };
 
 // Default column widths for initial state and merging with loaded state
@@ -224,7 +275,7 @@ const initialDefaultColumnWidths = {
   current_quantity: 100,
   status: 120,
   coa_status: 80,
-  actions: 100
+  actions: 100,
 };
 
 // Main Component
@@ -238,14 +289,19 @@ export default function BatchAndExpiryManagement() {
   const [error, setError] = useState(null);
 
   // Unified data structure
-  const [allData, setAllData] = useState({ allBatches: [], handledBatches: [], allSuppliers: [], reagentInfoCache: {} });
+  const [allData, setAllData] = useState({
+    allBatches: [],
+    handledBatches: [],
+    allSuppliers: [],
+    reagentInfoCache: {},
+  });
 
   // Load saved state from localStorage with safe fallbacks
   const loadSavedState = useCallback(() => {
     try {
-      const savedFilters = localStorage.getItem('batchFilters');
-      const savedColumns = localStorage.getItem('batchVisibleColumns');
-      const savedColumnWidths = localStorage.getItem('batchColumnWidths');
+      const savedFilters = localStorage.getItem("batchFilters");
+      const savedColumns = localStorage.getItem("batchVisibleColumns");
+      const savedColumnWidths = localStorage.getItem("batchColumnWidths");
 
       let parsedFilters = null;
       if (savedFilters) {
@@ -275,21 +331,33 @@ export default function BatchAndExpiryManagement() {
       }
 
       return {
-        filters: parsedFilters ? {
-          searchTerm: parsedFilters.searchTerm || '',
-          selectedStatuses: Array.isArray(parsedFilters.selectedStatuses) ? parsedFilters.selectedStatuses : [],
-          startDate: parsedFilters.startDate ? new Date(parsedFilters.startDate) : null,
-          endDate: parsedFilters.endDate ? new Date(parsedFilters.endDate) : null,
-          showHandled: parsedFilters.showHandled || false,
-          showExpiredOnly: parsedFilters.showExpiredOnly || false,
-          showInStockOnly: parsedFilters.showInStockOnly || false,
-          showActiveOnly: parsedFilters.showActiveOnly !== undefined ? parsedFilters.showActiveOnly : true
-        } : null,
+        filters: parsedFilters
+          ? {
+              searchTerm: parsedFilters.searchTerm || "",
+              selectedStatuses: Array.isArray(parsedFilters.selectedStatuses)
+                ? parsedFilters.selectedStatuses
+                : [],
+              startDate: parsedFilters.startDate
+                ? new Date(parsedFilters.startDate)
+                : null,
+              endDate: parsedFilters.endDate
+                ? new Date(parsedFilters.endDate)
+                : null,
+              showHandled: parsedFilters.showHandled || false,
+              showExpiredOnly: parsedFilters.showExpiredOnly || false,
+              showInStockOnly: parsedFilters.showInStockOnly || false,
+              showActiveOnly:
+                parsedFilters.showActiveOnly !== undefined
+                  ? parsedFilters.showActiveOnly
+                  : true,
+            }
+          : null,
         columns: parsedColumns || null,
-        columnWidths: parsedColumnWidths ? { ...initialDefaultColumnWidths, ...parsedColumnWidths } : null // Merge with defaults
+        columnWidths: parsedColumnWidths
+          ? { ...initialDefaultColumnWidths, ...parsedColumnWidths }
+          : null, // Merge with defaults
       };
-    } catch (error) {
-    }
+    } catch (error) {}
     return { filters: null, columns: null, columnWidths: null };
   }, []); // initialDefaultColumnWidths removed from dependency array as it's a constant.
 
@@ -310,21 +378,38 @@ export default function BatchAndExpiryManagement() {
   };
 
   // NEW: Individual filter states replacing the `filters` object, initialized from savedState
-  const [searchTerm, setSearchTerm] = useState(savedState.filters?.searchTerm ?? '');
-  const [selectedStatuses, setSelectedStatuses] = useState(savedState.filters?.selectedStatuses ?? []);
-  const [startDate, setStartDate] = useState(savedState.filters?.startDate ?? null);
+  const [searchTerm, setSearchTerm] = useState(
+    savedState.filters?.searchTerm ?? "",
+  );
+  const [selectedStatuses, setSelectedStatuses] = useState(
+    savedState.filters?.selectedStatuses ?? [],
+  );
+  const [startDate, setStartDate] = useState(
+    savedState.filters?.startDate ?? null,
+  );
   const [endDate, setEndDate] = useState(savedState.filters?.endDate ?? null);
-  const [showHandled, setShowHandled] = useState(savedState.filters?.showHandled ?? false);
-  const [showExpiredOnly, setShowExpiredOnly] = useState(savedState.filters?.showExpiredOnly ?? false);
-  const [showInStockOnly, setShowInStockOnly] = useState(savedState.filters?.showInStockOnly ?? false);
-  const [showActiveOnly, setShowActiveOnly] = useState(savedState.filters?.showActiveOnly ?? true); // Default to true if not specified
+  const [showHandled, setShowHandled] = useState(
+    savedState.filters?.showHandled ?? false,
+  );
+  const [showExpiredOnly, setShowExpiredOnly] = useState(
+    savedState.filters?.showExpiredOnly ?? false,
+  );
+  const [showInStockOnly, setShowInStockOnly] = useState(
+    savedState.filters?.showInStockOnly ?? false,
+  );
+  const [showActiveOnly, setShowActiveOnly] = useState(
+    savedState.filters?.showActiveOnly ?? true,
+  ); // Default to true if not specified
 
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState(savedState.columns ?? initialVisibleColumns);
+  const [visibleColumns, setVisibleColumns] = useState(
+    savedState.columns ?? initialVisibleColumns,
+  );
 
   // Column width states
-  const defaultColumnWidths = { // This is now inside the component as per the outline
+  const defaultColumnWidths = {
+    // This is now inside the component as per the outline
     select: 60,
     reagent_name: 200,
     supplier: 140,
@@ -334,10 +419,12 @@ export default function BatchAndExpiryManagement() {
     current_quantity: 120,
     status: 120,
     coa_status: 100,
-    actions: 140
+    actions: 140,
   };
   // NEW: Column widths state, initialized from savedState or defaults
-  const [columnWidths, setColumnWidths] = useState(savedState.columnWidths ?? defaultColumnWidths); // Used savedState.columnWidths for consistency
+  const [columnWidths, setColumnWidths] = useState(
+    savedState.columnWidths ?? defaultColumnWidths,
+  ); // Used savedState.columnWidths for consistency
 
   // NEW: State for column resizing, moved from UnifiedBatchTable
   const [isResizing, setIsResizing] = useState(false);
@@ -347,19 +434,29 @@ export default function BatchAndExpiryManagement() {
   const resizeDataRef = useRef({
     startX: 0,
     startWidth: 0,
-    currentColumn: null
+    currentColumn: null,
   });
 
   // Filter panel state
   const [isMobileFilterMenuOpen, setIsMobileFilterMenuOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Set()); // ✅ Fix applied here
-  const [sortConfig, setSortConfig] = useState({ key: 'expiry_date', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState(() => {
+    try {
+      const s = localStorage.getItem("batchExpiry_sortConfig");
+      return s ? JSON.parse(s) : { key: "expiry_date", direction: "asc" };
+    } catch {
+      return { key: "expiry_date", direction: "asc" };
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem("batchExpiry_sortConfig", JSON.stringify(sortConfig));
+  }, [sortConfig]);
 
   // NEW: Enhanced dialog states for the new handling system
   const [handlingItemDialog, setHandlingItemDialog] = useState(null);
-  const [actionType, setActionType] = useState('disposed');
-  const [handlingQuantity, setHandlingQuantity] = useState('');
-  const [actionNotes, setActionNotes] = useState('');
+  const [actionType, setActionType] = useState("disposed");
+  const [handlingQuantity, setHandlingQuantity] = useState("");
+  const [actionNotes, setActionNotes] = useState("");
   const [isHandlingAction, setIsHandlingAction] = useState(false);
   const [remainingQuantity, setRemainingQuantity] = useState(0);
 
@@ -367,19 +464,19 @@ export default function BatchAndExpiryManagement() {
   const [showCOADialog, setShowCOADialog] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [coaFile, setCoaFile] = useState(null);
-  const [coaFileName, setCoaFileName] = useState('');
+  const [coaFileName, setCoaFileName] = useState("");
   const [uploadingCOA, setUploadingCOA] = useState(false);
 
   // Constants for filter labels
   const statusLabels = {
-    'active': 'פעיל',
-    'IN_USE': 'בשימוש',
-    'expired': 'פג תוקף',
-    'disposed': 'הושמד',
-    'consumed': 'נצרך',
-    'quarantine': 'בהסגר',
-    'consumed_by_expiry': 'נצרך (תפוגה)',
-    'other_use': 'שימוש אחר'
+    active: "פעיל",
+    IN_USE: "בשימוש",
+    expired: "פג תוקף",
+    disposed: "הושמד",
+    consumed: "נצרך",
+    quarantine: "בהסגר",
+    consumed_by_expiry: "נצרך (תפוגה)",
+    other_use: "שימוש אחר",
   };
 
   // Save filters to localStorage whenever they change
@@ -393,45 +490,53 @@ export default function BatchAndExpiryManagement() {
         showHandled,
         showExpiredOnly,
         showInStockOnly,
-        showActiveOnly
+        showActiveOnly,
       };
-      localStorage.setItem('batchFilters', JSON.stringify(filtersToSave));
-    } catch (error) {
-    }
-  }, [searchTerm, selectedStatuses, startDate, endDate, showHandled, showExpiredOnly, showInStockOnly, showActiveOnly]);
+      localStorage.setItem("batchFilters", JSON.stringify(filtersToSave));
+    } catch (error) {}
+  }, [
+    searchTerm,
+    selectedStatuses,
+    startDate,
+    endDate,
+    showHandled,
+    showExpiredOnly,
+    showInStockOnly,
+    showActiveOnly,
+  ]);
 
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem('batchVisibleColumns', JSON.stringify(visibleColumns));
-    } catch (error) {
-    }
+      localStorage.setItem(
+        "batchVisibleColumns",
+        JSON.stringify(visibleColumns),
+      );
+    } catch (error) {}
   }, [visibleColumns]);
 
   // NEW: Save column widths to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem('batchColumnWidths', JSON.stringify(columnWidths));
-    } catch (error) {
-    }
+      localStorage.setItem("batchColumnWidths", JSON.stringify(columnWidths));
+    } catch (error) {}
   }, [columnWidths]);
-
 
   // Callbacks for filter changes
   const toggleStatus = useCallback((status) => {
-    setSelectedStatuses(prev =>
+    setSelectedStatuses((prev) =>
       prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
+        ? prev.filter((s) => s !== status)
+        : [...prev, status],
     );
   }, []);
 
   const toggleColumn = useCallback((key) => {
-    setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
+    setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedStatuses([]);
     setStartDate(null);
     setEndDate(null);
@@ -442,48 +547,54 @@ export default function BatchAndExpiryManagement() {
 
     // Also clear from localStorage
     try {
-      localStorage.removeItem('batchFilters');
-    } catch (error) {
-    }
+      localStorage.removeItem("batchFilters");
+    } catch (error) {}
   }, []);
 
   // ✅ Column Resizing Handlers - מהירות משופרת פי 2
-  const handleMouseDown = useCallback((e, columnKey) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMouseDown = useCallback(
+    (e, columnKey) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const currentWidth = columnWidths[columnKey] || defaultColumnWidths[columnKey] || 100;
+      const currentWidth =
+        columnWidths[columnKey] || defaultColumnWidths[columnKey] || 100;
 
-    // שמירת נתונים ב-ref במקום state (מהיר יותר)
-    resizeDataRef.current = {
-      startX: e.clientX,
-      startWidth: currentWidth,
-      currentColumn: columnKey
-    };
+      // שמירת נתונים ב-ref במקום state (מהיר יותר)
+      resizeDataRef.current = {
+        startX: e.clientX,
+        startWidth: currentWidth,
+        currentColumn: columnKey,
+      };
 
-    setIsResizing(true);
-    setResizingColumn(columnKey); // Keep this to trigger useEffect for event listeners
+      setIsResizing(true);
+      setResizingColumn(columnKey); // Keep this to trigger useEffect for event listeners
 
-    // Cursor וסגנון מיידי
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [columnWidths, defaultColumnWidths]);
+      // Cursor וסגנון מיידי
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [columnWidths, defaultColumnWidths],
+  );
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isResizing || !resizeDataRef.current.currentColumn) {
-      return;
-    }
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isResizing || !resizeDataRef.current.currentColumn) {
+        return;
+      }
 
-    // ✅ הכפלת מהירות התזוזה (x2)
-    const diff = (resizeDataRef.current.startX - e.clientX) * 2; // הכפלה פה!
-    const newWidth = Math.max(60, resizeDataRef.current.startWidth + diff);
+      // ✅ הכפלת מהירות התזוזה (x2)
+      const diff = (resizeDataRef.current.startX - e.clientX) * 2; // הכפלה פה!
+      const newWidth = Math.max(60, resizeDataRef.current.startWidth + diff);
 
-    // עדכון מיידי של state
-    setColumnWidths(prev => ({
-      ...prev,
-      [resizeDataRef.current.currentColumn]: newWidth
-    }));
-  }, [isResizing]); // Removed startX, startWidth, resizingColumn from dependencies as they are now in ref
+      // עדכון מיידי של state
+      setColumnWidths((prev) => ({
+        ...prev,
+        [resizeDataRef.current.currentColumn]: newWidth,
+      }));
+    },
+    [isResizing],
+  ); // Removed startX, startWidth, resizingColumn from dependencies as they are now in ref
 
   const handleMouseUp = useCallback(() => {
     if (isResizing) {
@@ -491,14 +602,14 @@ export default function BatchAndExpiryManagement() {
       setResizingColumn(null); // Reset state
 
       // איפוס cursor וסגנון
-      document.body.style.cursor = 'default';
-      document.body.style.userSelect = 'auto';
+      document.body.style.cursor = "default";
+      document.body.style.userSelect = "auto";
 
       // ניקוי ref
       resizeDataRef.current = {
         startX: 0,
         startWidth: 0,
-        currentColumn: null
+        currentColumn: null,
       };
     }
   }, [isResizing]);
@@ -507,25 +618,24 @@ export default function BatchAndExpiryManagement() {
   useEffect(() => {
     if (isResizing) {
       // הוספת event listeners כשמתחילים לגרור
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     } else {
       // הסרת event listeners כשמסיימים לגרור
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'default';
-      document.body.style.userSelect = 'auto'; // Restore user-select
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "default";
+      document.body.style.userSelect = "auto"; // Restore user-select
     }
 
     // Cleanup function
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'default';
-      document.body.style.userSelect = 'auto';
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "default";
+      document.body.style.userSelect = "auto";
     };
   }, [isResizing, handleMouseMove, handleMouseUp]);
-
 
   // Aggregate filter states into a single object for filteredAndSortedData useMemo
   const currentFilters = useMemo(() => {
@@ -534,14 +644,23 @@ export default function BatchAndExpiryManagement() {
       startDate,
       endDate,
       reagentIds: [], // Not implemented in UI yet
-      supplier: [],   // Not implemented in UI yet
+      supplier: [], // Not implemented in UI yet
       showHandled,
       showExpiredOnly,
       showInStockOnly,
       showActiveOnly,
       selectedStatuses,
     };
-  }, [searchTerm, startDate, endDate, showHandled, showExpiredOnly, showInStockOnly, showActiveOnly, selectedStatuses]);
+  }, [
+    searchTerm,
+    startDate,
+    endDate,
+    showHandled,
+    showExpiredOnly,
+    showInStockOnly,
+    showActiveOnly,
+    selectedStatuses,
+  ]);
 
   // NEW: Utility functions for button visibility and styling
   const utils = useMemo(() => {
@@ -557,7 +676,8 @@ export default function BatchAndExpiryManagement() {
         isValid(parseISO(item.expiry_date)) &&
         !item?.action_taken &&
         (item?.current_quantity || 0) > 0 &&
-        daysToExpiry !== null && daysToExpiry <= 7
+        daysToExpiry !== null &&
+        daysToExpiry <= 7
       );
     };
 
@@ -578,20 +698,24 @@ export default function BatchAndExpiryManagement() {
         throw new Error("לא התקבל מידע מהשרת.");
       }
 
-      const { allBatches, handledBatches, allSuppliers, reagentInfoCache } = data;
+      const { allBatches, handledBatches, allSuppliers, reagentInfoCache } =
+        data;
 
       setAllData({
         allBatches: allBatches || [],
         handledBatches: handledBatches || [],
         allSuppliers: allSuppliers || [],
-        reagentInfoCache: reagentInfoCache || {}
+        reagentInfoCache: reagentInfoCache || {},
       });
-
     } catch (error) {
       const description = error.message.includes("Network")
         ? "אירעה שגיאת רשת. אנא בדוק את חיבור האינטרנט שלך ונסה שוב."
         : error.message;
-      toast({ title: "שגיאה בטעינת דוחות", description: description, variant: "destructive" });
+      toast({
+        title: "שגיאה בטעינת דוחות",
+        description: description,
+        variant: "destructive",
+      });
       setError("שגיאה בטעינת נתוני האצוות. בדוק את חיבור האינטרנט ונסה לרענן.");
     } finally {
       setLoading(false);
@@ -615,13 +739,13 @@ export default function BatchAndExpiryManagement() {
     const today = startOfToday();
 
     // 1. Filter active batches based on ALL filters
-    let filteredActive = activeBatches.filter(item => {
+    let filteredActive = activeBatches.filter((item) => {
       // Search filter
       if (currentFilters.searchTerm) {
         const searchTermLower = currentFilters.searchTerm.toLowerCase();
         const matchesSearch =
           item.reagent_name?.toLowerCase().includes(searchTermLower) ||
-          (item.batch_number || '')?.toLowerCase().includes(searchTermLower) ||
+          (item.batch_number || "")?.toLowerCase().includes(searchTermLower) ||
           item.supplier?.toLowerCase().includes(searchTermLower);
         if (!matchesSearch) return false;
       }
@@ -636,26 +760,43 @@ export default function BatchAndExpiryManagement() {
       }
 
       // Status filter (new)
-      if (currentFilters.selectedStatuses.length > 0 && !currentFilters.selectedStatuses.includes(item.status)) {
+      if (
+        currentFilters.selectedStatuses.length > 0 &&
+        !currentFilters.selectedStatuses.includes(item.status)
+      ) {
         return false;
       }
 
       // Reagent IDs and Supplier filters (still applied, but no UI in outline)
-      if (currentFilters.reagentIds?.length > 0 && !currentFilters.reagentIds.includes(item.reagent_id)) return false;
-      if (currentFilters.supplier?.length > 0 && !currentFilters.supplier.includes(item.supplier)) return false;
+      if (
+        currentFilters.reagentIds?.length > 0 &&
+        !currentFilters.reagentIds.includes(item.reagent_id)
+      )
+        return false;
+      if (
+        currentFilters.supplier?.length > 0 &&
+        !currentFilters.supplier.includes(item.supplier)
+      )
+        return false;
 
       // showInStockOnly filter
-      if (currentFilters.showInStockOnly && (item.current_quantity === 0 || item.current_quantity === null)) {
+      if (
+        currentFilters.showInStockOnly &&
+        (item.current_quantity === 0 || item.current_quantity === null)
+      ) {
         return false;
       }
 
       // showExpiredOnly filter
-      if (currentFilters.showExpiredOnly && (!item.expiry_date || isAfter(parseISO(item.expiry_date), today))) {
+      if (
+        currentFilters.showExpiredOnly &&
+        (!item.expiry_date || isAfter(parseISO(item.expiry_date), today))
+      ) {
         return false;
       }
 
       // showActiveOnly filter
-      if (currentFilters.showActiveOnly && item.status !== 'active') {
+      if (currentFilters.showActiveOnly && item.status !== "active") {
         return false;
       }
 
@@ -665,18 +806,25 @@ export default function BatchAndExpiryManagement() {
     // 2. Filter handled logs if showHandled is true, also based on date and other filters
     let filteredHandled = [];
     if (currentFilters.showHandled) {
-      filteredHandled = handledLogs.filter(log => {
+      filteredHandled = handledLogs.filter((log) => {
         // Search filter for logs
         if (currentFilters.searchTerm) {
           const searchTermLower = currentFilters.searchTerm.toLowerCase();
           const matchesSearch =
-            log.reagent_name_snapshot?.toLowerCase().includes(searchTermLower) ||
-            (log.batch_number_snapshot || '')?.toLowerCase().includes(searchTermLower);
+            log.reagent_name_snapshot
+              ?.toLowerCase()
+              .includes(searchTermLower) ||
+            (log.batch_number_snapshot || "")
+              ?.toLowerCase()
+              .includes(searchTermLower);
           if (!matchesSearch) return false;
         }
 
         // Date filter for logs (using original_expiry_date)
-        if (log?.original_expiry_date && isValid(parseISO(log.original_expiry_date))) {
+        if (
+          log?.original_expiry_date &&
+          isValid(parseISO(log.original_expiry_date))
+        ) {
           const expiryDate = parseISO(log.original_expiry_date);
           const fromDate = currentFilters.startDate;
           const toDate = currentFilters.endDate;
@@ -685,17 +833,35 @@ export default function BatchAndExpiryManagement() {
         }
 
         // Status filter for logs (using action_taken as status)
-        if (currentFilters.selectedStatuses.length > 0 && !currentFilters.selectedStatuses.includes(log.action_taken)) {
+        if (
+          currentFilters.selectedStatuses.length > 0 &&
+          !currentFilters.selectedStatuses.includes(log.action_taken)
+        ) {
           return false;
         }
 
         // Reagent and Supplier filters for logs
-        if (currentFilters.reagentIds?.length > 0 && !currentFilters.reagentIds.includes(log.reagent_id)) return false;
+        if (
+          currentFilters.reagentIds?.length > 0 &&
+          !currentFilters.reagentIds.includes(log.reagent_id)
+        )
+          return false;
         const reagentInfo = allData.reagentInfoCache[log.reagent_id];
-        if (currentFilters.supplier?.length > 0 && !(reagentInfo && currentFilters.supplier.includes(reagentInfo.supplier))) return false;
+        if (
+          currentFilters.supplier?.length > 0 &&
+          !(
+            reagentInfo &&
+            currentFilters.supplier.includes(reagentInfo.supplier)
+          )
+        )
+          return false;
 
         // showExpiredOnly also applies to handled logs
-        if (currentFilters.showExpiredOnly && (!log.original_expiry_date || isAfter(parseISO(log.original_expiry_date), today))) {
+        if (
+          currentFilters.showExpiredOnly &&
+          (!log.original_expiry_date ||
+            isAfter(parseISO(log.original_expiry_date), today))
+        ) {
           return false;
         }
 
@@ -712,8 +878,8 @@ export default function BatchAndExpiryManagement() {
     }
 
     // Remove duplicates that might occur if a batch is in both lists and passes both filters
-    const uniqueData = combinedData.filter((item, index, self) =>
-      index === self.findIndex(t => t.id === item.id)
+    const uniqueData = combinedData.filter(
+      (item, index, self) => index === self.findIndex((t) => t.id === item.id),
     );
 
     // 4. Sort the final combined data
@@ -721,76 +887,122 @@ export default function BatchAndExpiryManagement() {
       let aValue, bValue;
 
       switch (sortConfig.key) {
-        case 'days_to_expiry':
-          aValue = (a?.expiry_date && isValid(parseISO(a.expiry_date))) ? differenceInDays(parseISO(a.expiry_date), new Date()) :
-                   (a?.original_expiry_date && isValid(parseISO(a.original_expiry_date))) ? differenceInDays(parseISO(a.original_expiry_date), new Date()) : Infinity;
-          bValue = (b?.expiry_date && isValid(parseISO(b.expiry_date))) ? differenceInDays(parseISO(b.expiry_date), new Date()) :
-                   (b?.original_expiry_date && isValid(parseISO(b.original_expiry_date))) ? differenceInDays(parseISO(b.original_expiry_date), new Date()) : Infinity;
+        case "days_to_expiry":
+          aValue =
+            a?.expiry_date && isValid(parseISO(a.expiry_date))
+              ? differenceInDays(parseISO(a.expiry_date), new Date())
+              : a?.original_expiry_date &&
+                  isValid(parseISO(a.original_expiry_date))
+                ? differenceInDays(parseISO(a.original_expiry_date), new Date())
+                : Infinity;
+          bValue =
+            b?.expiry_date && isValid(parseISO(b.expiry_date))
+              ? differenceInDays(parseISO(b.expiry_date), new Date())
+              : b?.original_expiry_date &&
+                  isValid(parseISO(b.original_expiry_date))
+                ? differenceInDays(parseISO(b.original_expiry_date), new Date())
+                : Infinity;
           break;
-        case 'expiry_date':
-          aValue = (a?.expiry_date && isValid(parseISO(a.expiry_date))) ? parseISO(a.expiry_date).getTime() :
-                   (a?.original_expiry_date && isValid(parseISO(a.original_expiry_date))) ? parseISO(a.original_expiry_date).getTime() : Infinity;
-          bValue = (b?.expiry_date && isValid(parseISO(b.expiry_date))) ? parseISO(b.expiry_date).getTime() :
-                   (b?.original_expiry_date && isValid(parseISO(b.original_expiry_date))) ? parseISO(b.original_expiry_date).getTime() : Infinity;
+        case "expiry_date":
+          aValue =
+            a?.expiry_date && isValid(parseISO(a.expiry_date))
+              ? parseISO(a.expiry_date).getTime()
+              : a?.original_expiry_date &&
+                  isValid(parseISO(a.original_expiry_date))
+                ? parseISO(a.original_expiry_date).getTime()
+                : Infinity;
+          bValue =
+            b?.expiry_date && isValid(parseISO(b.expiry_date))
+              ? parseISO(b.expiry_date).getTime()
+              : b?.original_expiry_date &&
+                  isValid(parseISO(b.original_expiry_date))
+                ? parseISO(b.original_expiry_date).getTime()
+                : Infinity;
           break;
-        case 'current_quantity':
+        case "current_quantity":
           aValue = Number(a?.current_quantity ?? a?.quantity_affected) || 0;
           bValue = Number(b?.current_quantity ?? b?.quantity_affected) || 0;
           break;
-        case 'documented_date': // For handled batches
-          aValue = (a?.documented_date && isValid(parseISO(a.documented_date))) ? parseISO(a.documented_date).getTime() : -Infinity;
-          bValue = (b?.documented_date && isValid(parseISO(b.documented_date))) ? parseISO(b.documented_date).getTime() : -Infinity;
+        case "documented_date": // For handled batches
+          aValue =
+            a?.documented_date && isValid(parseISO(a.documented_date))
+              ? parseISO(a.documented_date).getTime()
+              : -Infinity;
+          bValue =
+            b?.documented_date && isValid(parseISO(b.documented_date))
+              ? parseISO(b.documented_date).getTime()
+              : -Infinity;
           break;
-        case 'coa_status':
+        case "coa_status":
           aValue = a.coa_document_url ? 1 : 0;
           bValue = b.coa_document_url ? 1 : 0;
           break;
-        case 'status':
+        case "status":
           const statusOrder = {
-            'active': 1,
-            'quarantine': 2,
-            'expired': 3,
-            'consumed': 4,
-            'disposed': 5,
-            'consumed_by_expiry': 6,
-            'other_use': 7,
+            active: 1,
+            quarantine: 2,
+            expired: 3,
+            consumed: 4,
+            disposed: 5,
+            consumed_by_expiry: 6,
+            other_use: 7,
           };
           const getSortableStatus = (item) => {
-              if (item.action_taken) {
-                  return item.action_taken;
-              }
-              if (!item.status && item.original_expiry_date) {
-                  return isAfter(parseISO(item.original_expiry_date), today) ? 'active' : 'expired';
-              }
-              return item.status;
+            if (item.action_taken) {
+              return item.action_taken;
+            }
+            if (!item.status && item.original_expiry_date) {
+              return isAfter(parseISO(item.original_expiry_date), today)
+                ? "active"
+                : "expired";
+            }
+            return item.status;
           };
           aValue = statusOrder[getSortableStatus(a)] || Infinity;
           bValue = statusOrder[getSortableStatus(b)] || Infinity;
           break;
-        case 'reagent_name':
-          aValue = String(a?.reagent_name || a?.reagent_name_snapshot || '').toLowerCase();
-          bValue = String(b?.reagent_name || b?.reagent_name_snapshot || '').toLowerCase();
+        case "reagent_name":
+          aValue = String(
+            a?.reagent_name || a?.reagent_name_snapshot || "",
+          ).toLowerCase();
+          bValue = String(
+            b?.reagent_name || b?.reagent_name_snapshot || "",
+          ).toLowerCase();
           break;
-        case 'supplier':
-          aValue = String(allData.reagentInfoCache[a?.reagent_id]?.supplier || a?.supplier || '').toLowerCase();
-          bValue = String(allData.reagentInfoCache[b?.reagent_id]?.supplier || b?.supplier || '').toLowerCase();
+        case "supplier":
+          aValue = String(
+            allData.reagentInfoCache[a?.reagent_id]?.supplier ||
+              a?.supplier ||
+              "",
+          ).toLowerCase();
+          bValue = String(
+            allData.reagentInfoCache[b?.reagent_id]?.supplier ||
+              b?.supplier ||
+              "",
+          ).toLowerCase();
           break;
-        case 'batch_number':
-          aValue = String(a?.batch_number || a?.batch_number_snapshot || '').toLowerCase();
-          bValue = String(b?.batch_number || b?.batch_number_snapshot || '').toLowerCase();
+        case "batch_number":
+          aValue = String(
+            a?.batch_number || a?.batch_number_snapshot || "",
+          ).toLowerCase();
+          bValue = String(
+            b?.batch_number || b?.batch_number_snapshot || "",
+          ).toLowerCase();
           break;
-        case 'action_taken':
+        case "action_taken":
         default:
-          aValue = String(a?.[sortConfig.key] || '').toLowerCase();
-          bValue = String(b?.[sortConfig.key] || '').toLowerCase();
+          aValue = String(a?.[sortConfig.key] || "").toLowerCase();
+          bValue = String(b?.[sortConfig.key] || "").toLowerCase();
       }
 
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "asc"
+          ? aValue - bValue
+          : bValue - aValue;
       }
 
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
 
@@ -801,28 +1013,35 @@ export default function BatchAndExpiryManagement() {
   const reagentOptions = useMemo(() => {
     if (!allData.reagentInfoCache) return [];
     const uniqueReagents = new Map();
-    [...allData.allBatches, ...allData.handledBatches].forEach(item => {
+    [...allData.allBatches, ...allData.handledBatches].forEach((item) => {
       if (item.reagent_id && !uniqueReagents.has(item.reagent_id)) {
         uniqueReagents.set(item.reagent_id, {
           value: item.reagent_id,
-          label: allData.reagentInfoCache[item.reagent_id]?.name || item.reagent_name || 'ריאגנט לא ידוע'
+          label:
+            allData.reagentInfoCache[item.reagent_id]?.name ||
+            item.reagent_name ||
+            "ריאגנט לא ידוע",
         });
       }
     });
-    return Array.from(uniqueReagents.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return Array.from(uniqueReagents.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
   }, [allData]);
 
-
-  const handleSort = useCallback((key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  }, [sortConfig]);
+  const handleSort = useCallback(
+    (key) => {
+      let direction = "asc";
+      if (sortConfig.key === key && sortConfig.direction === "asc") {
+        direction = "desc";
+      }
+      setSortConfig({ key, direction });
+    },
+    [sortConfig],
+  );
 
   const handleSelectItem = useCallback((itemId) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(itemId)) {
         newSelection.delete(itemId);
@@ -837,17 +1056,16 @@ export default function BatchAndExpiryManagement() {
     if (selectedItems.size === filteredAndSortedData.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(filteredAndSortedData.map(item => item.id)));
+      setSelectedItems(new Set(filteredAndSortedData.map((item) => item.id)));
     }
   }, [selectedItems, filteredAndSortedData]);
-
 
   // COA handling functions
   const handleCOAUpload = (batch) => {
     setSelectedBatch(batch);
     setShowCOADialog(true);
     setCoaFile(null);
-    setCoaFileName('');
+    setCoaFileName("");
   };
 
   const handleCOAFileSelect = (event) => {
@@ -863,7 +1081,7 @@ export default function BatchAndExpiryManagement() {
       toast({
         title: "שגיאה",
         description: "אנא בחר קובץ להעלאה.",
-        variant: "default"
+        variant: "default",
       });
       return;
     }
@@ -876,19 +1094,18 @@ export default function BatchAndExpiryManagement() {
         let currentUser;
         try {
           currentUser = await User.me();
-        } catch (userError) {
-        }
+        } catch (userError) {}
 
         await ReagentBatch.update(selectedBatch.id, {
           coa_document_url: uploadResult.file_url,
           coa_upload_date: new Date().toISOString(),
-          coa_uploaded_by: currentUser?.email || 'system'
+          coa_uploaded_by: currentUser?.email || "system",
         });
 
         toast({
           title: "הצלחה!",
           description: `תעודת האנליזה עבור אצווה ${selectedBatch.batch_number} הועלתה בהצלחה.`,
-          variant: "default"
+          variant: "default",
         });
 
         await fetchData(); // Refresh data after update
@@ -896,76 +1113,83 @@ export default function BatchAndExpiryManagement() {
         setShowCOADialog(false);
         setSelectedBatch(null);
         setCoaFile(null);
-        setCoaFileName('');
+        setCoaFileName("");
       } else {
-        throw new Error('שגיאה בהעלאת הקובץ');
+        throw new Error("שגיאה בהעלאת הקובץ");
       }
     } catch (error) {
       toast({
         title: "שגיאה בהעלאת תעודת האנליזה",
         description: error.message || "אירעה שגיאה בהעלאת הקובץ.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setUploadingCOA(false);
     }
   };
 
-  const handleCOAView = useCallback(async (batch) => {
-    if (!batch?.coa_document_url) {
-      toast({
-        title: "אין תעודת אנליזה",
-        description: "לא הועלתה תעודת אנליזה עבור אצווה זו.",
-        variant: "default"
-      });
-      return;
-    }
-
-    try {
-      let urlToOpen = batch.coa_document_url;
-
-      if (urlToOpen.includes('base44.app/api/apps/')) {
-        const fileNameMatch = urlToOpen.match(/files\/(.+)$/);
-        if (fileNameMatch) {
-          const fileName = fileNameMatch[1];
-          urlToOpen = `https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/${fileName}`;
-        }
+  const handleCOAView = useCallback(
+    async (batch) => {
+      if (!batch?.coa_document_url) {
+        toast({
+          title: "אין תעודת אנליזה",
+          description: "לא הועלתה תעודת אנליזה עבור אצווה זו.",
+          variant: "default",
+        });
+        return;
       }
 
-      const newWindow = window.open(urlToOpen, '_blank', 'noopener,noreferrer');
+      try {
+        let urlToOpen = batch.coa_document_url;
 
-      if (!newWindow) {
-        try {
-          await navigator.clipboard.writeText(urlToOpen);
-          toast({
-            title: "קישור הועתק ללוח",
-            description: "חלון קופץ נחסם. הקישור הועתק.",
-            variant: "default"
-          });
-        } catch (clipboardError) {
-          toast({
-            title: "פתח ידנית",
-            description: `קישור: ${urlToOpen}`,
-            variant: "default"
-          });
+        if (urlToOpen.includes("base44.app/api/apps/")) {
+          const fileNameMatch = urlToOpen.match(/files\/(.+)$/);
+          if (fileNameMatch) {
+            const fileName = fileNameMatch[1];
+            urlToOpen = `https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/${fileName}`;
+          }
         }
+
+        const newWindow = window.open(
+          urlToOpen,
+          "_blank",
+          "noopener,noreferrer",
+        );
+
+        if (!newWindow) {
+          try {
+            await navigator.clipboard.writeText(urlToOpen);
+            toast({
+              title: "קישור הועתק ללוח",
+              description: "חלון קופץ נחסם. הקישור הועתק.",
+              variant: "default",
+            });
+          } catch (clipboardError) {
+            toast({
+              title: "פתח ידנית",
+              description: `קישור: ${urlToOpen}`,
+              variant: "default",
+            });
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "שגיאה בצפייה בתעודה",
+          description: "לא ניתן לפתוח את תעודת האנליזה.",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
-      toast({
-        title: "שגיאה בצפייה בתעודה",
-        description: "לא ניתן לפתוח את תעודת האנליזה.",
-        variant: "destructive"
-      });
-    }
-  }, [toast]);
+    },
+    [toast],
+  );
 
   // NEW: Enhanced handle expired item function
   const handleOpenHandlingDialog = (batch) => {
     setHandlingItemDialog(batch);
     setRemainingQuantity(parseFloat(batch?.current_quantity) || 0);
     setHandlingQuantity(String(parseFloat(batch?.current_quantity) || 0));
-    setActionType('disposed');
-    setActionNotes('');
+    setActionType("disposed");
+    setActionNotes("");
   };
 
   // NEW: Process handling action
@@ -974,155 +1198,184 @@ export default function BatchAndExpiryManagement() {
 
     setIsHandlingAction(true);
     try {
-        const user = await User.me();
-        const affectedQty = parseFloat(handlingQuantity) || 0;
-        const currentQty = remainingQuantity;
+      const user = await User.me();
+      const affectedQty = parseFloat(handlingQuantity) || 0;
+      const currentQty = remainingQuantity;
 
-        if (affectedQty <= 0 || affectedQty > currentQty) {
-            toast({
-                title: "כמות לא תקינה",
-                description: `יש להזין כמות בין 1 ל-${formatQuantity(currentQty)}`,
-                variant: "destructive"
-            });
-            setIsHandlingAction(false);
-            return;
-        }
-
-        await ExpiredProductLog.create({
-            reagent_id: handlingItemDialog?.reagent_id,
-            reagent_name_snapshot: handlingItemDialog?.reagent_name || 'לא ידוע',
-            batch_number_snapshot: handlingItemDialog?.batch_number,
-            original_expiry_date: handlingItemDialog?.expiry_date,
-            action_taken: actionType,
-            quantity_affected: affectedQty,
-            action_notes: actionNotes,
-            documented_date: new Date().toISOString(),
-            documented_by_user_id: user?.id
-        });
-
-        let newQuantity = currentQty - affectedQty;
-        let newStatus = handlingItemDialog?.status;
-
-        if (newQuantity <= 0) {
-            newQuantity = 0;
-            newStatus = actionType === 'disposed' ? 'disposed' : 'consumed';
-        }
-
-        await ReagentBatch.update(handlingItemDialog?.id, {
-            current_quantity: newQuantity,
-            status: newStatus
-        });
-
-        const transactionType = actionType === 'consumed_by_expiry' ? 'withdrawal' :
-                              actionType === 'disposed' ? 'disposal' : 'other_use_expired';
-
-        await InventoryTransaction.create({
-            reagent_id: handlingItemDialog?.reagent_id,
-            transaction_type: transactionType,
-            quantity: -affectedQty,
-            batch_number: handlingItemDialog?.batch_number,
-            expiry_date: handlingItemDialog?.expiry_date,
-            notes: `טיפול בפג תוקף: ${getActionTakenLabel(actionType)} - ${actionNotes}`
-        });
-
+      if (affectedQty <= 0 || affectedQty > currentQty) {
         toast({
-            title: "הפעולה בוצעה בהצלחה",
-            description: `${getActionTakenLabel(actionType)} - כמות: ${formatQuantity(affectedQty)}`,
-            variant: "default"
+          title: "כמות לא תקינה",
+          description: `יש להזין כמות בין 1 ל-${formatQuantity(currentQty)}`,
+          variant: "destructive",
         });
-
-        // Update remaining quantity in dialog
-        setRemainingQuantity(newQuantity);
-        setHandlingQuantity(String(newQuantity));
-
-        // If quantity reached 0, close dialog and refresh
-        if (newQuantity <= 0) {
-          setHandlingItemDialog(null);
-          setActionNotes('');
-          await fetchData(); // Refresh data after update
-        }
-
-    } catch (error) {
-        toast({
-            title: "שגיאה בביצוע הפעולה",
-            description: error.message,
-            variant: "destructive"
-        });
-    } finally {
         setIsHandlingAction(false);
+        return;
+      }
+
+      await ExpiredProductLog.create({
+        reagent_id: handlingItemDialog?.reagent_id,
+        reagent_name_snapshot: handlingItemDialog?.reagent_name || "לא ידוע",
+        batch_number_snapshot: handlingItemDialog?.batch_number,
+        original_expiry_date: handlingItemDialog?.expiry_date,
+        action_taken: actionType,
+        quantity_affected: affectedQty,
+        action_notes: actionNotes,
+        documented_date: new Date().toISOString(),
+        documented_by_user_id: user?.id,
+      });
+
+      let newQuantity = currentQty - affectedQty;
+      let newStatus = handlingItemDialog?.status;
+
+      if (newQuantity <= 0) {
+        newQuantity = 0;
+        newStatus = actionType === "disposed" ? "disposed" : "consumed";
+      }
+
+      await ReagentBatch.update(handlingItemDialog?.id, {
+        current_quantity: newQuantity,
+        status: newStatus,
+      });
+
+      const transactionType =
+        actionType === "consumed_by_expiry"
+          ? "withdrawal"
+          : actionType === "disposed"
+            ? "disposal"
+            : "other_use_expired";
+
+      await InventoryTransaction.create({
+        reagent_id: handlingItemDialog?.reagent_id,
+        transaction_type: transactionType,
+        quantity: -affectedQty,
+        batch_number: handlingItemDialog?.batch_number,
+        expiry_date: handlingItemDialog?.expiry_date,
+        notes: `טיפול בפג תוקף: ${getActionTakenLabel(actionType)} - ${actionNotes}`,
+      });
+
+      toast({
+        title: "הפעולה בוצעה בהצלחה",
+        description: `${getActionTakenLabel(actionType)} - כמות: ${formatQuantity(affectedQty)}`,
+        variant: "default",
+      });
+
+      // Update remaining quantity in dialog
+      setRemainingQuantity(newQuantity);
+      setHandlingQuantity(String(newQuantity));
+
+      // If quantity reached 0, close dialog and refresh
+      if (newQuantity <= 0) {
+        setHandlingItemDialog(null);
+        setActionNotes("");
+        await fetchData(); // Refresh data after update
+      }
+    } catch (error) {
+      toast({
+        title: "שגיאה בביצוע הפעולה",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsHandlingAction(false);
     }
   };
 
   const handleRestoreBatch = async (log) => {
     if (!log?.id) {
-        toast({ title: "שגיאה קריטית", description: "לא ניתן למצוא את מזהה הרישום לשחזור.", variant: "destructive" });
-        return;
+      toast({
+        title: "שגיאה קריטית",
+        description: "לא ניתן למצוא את מזהה הרישום לשחזור.",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
-        const filterPayload = {
-            reagent_id: log?.reagent_id,
-            batch_number: log?.batch_number_snapshot,
-        };
-        if (log?.original_expiry_date) {
-            filterPayload.expiry_date = log.original_expiry_date;
+      const filterPayload = {
+        reagent_id: log?.reagent_id,
+        batch_number: log?.batch_number_snapshot,
+      };
+      if (log?.original_expiry_date) {
+        filterPayload.expiry_date = log.original_expiry_date;
+      }
+
+      const correspondingBatches = await ReagentBatch.filter(filterPayload);
+
+      if (correspondingBatches.length > 0) {
+        const batchToUpdate = correspondingBatches[0];
+        const quantityToRestore = log?.quantity_affected;
+
+        let nextStatus = batchToUpdate.status || "active";
+        if (batchToUpdate.expiry_date) {
+          const expiryValue = batchToUpdate.expiry_date;
+          const parsedExpiry =
+            typeof expiryValue === "string"
+              ? parseISO(expiryValue)
+              : new Date(expiryValue);
+          if (isValid(parsedExpiry)) {
+            nextStatus = isAfter(parsedExpiry, new Date())
+              ? "active"
+              : "expired";
+          }
         }
 
-        const correspondingBatches = await ReagentBatch.filter(filterPayload);
+        await ReagentBatch.update(batchToUpdate.id, {
+          current_quantity:
+            (batchToUpdate.current_quantity || 0) + quantityToRestore,
+          status: nextStatus,
+        });
 
-        if (correspondingBatches.length > 0) {
-            const batchToUpdate = correspondingBatches[0];
-            const quantityToRestore = log?.quantity_affected;
+        await InventoryTransaction.create({
+          reagent_id: log?.reagent_id,
+          transaction_type: "inventory_correction",
+          quantity: quantityToRestore,
+          batch_number: log?.batch_number_snapshot,
+          expiry_date: log?.original_expiry_date,
+          notes: `שחזור טיפול בפג תוקף: ${getActionTakenLabel(log.action_taken)} - החזרת ${formatQuantity(quantityToRestore)} יח' למלאי`,
+        });
+      } else {
+        toast({
+          title: "שגיאה",
+          description: `לא נמצאה אצווה מתאימה לשחזור עבור ${log?.reagent_name_snapshot}.`,
+          variant: "destructive",
+        });
+        return;
+      }
 
-            let nextStatus = batchToUpdate.status || 'active';
-            if (batchToUpdate.expiry_date) {
-                const expiryValue = batchToUpdate.expiry_date;
-                const parsedExpiry = typeof expiryValue === 'string' ? parseISO(expiryValue) : new Date(expiryValue);
-                if (isValid(parsedExpiry)) {
-                    nextStatus = isAfter(parsedExpiry, new Date()) ? 'active' : 'expired';
-                }
-            }
+      await ExpiredProductLog.delete(log.id);
 
-            await ReagentBatch.update(batchToUpdate.id, {
-                current_quantity: (batchToUpdate.current_quantity || 0) + quantityToRestore,
-                status: nextStatus
-            });
+      toast({
+        title: "אצווה שוחזרה",
+        description: `האצווה ${log?.batch_number_snapshot} שוחזרה והכמות עודכנה במלאי.`,
+        variant: "default",
+      });
 
-            await InventoryTransaction.create({
-                reagent_id: log?.reagent_id,
-                transaction_type: 'inventory_correction',
-                quantity: quantityToRestore,
-                batch_number: log?.batch_number_snapshot,
-                expiry_date: log?.original_expiry_date,
-                notes: `שחזור טיפול בפג תוקף: ${getActionTakenLabel(log.action_taken)} - החזרת ${formatQuantity(quantityToRestore)} יח' למלאי`
-            });
-        } else {
-             toast({ title: "שגיאה", description: `לא נמצאה אצווה מתאימה לשחזור עבור ${log?.reagent_name_snapshot}.`, variant: "destructive" });
-             return;
-        }
-
-        await ExpiredProductLog.delete(log.id);
-
-        toast({ title: "אצווה שוחזרה", description: `האצווה ${log?.batch_number_snapshot} שוחזרה והכמות עודכנה במלאי.`, variant: "default" });
-
-        await fetchData(); // Refresh data after update
+      await fetchData(); // Refresh data after update
     } catch (error) {
-        toast({ title: "שגיאה בשחזור", description: error.message, variant: "destructive" });
+      toast({
+        title: "שגיאה בשחזור",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
   const handleEditBatch = (batch) => {
-    navigate(createPageUrl(`EditReagentBatch?id=${batch?.id || batch?.reagent_batch_id}`));
+    navigate(
+      createPageUrl(
+        `EditReagentBatch?id=${batch?.id || batch?.reagent_batch_id}`,
+      ),
+    );
   };
 
   // Enhanced print report function (from outline, replacing previous one)
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
       toast({
         title: "חסימת קופצים",
         description: "אנא אפשר חלונות קופצים כדי להדפיס את הדוח.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -1130,7 +1383,10 @@ export default function BatchAndExpiryManagement() {
 
     // Calculate summaries based on the currently filtered data
     const totalBatches = filteredAndSortedData.length;
-    const totalQuantity = filteredAndSortedData.reduce((sum, item) => sum + (item.current_quantity || 0), 0);
+    const totalQuantity = filteredAndSortedData.reduce(
+      (sum, item) => sum + (item.current_quantity || 0),
+      0,
+    );
 
     const printHTML = `
       <!DOCTYPE html>
@@ -1150,7 +1406,7 @@ export default function BatchAndExpiryManagement() {
         <body>
           <div class="print-header">
             <h1>דוח אצוות ופגי תוקף</h1>
-            <p>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</p>
+            <p>נוצר בתאריך: ${new Date().toLocaleDateString("he-IL")}</p>
           </div>
 
           <div class="print-summary">
@@ -1169,16 +1425,20 @@ export default function BatchAndExpiryManagement() {
               </tr>
             </thead>
             <tbody>
-              ${filteredAndSortedData.map(item => `
+              ${filteredAndSortedData
+                .map(
+                  (item) => `
                 <tr>
-                  <td>${item.reagent_name || item.reagent_name_snapshot || ''}</td>
-                  <td>${item.batch_number || item.batch_number_snapshot || ''}</td>
-                  <td>${item.expiry_date && isValid(parseISO(item.expiry_date)) ? format(parseISO(item.expiry_date), 'dd/MM/yyyy') : (item.original_expiry_date && isValid(parseISO(item.original_expiry_date)) ? format(parseISO(item.original_expiry_date), 'dd/MM/yyyy') : '')}</td>
+                  <td>${item.reagent_name || item.reagent_name_snapshot || ""}</td>
+                  <td>${item.batch_number || item.batch_number_snapshot || ""}</td>
+                  <td>${item.expiry_date && isValid(parseISO(item.expiry_date)) ? format(parseISO(item.expiry_date), "dd/MM/yyyy") : item.original_expiry_date && isValid(parseISO(item.original_expiry_date)) ? format(parseISO(item.original_expiry_date), "dd/MM/yyyy") : ""}</td>
                   <td>${formatQuantity(item.current_quantity ?? item.quantity_affected ?? 0)}</td>
-                  <td>${getStatusDisplay(item.action_taken || item.status || '')}</td>
-                  <td>${allData.reagentInfoCache[item.reagent_id]?.supplier || item.supplier || ''}</td>
+                  <td>${getStatusDisplay(item.action_taken || item.status || "")}</td>
+                  <td>${allData.reagentInfoCache[item.reagent_id]?.supplier || item.supplier || ""}</td>
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </tbody>
           </table>
         </body>
@@ -1201,44 +1461,63 @@ export default function BatchAndExpiryManagement() {
     }
 
     const headers = [
-      'שם ריאגנט', 'ספק', 'מספר אצווה', 'תאריך תפוגה', 'כמות נוכחית', 'סטטוס', 'ימים לתפוגה',
-      'ת. אנליזה קיימת', 'ת. אנליזה הועלתה ע"י', 'ת. אנליזה תאריך העלאה', 'הערות פעולה (בטיפול)',
-      'כמות שהושפעה (בטיפול)', 'תאריך תיעוד (בטיפול)', 'מטופל ע"י (בטיפול)'
+      "שם ריאגנט",
+      "ספק",
+      "מספר אצווה",
+      "תאריך תפוגה",
+      "כמות נוכחית",
+      "סטטוס",
+      "ימים לתפוגה",
+      "ת. אנליזה קיימת",
+      'ת. אנליזה הועלתה ע"י',
+      "ת. אנליזה תאריך העלאה",
+      "הערות פעולה (בטיפול)",
+      "כמות שהושפעה (בטיפול)",
+      "תאריך תיעוד (בטיפול)",
+      'מטופל ע"י (בטיפול)',
     ];
-    let csv = '\uFEFF' + headers.join(',') + '\n'; // Add BOM for Hebrew characters
+    let csv = "\uFEFF" + headers.join(",") + "\n"; // Add BOM for Hebrew characters
 
-    data.forEach(item => {
-      const daysUntilExpiry = (item.expiry_date && isValid(parseISO(item.expiry_date))) ? differenceInDays(parseISO(item.expiry_date), new Date()) :
-                              (item.original_expiry_date && isValid(parseISO(item.original_expiry_date))) ? differenceInDays(parseISO(item.original_expiry_date), new Date()) : 'N/A';
+    data.forEach((item) => {
+      const daysUntilExpiry =
+        item.expiry_date && isValid(parseISO(item.expiry_date))
+          ? differenceInDays(parseISO(item.expiry_date), new Date())
+          : item.original_expiry_date &&
+              isValid(parseISO(item.original_expiry_date))
+            ? differenceInDays(parseISO(item.original_expiry_date), new Date())
+            : "N/A";
       const itemStatus = item.action_taken || item.status;
       const reagentInfo = allData.reagentInfoCache[item.reagent_id];
 
       const row = [
-        `"${item.reagent_name || item.reagent_name_snapshot || ''}"`,
-        `"${reagentInfo?.supplier || item.supplier || ''}"`,
-        `"${item.batch_number || item.batch_number_snapshot || ''}"`,
-        `"${(item.expiry_date && isValid(parseISO(item.expiry_date))) ? format(parseISO(item.expiry_date), 'dd/MM/yyyy') : (item.original_expiry_date && isValid(parseISO(item.original_expiry_date))) ? format(parseISO(item.original_expiry_date), 'dd/MM/yyyy') : ''}"`,
+        `"${item.reagent_name || item.reagent_name_snapshot || ""}"`,
+        `"${reagentInfo?.supplier || item.supplier || ""}"`,
+        `"${item.batch_number || item.batch_number_snapshot || ""}"`,
+        `"${item.expiry_date && isValid(parseISO(item.expiry_date)) ? format(parseISO(item.expiry_date), "dd/MM/yyyy") : item.original_expiry_date && isValid(parseISO(item.original_expiry_date)) ? format(parseISO(item.original_expiry_date), "dd/MM/yyyy") : ""}"`,
         `"${formatQuantity(item.current_quantity ?? item.quantity_affected ?? 0)}"`,
         `"${getStatusDisplay(itemStatus)}"`,
         `"${daysUntilExpiry}"`,
-        `"${item.coa_document_url ? 'כן' : 'לא'}"`,
-        `"${item.coa_uploaded_by || ''}"`,
-        `"${item.coa_upload_date && isValid(parseISO(item.coa_upload_date)) ? format(parseISO(item.coa_upload_date), 'dd/MM/yyyy HH:mm') : ''}"`,
-        `"${item.action_notes || ''}"`,
-        `"${item.quantity_affected || ''}"`,
-        `"${item.documented_date && isValid(parseISO(item.documented_date)) ? format(parseISO(item.documented_date), 'dd/MM/yyyy HH:mm') : ''}"`,
-        `"${item.documented_by_user_id || ''}"` // This would ideally be a user's name
-      ].join(',');
-      csv += row + '\n';
+        `"${item.coa_document_url ? "כן" : "לא"}"`,
+        `"${item.coa_uploaded_by || ""}"`,
+        `"${item.coa_upload_date && isValid(parseISO(item.coa_upload_date)) ? format(parseISO(item.coa_upload_date), "dd/MM/yyyy HH:mm") : ""}"`,
+        `"${item.action_notes || ""}"`,
+        `"${item.quantity_affected || ""}"`,
+        `"${item.documented_date && isValid(parseISO(item.documented_date)) ? format(parseISO(item.documented_date), "dd/MM/yyyy HH:mm") : ""}"`,
+        `"${item.documented_by_user_id || ""}"`, // This would ideally be a user's name
+      ].join(",");
+      csv += row + "\n";
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `report_batches_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
-      link.style.visibility = 'hidden';
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `report_batches_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`,
+      );
+      link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1258,11 +1537,15 @@ export default function BatchAndExpiryManagement() {
 
   // UPDATED: Get action type labels with corrected texts
   const getActionTypeLabel = (type) => {
-    switch(type) {
-      case 'disposed': return 'כמות להשמדה';
-      case 'consumed_by_expiry': return 'כמות שנצרכה';
-      case 'other_use': return 'כמות לשימוש אחר';
-      default: return 'כמות לטיפול';
+    switch (type) {
+      case "disposed":
+        return "כמות להשמדה";
+      case "consumed_by_expiry":
+        return "כמות שנצרכה";
+      case "other_use":
+        return "כמות לשימוש אחר";
+      default:
+        return "כמות לטיפול";
     }
   };
 
@@ -1271,7 +1554,12 @@ export default function BatchAndExpiryManagement() {
     <div className="p-6 text-white h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-slate-100">סינון מתקדם</h2>
-        <Button variant="ghost" size="icon" onClick={() => setIsMobileFilterMenuOpen(false)} className="lg:hidden text-white hover:bg-white/10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileFilterMenuOpen(false)}
+          className="lg:hidden text-white hover:bg-white/10"
+        >
           <X className="h-6 w-6" />
         </Button>
       </div>
@@ -1280,22 +1568,41 @@ export default function BatchAndExpiryManagement() {
         <div>
           <Label className="text-slate-300 mb-2 block">טווח תאריכי תפוגה</Label>
           <div className="flex flex-col gap-2 mt-2">
-            <DatePicker selected={startDate} onChange={setStartDate} placeholderText="מתאריך" />
-            <DatePicker selected={endDate} onChange={setEndDate} placeholderText="עד תאריך" />
+            <DatePicker
+              selected={startDate}
+              onChange={setStartDate}
+              placeholderText="מתאריך"
+            />
+            <DatePicker
+              selected={endDate}
+              onChange={setEndDate}
+              placeholderText="עד תאריך"
+            />
           </div>
         </div>
 
         <div className="space-y-3">
           <Label className="text-slate-300 mb-2 block">סטטוסים</Label>
           <div className="flex flex-wrap gap-2">
-            {['active', 'IN_USE', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
+            {[
+              "active",
+              "IN_USE",
+              "expired",
+              "disposed",
+              "consumed",
+              "quarantine",
+              "consumed_by_expiry",
+              "other_use",
+            ].map((status) => (
               <Button
                 key={status}
-                variant={selectedStatuses.includes(status) ? "default" : "outline"}
+                variant={
+                  selectedStatuses.includes(status) ? "default" : "outline"
+                }
                 size="sm"
                 onClick={() => toggleStatus(status)}
                 className={`text-white border-white/30 hover:bg-white/20
-                            ${selectedStatuses.includes(status) ? 'bg-blue-600 hover:bg-blue-700 border-blue-600' : ''}`}
+                            ${selectedStatuses.includes(status) ? "bg-blue-600 hover:bg-blue-700 border-blue-600" : ""}`}
               >
                 {statusLabels[status]}
               </Button>
@@ -1305,7 +1612,12 @@ export default function BatchAndExpiryManagement() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="showHandled" className="text-slate-200 cursor-pointer">הצג אצוות שטופלו</Label>
+            <Label
+              htmlFor="showHandled"
+              className="text-slate-200 cursor-pointer"
+            >
+              הצג אצוות שטופלו
+            </Label>
             <Switch
               id="showHandled"
               checked={showHandled}
@@ -1314,7 +1626,12 @@ export default function BatchAndExpiryManagement() {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="showExpiredOnly" className="text-slate-200 cursor-pointer">הצג פגי תוקף בלבד</Label>
+            <Label
+              htmlFor="showExpiredOnly"
+              className="text-slate-200 cursor-pointer"
+            >
+              הצג פגי תוקף בלבד
+            </Label>
             <Switch
               id="showExpiredOnly"
               checked={showExpiredOnly}
@@ -1322,8 +1639,13 @@ export default function BatchAndExpiryManagement() {
               className="data-[state=checked]:bg-blue-600"
             />
           </div>
-           <div className="flex items-center justify-between">
-            <Label htmlFor="showInStockOnly" className="text-slate-200 cursor-pointer">הצג במלאי בלבד</Label>
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="showInStockOnly"
+              className="text-slate-200 cursor-pointer"
+            >
+              הצג במלאי בלבד
+            </Label>
             <Switch
               id="showInStockOnly"
               checked={showInStockOnly}
@@ -1331,8 +1653,13 @@ export default function BatchAndExpiryManagement() {
               className="data-[state=checked]:bg-blue-600"
             />
           </div>
-           <div className="flex items-center justify-between">
-            <Label htmlFor="showActiveOnly" className="text-slate-200 cursor-pointer">הצג אצוות פעילות בלבד</Label>
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="showActiveOnly"
+              className="text-slate-200 cursor-pointer"
+            >
+              הצג אצוות פעילות בלבד
+            </Label>
             <Switch
               id="showActiveOnly"
               checked={showActiveOnly}
@@ -1352,10 +1679,12 @@ export default function BatchAndExpiryManagement() {
     </div>
   );
 
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 p-6" dir="rtl">
+      <div
+        className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 p-6"
+        dir="rtl"
+      >
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="h-12 w-12 mx-auto animate-spin text-blue-600 mb-4" />
@@ -1380,7 +1709,8 @@ export default function BatchAndExpiryManagement() {
     );
   }
 
-  const totalAllItems = allData.allBatches.length + allData.handledBatches.length;
+  const totalAllItems =
+    allData.allBatches.length + allData.handledBatches.length;
   const activeFilterCount = [
     searchTerm ? 1 : 0,
     selectedStatuses.length > 0 ? 1 : 0,
@@ -1394,14 +1724,15 @@ export default function BatchAndExpiryManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
-
       {/* Mobile Header and Desktop header */}
       <header className="bg-white shadow-sm sticky top-0 z-20">
         {/* Mobile top bar */}
         <div className="px-4 py-3 border-b lg:hidden">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-gray-800 truncate">ניהול אצוות ופגי תוקף</h1>
+              <h1 className="text-lg font-bold text-gray-800 truncate">
+                ניהול אצוות ופגי תוקף
+              </h1>
               <p className="text-sm text-gray-500 mt-0.5">
                 {filteredAndSortedData.length} פריטים
               </p>
@@ -1426,8 +1757,13 @@ export default function BatchAndExpiryManagement() {
             <div className="hidden lg:flex items-center gap-4 flex-grow">
               <BackButton />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-slate-900">ניהול אצוות ופגי תוקף</h1>
-                <p className="text-sm text-slate-600 mt-1">מציג {filteredAndSortedData.length} מתוך {totalAllItems} פריטים</p>
+                <h1 className="text-xl md:text-2xl font-bold text-slate-900">
+                  ניהול אצוות ופגי תוקף
+                </h1>
+                <p className="text-sm text-slate-600 mt-1">
+                  מציג {filteredAndSortedData.length} מתוך {totalAllItems}{" "}
+                  פריטים
+                </p>
               </div>
             </div>
 
@@ -1438,7 +1774,7 @@ export default function BatchAndExpiryManagement() {
                 placeholder="חיפוש מהיר..."
                 className="w-full ps-4 pe-10 bg-white"
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
@@ -1449,7 +1785,9 @@ export default function BatchAndExpiryManagement() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => navigate(createPageUrl('QualityAssurance'))}
+                      onClick={() =>
+                        navigate(createPageUrl("QualityAssurance"))
+                      }
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 border-gray-300"
@@ -1457,18 +1795,24 @@ export default function BatchAndExpiryManagement() {
                       <FlaskConical className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent><p>בקרת איכות</p></TooltipContent>
+                  <TooltipContent>
+                    <p>בקרת איכות</p>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-               <Button
+              <Button
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-gray-300"
                 onClick={handleRefresh}
                 disabled={refreshing}
               >
-                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                {refreshing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -1486,150 +1830,225 @@ export default function BatchAndExpiryManagement() {
       <main className="flex-1 p-4 sm:p-6">
         {/* Filters Section - Desktop: Collapsible Popover, Mobile: Current behavior */}
         <Card className="mb-6 shadow-sm">
-            <CardContent className="p-4">
-                {/* Desktop: Compact Filter Button */}
-                <div className="hidden lg:flex items-center gap-3 flex-wrap">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="gap-2">
-                                <SlidersHorizontal className="h-4 w-4" />
-                                סינון מתקדם
-                                {activeFilterCount > 0 && (
-                                    <span className="bg-amber-500 text-white text-xs rounded-full px-2 py-0.5">
-                                        {activeFilterCount}
-                                    </span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[400px]" align="start">
-                            <div className="space-y-4" dir="rtl">
-                                <div>
-                                    <label className="text-sm font-medium text-slate-700 mb-2 block">חיפוש</label>
-                                    <div className="relative">
-                                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                        <Input
-                                            placeholder="חפש לפי שם, מס' אצווה או ספק..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pe-10"
-                                        />
-                                    </div>
-                                </div>
+          <CardContent className="p-4">
+            {/* Desktop: Compact Filter Button */}
+            <div className="hidden lg:flex items-center gap-3 flex-wrap">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    סינון מתקדם
+                    {activeFilterCount > 0 && (
+                      <span className="bg-amber-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px]" align="start">
+                  <div className="space-y-4" dir="rtl">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">
+                        חיפוש
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          placeholder="חפש לפי שם, מס' אצווה או ספק..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pe-10"
+                        />
+                      </div>
+                    </div>
 
-                                <div>
-                                    <label className="text-sm font-medium text-slate-700 mb-2 block">סטטוסים</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['active', 'IN_USE', 'expired', 'disposed', 'consumed', 'quarantine', 'consumed_by_expiry', 'other_use'].map((status) => (
-                                            <Button
-                                                key={status}
-                                                variant={selectedStatuses.includes(status) ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => toggleStatus(status)}
-                                                className={selectedStatuses.includes(status) ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
-                                            >
-                                                {statusLabels[status]}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">
+                        סטטוסים
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          "active",
+                          "IN_USE",
+                          "expired",
+                          "disposed",
+                          "consumed",
+                          "quarantine",
+                          "consumed_by_expiry",
+                          "other_use",
+                        ].map((status) => (
+                          <Button
+                            key={status}
+                            variant={
+                              selectedStatuses.includes(status)
+                                ? "default"
+                                : "outline"
+                            }
+                            size="sm"
+                            onClick={() => toggleStatus(status)}
+                            className={
+                              selectedStatuses.includes(status)
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : ""
+                            }
+                          >
+                            {statusLabels[status]}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-sm font-medium text-slate-700 mb-2 block">מתאריך</label>
-                                        <DatePicker selected={startDate} onChange={setStartDate} placeholderText="מתאריך" />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-slate-700 mb-2 block">עד תאריך</label>
-                                        <DatePicker selected={endDate} onChange={setEndDate} placeholderText="עד תאריך" />
-                                    </div>
-                                </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-2 block">
+                          מתאריך
+                        </label>
+                        <DatePicker
+                          selected={startDate}
+                          onChange={setStartDate}
+                          placeholderText="מתאריך"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-2 block">
+                          עד תאריך
+                        </label>
+                        <DatePicker
+                          selected={endDate}
+                          onChange={setEndDate}
+                          placeholderText="עד תאריך"
+                        />
+                      </div>
+                    </div>
 
-                                <div className="space-y-2 pt-2 border-t">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-slate-700">הצג אצוות שטופלו</label>
-                                        <Switch checked={showHandled} onCheckedChange={setShowHandled} />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-slate-700">הצג פגי תוקף בלבד</label>
-                                        <Switch checked={showExpiredOnly} onCheckedChange={setShowExpiredOnly} />
-                                     </div>
-                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="showInStockOnly" className="text-sm font-medium text-slate-700 cursor-pointer">הצג במלאי בלבד</Label>
-                                        <Switch
-                                          id="showInStockOnly"
-                                          checked={showInStockOnly}
-                                          onCheckedChange={setShowInStockOnly}
-                                        />
-                                    </div>
-                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="showActiveOnly" className="text-sm font-medium text-slate-700 cursor-pointer">הצג אצוות פעילות בלבד</Label>
-                                        <Switch
-                                          id="showActiveOnly"
-                                          checked={showActiveOnly}
-                                          onCheckedChange={setShowActiveOnly}
-                                        />
-                                    </div>
-                                </div>
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-slate-700">
+                          הצג אצוות שטופלו
+                        </label>
+                        <Switch
+                          checked={showHandled}
+                          onCheckedChange={setShowHandled}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-slate-700">
+                          הצג פגי תוקף בלבד
+                        </label>
+                        <Switch
+                          checked={showExpiredOnly}
+                          onCheckedChange={setShowExpiredOnly}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor="showInStockOnly"
+                          className="text-sm font-medium text-slate-700 cursor-pointer"
+                        >
+                          הצג במלאי בלבד
+                        </Label>
+                        <Switch
+                          id="showInStockOnly"
+                          checked={showInStockOnly}
+                          onCheckedChange={setShowInStockOnly}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor="showActiveOnly"
+                          className="text-sm font-medium text-slate-700 cursor-pointer"
+                        >
+                          הצג אצוות פעילות בלבד
+                        </Label>
+                        <Switch
+                          id="showActiveOnly"
+                          checked={showActiveOnly}
+                          onCheckedChange={setShowActiveOnly}
+                        />
+                      </div>
+                    </div>
 
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={clearAllFilters}
-                                    className="w-full"
-                                >
-                                    נקה סינונים
-                                </Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-
-                    <Button variant="outline" size="sm" onClick={() => setShowColumnSelector(!showColumnSelector)} className="gap-2">
-                        <Columns className="h-4 w-4" />
-                        עמודות
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="w-full"
+                    >
+                      נקה סינונים
                     </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-                    <div className="flex-1" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowColumnSelector(!showColumnSelector)}
+                className="gap-2"
+              >
+                <Columns className="h-4 w-4" />
+                עמודות
+              </Button>
 
-                    <span className="text-sm text-slate-600">
-                        מציג {filteredAndSortedData.length} מתוך {totalAllItems}
-                    </span>
+              <div className="flex-1" />
+
+              <span className="text-sm text-slate-600">
+                מציג {filteredAndSortedData.length} מתוך {totalAllItems}
+              </span>
+            </div>
+
+            {/* Mobile: Filter logic handled by the side menu (isMobileFilterMenuOpen) */}
+
+            {/* Column Selector Popover (Desktop & Mobile) */}
+            {showColumnSelector && (
+              <Card className="mt-4 p-4 bg-slate-50">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-sm">בחר עמודות להצגה</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowColumnSelector(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-
-                {/* Mobile: Filter logic handled by the side menu (isMobileFilterMenuOpen) */}
-
-                {/* Column Selector Popover (Desktop & Mobile) */}
-                {showColumnSelector && (
-                    <Card className="mt-4 p-4 bg-slate-50">
-                        <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-sm">בחר עמודות להצגה</h4>
-                            <Button variant="ghost" size="sm" onClick={() => setShowColumnSelector(false)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {Object.keys(initialVisibleColumns).map((key) => (
-                                <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={visibleColumns[key]}
-                                        onChange={() => toggleColumn(key)}
-                                        className="rounded border-slate-300"
-                                        disabled={key === 'reagent_name' || key === 'batch_number' || key === 'expiry_date' || key === 'status' || key === 'actions'} // Disable essential columns
-                                    />
-                                    <span>{columns[key]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </Card>
-                )}
-            </CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {Object.keys(initialVisibleColumns).map((key) => (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 text-sm cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[key]}
+                        onChange={() => toggleColumn(key)}
+                        className="rounded border-slate-300"
+                        disabled={
+                          key === "reagent_name" ||
+                          key === "batch_number" ||
+                          key === "expiry_date" ||
+                          key === "status" ||
+                          key === "actions"
+                        } // Disable essential columns
+                      />
+                      <span>{columns[key]}</span>
+                    </label>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </CardContent>
         </Card>
 
         {filteredAndSortedData.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-            <h3 className="text-lg font-medium text-slate-700 mb-2">אין נתונים להצגה</h3>
-            <p className="text-slate-500">נסה לשנות את הפילטרים או לרענן את הנתונים</p>
+            <h3 className="text-lg font-medium text-slate-700 mb-2">
+              אין נתונים להצגה
+            </h3>
+            <p className="text-slate-500">
+              נסה לשנות את הפילטרים או לרענן את הנתונים
+            </p>
           </div>
         ) : (
           <>
@@ -1693,10 +2112,10 @@ export default function BatchAndExpiryManagement() {
               onClick={() => setIsMobileFilterMenuOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="relative w-full max-w-xs h-full bg-slate-800/80 backdrop-blur-lg shadow-2xl"
             >
               {filterControls}
@@ -1704,7 +2123,6 @@ export default function BatchAndExpiryManagement() {
           </div>
         )}
       </AnimatePresence>
-
 
       {/* UPDATED: Enhanced Action Dialog with corrected texts, colors and larger headings */}
       <AnimatePresence>
@@ -1718,7 +2136,7 @@ export default function BatchAndExpiryManagement() {
               className="fixed inset-0 bg-black/30 backdrop-blur-md"
               onClick={() => {
                 setHandlingItemDialog(null);
-                setActionNotes('');
+                setActionNotes("");
               }}
             />
 
@@ -1733,17 +2151,23 @@ export default function BatchAndExpiryManagement() {
               <div className="bg-gradient-to-r from-blue-50/90 to-slate-50/90 backdrop-blur-sm p-6 border-b border-slate-200/50">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">טיפול בפריטים פגי תוקף</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">
+                      טיפול בפריטים פגי תוקף
+                    </h3>
                     {/* UPDATED: Larger and more prominent reagent name and batch */}
-                    <p className="text-lg font-semibold text-blue-700 mb-1">{handlingItemDialog?.reagent_name}</p>
-                    <p className="text-base font-mono font-medium text-slate-700">אצווה: {handlingItemDialog?.batch_number}</p>
+                    <p className="text-lg font-semibold text-blue-700 mb-1">
+                      {handlingItemDialog?.reagent_name}
+                    </p>
+                    <p className="text-base font-mono font-medium text-slate-700">
+                      אצווה: {handlingItemDialog?.batch_number}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => {
                       setHandlingItemDialog(null);
-                      setActionNotes('');
+                      setActionNotes("");
                     }}
                     className="h-8 w-8 text-slate-400 hover:text-slate-600"
                   >
@@ -1759,33 +2183,51 @@ export default function BatchAndExpiryManagement() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="font-medium text-slate-600">ספק:</span>
-                      <p className="text-slate-900 font-medium">{allData.reagentInfoCache[handlingItemDialog?.reagent_id]?.supplier || handlingItemDialog?.supplier || 'לא ידוע'}</p>
+                      <p className="text-slate-900 font-medium">
+                        {allData.reagentInfoCache[
+                          handlingItemDialog?.reagent_id
+                        ]?.supplier ||
+                          handlingItemDialog?.supplier ||
+                          "לא ידוע"}
+                      </p>
                     </div>
                     <div>
                       <span className="font-medium text-slate-600">תפוגה:</span>
                       <p className="text-slate-900 font-medium">
-                        {handlingItemDialog?.expiry_date && isValid(parseISO(handlingItemDialog.expiry_date))
-                          ? format(parseISO(handlingItemDialog.expiry_date), 'dd/MM/yyyy')
-                          : 'אין'}
+                        {handlingItemDialog?.expiry_date &&
+                        isValid(parseISO(handlingItemDialog.expiry_date))
+                          ? format(
+                              parseISO(handlingItemDialog.expiry_date),
+                              "dd/MM/yyyy",
+                            )
+                          : "אין"}
                       </p>
                     </div>
                     <div className="col-span-2 text-center">
-                      <span className="font-medium text-slate-600">כמות זמינה:</span>
-                      <p className="text-2xl font-bold text-blue-600 mt-1">{formatQuantity(remainingQuantity)}</p>
+                      <span className="font-medium text-slate-600">
+                        כמות זמינה:
+                      </span>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">
+                        {formatQuantity(remainingQuantity)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Type Selection - UPDATED: System colors */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium text-slate-800">בחר פעולה</Label>
+                  <Label className="text-base font-medium text-slate-800">
+                    בחר פעולה
+                  </Label>
                   <Select value={actionType} onValueChange={setActionType}>
                     <SelectTrigger className="w-full bg-white/90 backdrop-blur-sm border-slate-300 focus:border-blue-500 focus:ring-blue-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="disposed">השמדה</SelectItem>
-                      <SelectItem value="consumed_by_expiry">נצרך לפני זמן התפוגה</SelectItem>
+                      <SelectItem value="consumed_by_expiry">
+                        נצרך לפני זמן התפוגה
+                      </SelectItem>
                       <SelectItem value="other_use">שימוש אחר</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1793,13 +2235,20 @@ export default function BatchAndExpiryManagement() {
 
                 {/* Quantity Input - UPDATED: System colors */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium text-slate-800">{getActionTypeLabel(actionType)}</Label>
+                  <Label className="text-base font-medium text-slate-800">
+                    {getActionTypeLabel(actionType)}
+                  </Label>
                   <Input
                     type="number"
                     value={handlingQuantity}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === '' || (!isNaN(val) && parseFloat(val) >= 0 && parseFloat(val) <= remainingQuantity)) {
+                      if (
+                        val === "" ||
+                        (!isNaN(val) &&
+                          parseFloat(val) >= 0 &&
+                          parseFloat(val) <= remainingQuantity)
+                      ) {
                         setHandlingQuantity(val);
                       }
                     }}
@@ -1815,7 +2264,9 @@ export default function BatchAndExpiryManagement() {
 
                 {/* Notes - UPDATED: System colors */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium text-slate-800">הערות (אופציונלי)</Label>
+                  <Label className="text-base font-medium text-slate-800">
+                    הערות (אופציונלי)
+                  </Label>
                   <Textarea
                     placeholder="הוסף הערות על הטיפול בפריט..."
                     value={actionNotes}
@@ -1832,7 +2283,7 @@ export default function BatchAndExpiryManagement() {
                     variant="outline"
                     onClick={() => {
                       setHandlingItemDialog(null);
-                      setActionNotes('');
+                      setActionNotes("");
                     }}
                     className="flex-1 bg-white/90 backdrop-blur-sm border-slate-300 hover:bg-slate-50"
                   >
@@ -1840,7 +2291,11 @@ export default function BatchAndExpiryManagement() {
                   </Button>
                   <Button
                     onClick={handleProcessAction}
-                    disabled={isHandlingAction || !handlingQuantity || parseFloat(handlingQuantity) <= 0}
+                    disabled={
+                      isHandlingAction ||
+                      !handlingQuantity ||
+                      parseFloat(handlingQuantity) <= 0
+                    }
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                   >
                     {isHandlingAction ? (
@@ -1849,7 +2304,7 @@ export default function BatchAndExpiryManagement() {
                         מעבד...
                       </>
                     ) : (
-                      'בצע פעולה'
+                      "בצע פעולה"
                     )}
                   </Button>
                 </div>
@@ -1861,7 +2316,10 @@ export default function BatchAndExpiryManagement() {
 
       {/* UPDATED: COA Upload Dialog with new design */}
       <Dialog open={showCOADialog} onOpenChange={setShowCOADialog}>
-        <DialogContent className="max-w-md bg-white border border-slate-300 rounded-2xl shadow-2xl" dir="rtl">
+        <DialogContent
+          className="max-w-md bg-white border border-slate-300 rounded-2xl shadow-2xl"
+          dir="rtl"
+        >
           <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
               <div className="bg-amber-100 p-2 rounded-lg">
@@ -1875,19 +2333,48 @@ export default function BatchAndExpiryManagement() {
             <div className="space-y-6">
               {/* Batch Info Card - Clear and prominent */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div className="text-sm font-medium text-slate-600 mb-2">פרטי האצווה:</div>
-                <div className="text-2xl font-bold text-slate-900 mb-2">{selectedBatch?.reagent_name || selectedBatch?.reagent_name_snapshot}</div>
+                <div className="text-sm font-medium text-slate-600 mb-2">
+                  פרטי האצווה:
+                </div>
+                <div className="text-2xl font-bold text-slate-900 mb-2">
+                  {selectedBatch?.reagent_name ||
+                    selectedBatch?.reagent_name_snapshot}
+                </div>
                 <div className="text-lg font-semibold text-slate-800 mb-3">
-                  אצווה: <span className="font-mono text-blue-700">{selectedBatch?.batch_number || selectedBatch?.batch_number_snapshot}</span>
+                  אצווה:{" "}
+                  <span className="font-mono text-blue-700">
+                    {selectedBatch?.batch_number ||
+                      selectedBatch?.batch_number_snapshot}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-700">
-                  <span>תפוגה: {(selectedBatch?.expiry_date && isValid(parseISO(selectedBatch.expiry_date))) ? format(parseISO(selectedBatch.expiry_date), 'dd/MM/yyyy') : 'לא ידוע'}</span>
-                  <span>ספק: {(allData.reagentInfoCache[selectedBatch.reagent_id]?.supplier) || selectedBatch?.supplier || 'לא ידוע'}</span>
+                  <span>
+                    תפוגה:{" "}
+                    {selectedBatch?.expiry_date &&
+                    isValid(parseISO(selectedBatch.expiry_date))
+                      ? format(
+                          parseISO(selectedBatch.expiry_date),
+                          "dd/MM/yyyy",
+                        )
+                      : "לא ידוע"}
+                  </span>
+                  <span>
+                    ספק:{" "}
+                    {allData.reagentInfoCache[selectedBatch.reagent_id]
+                      ?.supplier ||
+                      selectedBatch?.supplier ||
+                      "לא ידוע"}
+                  </span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="coa-file" className="text-base font-semibold text-slate-800">בחר קובץ תעודת אנליזה:</Label>
+                <Label
+                  htmlFor="coa-file"
+                  className="text-base font-semibold text-slate-800"
+                >
+                  בחר קובץ תעודת אנליזה:
+                </Label>
                 <input
                   id="coa-file"
                   type="file"
@@ -1903,7 +2390,8 @@ export default function BatchAndExpiryManagement() {
                   </div>
                 )}
                 <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  📎 תמיכה בקבצי PDF ותמונות<br/>
+                  📎 תמיכה בקבצי PDF ותמונות
+                  <br />
                   📱 במובייל - לחץ לצילום ישיר של התעודה
                 </div>
               </div>
@@ -1963,8 +2451,25 @@ export default function BatchAndExpiryManagement() {
 }
 
 // ENHANCED: Unified Table Component with polished interactions
-function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpload, onCOAView, onEdit, onRestore, utils, selectedItems, onSelectItem, onSelectAll, reagentInfoCache, visibleColumns, columnsLabels, columnWidths, onColumnResizeMouseDown }) {
-
+function UnifiedBatchTable({
+  data,
+  onSort,
+  sortConfig,
+  onHandleExpired,
+  onCOAUpload,
+  onCOAView,
+  onEdit,
+  onRestore,
+  utils,
+  selectedItems,
+  onSelectItem,
+  onSelectAll,
+  reagentInfoCache,
+  visibleColumns,
+  columnsLabels,
+  columnWidths,
+  onColumnResizeMouseDown,
+}) {
   // Custom Sortable Header component for desktop table
   const SortableHeader = ({ field, label }) => (
     <div
@@ -1975,14 +2480,16 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
       <div className="flex flex-col items-center ms-1">
         <ChevronUp
           className={`h-3 w-3 ${
-            sortConfig.key === field && sortConfig.direction === 'asc'
-              ? 'text-blue-600' : 'text-gray-400'
+            sortConfig.key === field && sortConfig.direction === "asc"
+              ? "text-blue-600"
+              : "text-gray-400"
           }`}
         />
         <ChevronDown
           className={`h-3 w-3 -mt-1 ${
-            sortConfig.key === field && sortConfig.direction === 'desc'
-              ? 'text-blue-600' : 'text-gray-400'
+            sortConfig.key === field && sortConfig.direction === "desc"
+              ? "text-blue-600"
+              : "text-gray-400"
           }`}
         />
       </div>
@@ -1990,7 +2497,12 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
   );
 
   // Action buttons with better visual feedback
-  const ActionButtonWithTooltip = ({ icon: Icon, onClick, tooltip, disabled }) => (
+  const ActionButtonWithTooltip = ({
+    icon: Icon,
+    onClick,
+    tooltip,
+    disabled,
+  }) => (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -2004,7 +2516,10 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
             <Icon className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="bg-slate-800 text-white text-xs px-2 py-1">
+        <TooltipContent
+          side="top"
+          className="bg-slate-800 text-white text-xs px-2 py-1"
+        >
           <p>{tooltip}</p>
         </TooltipContent>
       </Tooltip>
@@ -2020,14 +2535,17 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
             size="sm"
             onClick={() => onClick(item)}
             className={`text-xs px-3 py-1.5 h-auto transition-colors duration-200
-                        ${isUrgent ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'}
+                        ${isUrgent ? "bg-orange-600 hover:bg-orange-700" : "bg-blue-600 hover:bg-blue-700"}
                         text-white`}
           >
             טפל
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="bg-slate-800 text-white text-xs px-2 py-1">
-          <p>{isUrgent ? 'הפריט פג תוקף או עומד לפוג בקרוב' : 'טפל בפריט'}</p>
+        <TooltipContent
+          side="top"
+          className="bg-slate-800 text-white text-xs px-2 py-1"
+        >
+          <p>{isUrgent ? "הפריט פג תוקף או עומד לפוג בקרוב" : "טפל בפריט"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -2041,11 +2559,13 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
       return <span className="text-slate-500 text-xs">אין תאריך</span>;
     }
 
-    const displayDate = format(parseISO(date), 'dd/MM/yyyy', { locale: he });
+    const displayDate = format(parseISO(date), "dd/MM/yyyy", { locale: he });
 
     return (
       <div className="flex items-center justify-center">
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}>
+        <span
+          className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}
+        >
           {displayDate}
         </span>
       </div>
@@ -2065,23 +2585,25 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
 
     if (daysLeft < 0) {
       daysDisplay = `עברו ${Math.abs(daysLeft)}`;
-      urgencyIcon = '⚠️';
+      urgencyIcon = "⚠️";
     } else if (daysLeft === 0) {
-      daysDisplay = 'פג היום';
-      urgencyIcon = '🔴';
+      daysDisplay = "פג היום";
+      urgencyIcon = "🔴";
     } else if (daysLeft <= 3) {
       daysDisplay = `${daysLeft} ימים`;
-      urgencyIcon = '🟠';
+      urgencyIcon = "🟠";
     } else if (daysLeft <= 7) {
       daysDisplay = `${daysLeft} ימים`;
-      urgencyIcon = '🟡';
+      urgencyIcon = "🟡";
     } else {
       daysDisplay = `${daysLeft} ימים`;
     }
 
     return (
       <div className="flex items-center justify-center">
-        <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}>
+        <span
+          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}
+        >
           {urgencyIcon && <span className="text-xs">{urgencyIcon}</span>}
           {daysDisplay}
         </span>
@@ -2090,21 +2612,27 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
   };
 
   // Get table headers based on visible columns
-  const getTableHeaders = () => Object.keys(columnsLabels)
-    .map(key => ({ key, label: columnsLabels[key] }))
-    .filter(header => visibleColumns[header.key]);
+  const getTableHeaders = () =>
+    Object.keys(columnsLabels)
+      .map((key) => ({ key, label: columnsLabels[key] }))
+      .filter((header) => visibleColumns[header.key]);
 
   // Desktop table row with better visual feedback
   const DesktopTableRow = ({ item, index, isSelected, onSelect }) => {
     const isHandled = !!item?.action_taken;
-    const daysLeft = (item?.expiry_date && isValid(parseISO(item.expiry_date))) ? differenceInDays(parseISO(item.expiry_date), new Date()) :
-                     (item?.original_expiry_date && isValid(parseISO(item.original_expiry_date))) ? differenceInDays(parseISO(item.original_expiry_date), new Date()) : null;
+    const daysLeft =
+      item?.expiry_date && isValid(parseISO(item.expiry_date))
+        ? differenceInDays(parseISO(item.expiry_date), new Date())
+        : item?.original_expiry_date &&
+            isValid(parseISO(item.original_expiry_date))
+          ? differenceInDays(parseISO(item.original_expiry_date), new Date())
+          : null;
     const shouldShowHandleButton = utils.canBeHandled(item);
     const isUrgent = utils.isUrgentForColor(item, daysLeft);
 
     // Status display logic
-    let statusDisplay = '';
-    let statusBadgeClass = '';
+    let statusDisplay = "";
+    let statusBadgeClass = "";
 
     if (isHandled) {
       statusDisplay = getActionTakenLabel(item?.action_taken);
@@ -2115,27 +2643,51 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
     }
 
     return (
-      <TableRow key={item.id || index} className={`border-b border-slate-200 transition-all duration-200 ${isSelected ? 'bg-blue-50/30' : (isHandled ? 'bg-slate-50/50' : 'bg-white')} hover:bg-slate-50/80 h-14`}>
+      <TableRow
+        key={item.id || index}
+        className={`border-b border-slate-200 transition-all duration-200 ${isSelected ? "bg-blue-50/30" : isHandled ? "bg-slate-50/50" : "bg-white"} hover:bg-slate-50/80 h-14`}
+      >
         {visibleColumns.select && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.select}}>
-            <Checkbox checked={isSelected} onCheckedChange={() => onSelect(item.id)} />
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.select }}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onSelect(item.id)}
+            />
           </TableCell>
         )}
 
         {visibleColumns.reagent_name && (
-          <TableCell className="px-3 py-3 text-right text-sm text-slate-900 font-medium" style={{width: columnWidths.reagent_name}}>
-            <div className="truncate">{item?.reagent_name || item?.reagent_name_snapshot}</div>
+          <TableCell
+            className="px-3 py-3 text-right text-sm text-slate-900 font-medium"
+            style={{ width: columnWidths.reagent_name }}
+          >
+            <div className="truncate">
+              {item?.reagent_name || item?.reagent_name_snapshot}
+            </div>
           </TableCell>
         )}
 
         {visibleColumns.supplier && (
-          <TableCell className="px-3 py-3 text-right text-sm text-slate-600" style={{width: columnWidths.supplier}}>
-            <div className="truncate">{reagentInfoCache[item.reagent_id]?.supplier || item.supplier || 'לא ידוע'}</div>
+          <TableCell
+            className="px-3 py-3 text-right text-sm text-slate-600"
+            style={{ width: columnWidths.supplier }}
+          >
+            <div className="truncate">
+              {reagentInfoCache[item.reagent_id]?.supplier ||
+                item.supplier ||
+                "לא ידוע"}
+            </div>
           </TableCell>
         )}
 
         {visibleColumns.batch_number && (
-          <TableCell className="px-3 py-3 text-center font-mono text-sm" style={{width: columnWidths.batch_number}}>
+          <TableCell
+            className="px-3 py-3 text-center font-mono text-sm"
+            style={{ width: columnWidths.batch_number }}
+          >
             <Link
               to={createPageUrl(`EditReagentBatch?id=${item?.id}`)}
               className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 font-medium"
@@ -2146,33 +2698,54 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
         )}
 
         {visibleColumns.expiry_date && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.expiry_date}}>
-            <ExpiryDateBadge date={item?.expiry_date || item?.original_expiry_date} daysLeft={daysLeft} />
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.expiry_date }}
+          >
+            <ExpiryDateBadge
+              date={item?.expiry_date || item?.original_expiry_date}
+              daysLeft={daysLeft}
+            />
           </TableCell>
         )}
 
         {visibleColumns.days_to_expiry && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.days_to_expiry}}>
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.days_to_expiry }}
+          >
             <DaysToExpiryBadge daysLeft={daysLeft} />
           </TableCell>
         )}
 
         {visibleColumns.current_quantity && (
-          <TableCell className="px-3 py-3 text-center font-mono text-sm font-medium" style={{width: columnWidths.current_quantity}}>
+          <TableCell
+            className="px-3 py-3 text-center font-mono text-sm font-medium"
+            style={{ width: columnWidths.current_quantity }}
+          >
             {formatQuantity(item?.current_quantity ?? item?.quantity_affected)}
           </TableCell>
         )}
 
         {visibleColumns.status && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.status}}>
-            <Badge variant={statusBadgeClass} className="text-xs px-2 py-1 transition-all duration-200 hover:scale-105">
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.status }}
+          >
+            <Badge
+              variant={statusBadgeClass}
+              className="text-xs px-2 py-1 transition-all duration-200 hover:scale-105"
+            >
               {statusDisplay}
             </Badge>
           </TableCell>
         )}
 
         {visibleColumns.coa_status && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.coa_status}}>
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.coa_status }}
+          >
             <div className="flex items-center justify-center gap-1">
               {item?.coa_document_url && (
                 <ActionButtonWithTooltip
@@ -2184,14 +2757,21 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
               <ActionButtonWithTooltip
                 icon={Upload}
                 onClick={() => onCOAUpload(item)}
-                tooltip={item?.coa_document_url ? 'עדכן תעודת אנליזה' : 'העלה תעודת אנליזה'}
+                tooltip={
+                  item?.coa_document_url
+                    ? "עדכן תעודת אנליזה"
+                    : "העלה תעודת אנליזה"
+                }
               />
             </div>
           </TableCell>
         )}
 
         {visibleColumns.actions && (
-          <TableCell className="px-3 py-3 text-center" style={{width: columnWidths.actions}}>
+          <TableCell
+            className="px-3 py-3 text-center"
+            style={{ width: columnWidths.actions }}
+          >
             <div className="flex items-center justify-center gap-1">
               <ActionButtonWithTooltip
                 icon={Edit3}
@@ -2237,23 +2817,27 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
                   className="px-3 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider border-e border-slate-200 last:border-e-0 relative select-none bg-gradient-to-b from-slate-100 to-slate-50"
                   style={{ width: columnWidths[header.key] }}
                 >
-                  {header.key === 'select' ? (
+                  {header.key === "select" ? (
                     <Checkbox
-                      checked={selectedItems.size === data.length && data.length > 0}
+                      checked={
+                        selectedItems.size === data.length && data.length > 0
+                      }
                       onCheckedChange={onSelectAll}
                       disabled={data.length === 0}
                     />
-                  ) : header.key === 'actions' ? (
+                  ) : header.key === "actions" ? (
                     <span className="block">{header.label}</span>
                   ) : (
                     <SortableHeader field={header.key} label={header.label} />
                   )}
 
                   {/* Resize handle - positioned on LEFT for RTL. Disabled for 'select' and 'actions' */}
-                  {!(header.key === 'select' || header.key === 'actions') && (
+                  {!(header.key === "select" || header.key === "actions") && (
                     <div
                       className="absolute top-0 left-0 w-2 h-full cursor-col-resize hover:bg-blue-400/30 bg-transparent transition-colors duration-200 active:bg-blue-500/40"
-                      onMouseDown={(e) => onColumnResizeMouseDown(e, header.key)}
+                      onMouseDown={(e) =>
+                        onColumnResizeMouseDown(e, header.key)
+                      }
                       title="גרור לשינוי רוחב העמודה"
                     />
                   )}
@@ -2279,10 +2863,26 @@ function UnifiedBatchTable({ data, onSort, sortConfig, onHandleExpired, onCOAUpl
 }
 
 // NEW: BatchCard component for mobile view, extracted from UnifiedBatchTable
-function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onRestore, utils, isSelected, onSelect, reagentInfoCache }) {
+function BatchCard({
+  item,
+  onHandleItem,
+  onCOAUpload,
+  onCOAView,
+  onEdit,
+  onRestore,
+  utils,
+  isSelected,
+  onSelect,
+  reagentInfoCache,
+}) {
   const isHandled = !!item?.action_taken;
-  const daysLeft = (item?.expiry_date && isValid(parseISO(item.expiry_date))) ? differenceInDays(parseISO(item.expiry_date), new Date()) :
-                   (item?.original_expiry_date && isValid(parseISO(item.original_expiry_date))) ? differenceInDays(parseISO(item.original_expiry_date), new Date()) : null;
+  const daysLeft =
+    item?.expiry_date && isValid(parseISO(item.expiry_date))
+      ? differenceInDays(parseISO(item.expiry_date), new Date())
+      : item?.original_expiry_date &&
+          isValid(parseISO(item.original_expiry_date))
+        ? differenceInDays(parseISO(item.original_expiry_date), new Date())
+        : null;
   const shouldShowHandleButton = utils.canBeHandled(item);
   const isUrgent = utils.isUrgentForColor(item, daysLeft);
 
@@ -2293,11 +2893,13 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
       return <span className="text-slate-500 text-xs">אין תאריך</span>;
     }
 
-    const displayDate = format(parseISO(date), 'dd/MM/yyyy', { locale: he });
+    const displayDate = format(parseISO(date), "dd/MM/yyyy", { locale: he });
 
     return (
       <div className="flex items-center justify-center">
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}>
+        <span
+          className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${expiryColors.bgColor} ${expiryColors.textColor}`}
+        >
           {displayDate}
         </span>
       </div>
@@ -2305,7 +2907,13 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
   };
 
   // Action buttons with better visual feedback
-  const ActionButtonWithTooltip = ({ icon: Icon, onClick, tooltip, disabled, className = "" }) => (
+  const ActionButtonWithTooltip = ({
+    icon: Icon,
+    onClick,
+    tooltip,
+    disabled,
+    className = "",
+  }) => (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -2319,7 +2927,10 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
             <Icon className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="bg-slate-800 text-white text-xs px-2 py-1">
+        <TooltipContent
+          side="top"
+          className="bg-slate-800 text-white text-xs px-2 py-1"
+        >
           <p>{tooltip}</p>
         </TooltipContent>
       </Tooltip>
@@ -2334,39 +2945,54 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
             size="sm"
             onClick={() => onClick(item)}
             className={`text-xs px-3 py-1.5 h-auto transition-colors duration-200
-                        ${isUrgent ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'}
+                        ${isUrgent ? "bg-orange-600 hover:bg-orange-700" : "bg-blue-600 hover:bg-blue-700"}
                         text-white`}
           >
             טפל
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="bg-slate-800 text-white text-xs px-2 py-1">
-          <p>{isUrgent ? 'הפריט פג תוקף או עומד לפוג בקרוב' : 'טפל בפריט'}</p>
+        <TooltipContent
+          side="top"
+          className="bg-slate-800 text-white text-xs px-2 py-1"
+        >
+          <p>{isUrgent ? "הפריט פג תוקף או עומד לפוג בקרוב" : "טפל בפריט"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 
-
   return (
-    <div className={`bg-white/80 backdrop-blur-sm border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-200 ${isSelected ? 'border-blue-500 bg-blue-50/20' : 'border-slate-200'}`}>
+    <div
+      className={`bg-white/80 backdrop-blur-sm border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-200 ${isSelected ? "border-blue-500 bg-blue-50/20" : "border-slate-200"}`}
+    >
       <div className="flex items-start justify-between mb-1">
         {/* Checkbox */}
         <div className="flex-shrink-0 ms-2 pt-1">
-          <Checkbox checked={isSelected} onCheckedChange={() => onSelect(item.id)} />
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onSelect(item.id)}
+          />
         </div>
 
         {/* Left side - Main info in horizontal layout */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <div className="font-semibold text-sm text-slate-800 truncate me-2">{item?.reagent_name || item?.reagent_name_snapshot}</div>
+            <div className="font-semibold text-sm text-slate-800 truncate me-2">
+              {item?.reagent_name || item?.reagent_name_snapshot}
+            </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               {!isHandled ? (
-                <Badge variant="outline" className="font-mono text-xs px-1 py-0">
+                <Badge
+                  variant="outline"
+                  className="font-mono text-xs px-1 py-0"
+                >
                   {formatQuantity(item?.current_quantity)}
                 </Badge>
               ) : (
-                <Badge variant={getStatusBadgeVariant(item?.action_taken)} className="text-xs px-1 py-0">
+                <Badge
+                  variant={getStatusBadgeVariant(item?.action_taken)}
+                  className="text-xs px-1 py-0"
+                >
                   {getActionTakenLabel(item?.action_taken)}
                 </Badge>
               )}
@@ -2376,14 +3002,24 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
           {/* Compact info row */}
           <div className="flex items-center justify-between text-xs text-slate-500">
             <div className="flex items-center gap-2">
-              <span>{reagentInfoCache[item.reagent_id]?.supplier || item.supplier || 'לא ידוע'}</span>
+              <span>
+                {reagentInfoCache[item.reagent_id]?.supplier ||
+                  item.supplier ||
+                  "לא ידוע"}
+              </span>
               <span>•</span>
-              <Link to={createPageUrl(`EditReagentBatch?id=${item?.id}`)} className="text-blue-600 hover:underline font-mono">
+              <Link
+                to={createPageUrl(`EditReagentBatch?id=${item?.id}`)}
+                className="text-blue-600 hover:underline font-mono"
+              >
                 {item?.batch_number || item?.batch_number_snapshot}
               </Link>
             </div>
             <div className="flex items-center gap-1">
-              <ExpiryDateBadge date={item?.expiry_date || item?.original_expiry_date} daysLeft={daysLeft} />
+              <ExpiryDateBadge
+                date={item?.expiry_date || item?.original_expiry_date}
+                daysLeft={daysLeft}
+              />
             </div>
           </div>
         </div>
@@ -2415,7 +3051,9 @@ function BatchCard({ item, onHandleItem, onCOAUpload, onCOAView, onEdit, onResto
               onClick={onHandleItem}
             />
           ) : (
-            <span className="text-xs text-slate-400 flex items-center justify-center px-3 py-1.5">-</span>
+            <span className="text-xs text-slate-400 flex items-center justify-center px-3 py-1.5">
+              -
+            </span>
           )
         ) : (
           <ActionButtonWithTooltip

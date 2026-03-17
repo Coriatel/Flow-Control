@@ -1,5 +1,6 @@
-import prisma from '../utils/prisma';
-import { BatchStatus, TransactionType } from '../types';
+import prisma from "../utils/prisma";
+import { BatchStatus, TransactionType } from "../types";
+import { updateReagentAggregates } from "./reagentAggregates";
 
 export interface BatchFilters {
   reagentId?: string;
@@ -50,12 +51,12 @@ export const batchService = {
       where.expiryDate = {
         lte: futureDate,
       };
-      where.status = 'ACTIVE';
+      where.status = "ACTIVE";
     }
 
     const batches = await prisma.reagentBatch.findMany({
       where,
-      orderBy: { expiryDate: 'asc' },
+      orderBy: { expiryDate: "asc" },
     });
 
     // Manually add reagent and supplier info
@@ -99,7 +100,7 @@ export const batchService = {
 
     const transactions = await prisma.inventoryTransaction.findMany({
       where: { batchId: id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: 50,
     });
 
@@ -122,7 +123,7 @@ export const batchService = {
         initialQuantity: data.initialQuantity,
         currentQuantity: data.initialQuantity,
         receivedDate: data.receivedDate || new Date(),
-        status: 'ACTIVE',
+        status: "ACTIVE",
         generalNotes: data.notes,
       },
     });
@@ -177,22 +178,22 @@ export const batchService = {
     });
 
     if (!batch) {
-      throw new Error('Batch not found');
+      throw new Error("Batch not found");
     }
 
-    if (batch.status !== 'ACTIVE') {
-      throw new Error('Cannot withdraw from inactive batch');
+    if (batch.status !== "ACTIVE") {
+      throw new Error("Cannot withdraw from inactive batch");
     }
 
     const currentQty = Number(batch.currentQuantity);
     if (input.quantity > currentQty) {
       throw new Error(
-        `Insufficient quantity. Available: ${currentQty}, Requested: ${input.quantity}`
+        `Insufficient quantity. Available: ${currentQty}, Requested: ${input.quantity}`,
       );
     }
 
     const newQuantity = currentQty - input.quantity;
-    const newStatus = newQuantity === 0 ? 'CONSUMED' : 'ACTIVE';
+    const newStatus = newQuantity === 0 ? "CONSUMED" : "ACTIVE";
 
     // Update batch
     const updatedBatch = await prisma.reagentBatch.update({
@@ -232,7 +233,7 @@ export const batchService = {
     const batch = await prisma.reagentBatch.update({
       where: { id },
       data: {
-        status: 'EXPIRED',
+        status: "EXPIRED",
       },
     });
 
@@ -250,7 +251,7 @@ export const batchService = {
     });
 
     if (!batch) {
-      throw new Error('Batch not found');
+      throw new Error("Batch not found");
     }
 
     const qtyToDestroy = destroyedQuantity || Number(batch.currentQuantity);
@@ -258,7 +259,7 @@ export const batchService = {
     const updatedBatch = await prisma.reagentBatch.update({
       where: { id },
       data: {
-        status: 'DESTROYED',
+        status: "DESTROYED",
         currentQuantity: 0,
       },
     });
@@ -270,7 +271,7 @@ export const batchService = {
         batchId: batch.id,
         transactionType: TransactionType.DESTRUCTION,
         quantityDelta: -qtyToDestroy,
-        notes: notes || 'השמדת אצווה',
+        notes: notes || "השמדת אצווה",
       },
     });
 
@@ -291,9 +292,9 @@ export const batchService = {
     const batches = await prisma.reagentBatch.findMany({
       where: {
         expiryDate: { lte: futureDate },
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
-      orderBy: { expiryDate: 'asc' },
+      orderBy: { expiryDate: "asc" },
     });
 
     // Filter by expiry >= today and optionally by category
@@ -327,30 +328,10 @@ export const batchService = {
   },
 
   /**
-   * Update reagent aggregate fields after batch changes
+   * Update reagent aggregate fields after batch changes (delegates to canonical implementation)
    */
   async updateReagentAggregates(reagentId: string) {
-    const activeBatches = await prisma.reagentBatch.findMany({
-      where: {
-        reagentId,
-        status: 'ACTIVE',
-      },
-      orderBy: { expiryDate: 'asc' },
-    });
-
-    const totalQuantity = activeBatches.reduce(
-      (sum, b) => sum + Number(b.currentQuantity),
-      0
-    );
-
-    await prisma.reagent.update({
-      where: { id: reagentId },
-      data: {
-        totalQuantity,
-        activeBatchesCount: activeBatches.length,
-        nearestExpiryDate: activeBatches[0]?.expiryDate || null,
-      },
-    });
+    await updateReagentAggregates(reagentId);
   },
 
   /**
@@ -365,14 +346,14 @@ export const batchService = {
         expiryDate: {
           lt: today,
         },
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
     });
 
     for (const batch of expiredBatches) {
       await prisma.reagentBatch.update({
         where: { id: batch.id },
-        data: { status: 'EXPIRED' },
+        data: { status: "EXPIRED" },
       });
 
       await this.updateReagentAggregates(batch.reagentId);

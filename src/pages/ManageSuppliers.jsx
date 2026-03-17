@@ -1,21 +1,36 @@
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,31 +40,54 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { createPageUrl } from '@/utils';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { createPageUrl } from "@/utils";
 import {
-  Plus, Search, RefreshCw, Loader2, Columns3, Edit2, Trash2, CheckCircle2, XCircle, Users, SlidersHorizontal
-} from 'lucide-react';
-import BackButton from '@/components/ui/BackButton';
-import ResizableTable from '@/components/ui/ResizableTable';
-import SupplierCard from '../components/suppliers/SupplierCard';
-import SupplierForm from '../components/suppliers/SupplierForm';
-import { getManageSuppliersData } from '@/api/functions';
-import { Supplier } from '@/api/entities';
+  Plus,
+  Search,
+  RefreshCw,
+  Loader2,
+  Columns3,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Users,
+  SlidersHorizontal,
+} from "lucide-react";
+import BackButton from "@/components/ui/BackButton";
+import ResizableTable from "@/components/ui/ResizableTable";
+import SupplierCard from "../components/suppliers/SupplierCard";
+import SupplierForm from "../components/suppliers/SupplierForm";
+import { getManageSuppliersData } from "@/api/functions";
+import { Supplier } from "@/api/entities";
 
 export default function ManageSuppliersPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState(() => {
+    try {
+      const s = localStorage.getItem("manageSuppliers_sortConfig");
+      return s ? JSON.parse(s) : { key: "name", direction: "ascending" };
+    } catch {
+      return { key: "name", direction: "ascending" };
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem(
+      "manageSuppliers_sortConfig",
+      JSON.stringify(sortConfig),
+    );
+  }, [sortConfig]);
   const [supplierToDelete, setSupplierToDelete] = useState(null);
   const [deletingSupplier, setDeletingSupplier] = useState(false);
-  
+
   // Edit supplier state
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
@@ -59,28 +97,35 @@ export default function ManageSuppliersPage() {
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState([
-    'name', 'code', 'contact_person', 'phone', 'email', 'contacts_count', 'is_active', 'actions'
+    "name",
+    "code",
+    "contact_person",
+    "phone",
+    "email",
+    "contacts_count",
+    "is_active",
+    "actions",
   ]);
 
   const allColumns = [
-    { key: 'name', label: 'שם ספק', alwaysVisible: true, defaultWidth: 180 },
-    { key: 'display_name', label: 'שם תצוגה', defaultWidth: 150 },
-    { key: 'code', label: 'קוד', defaultWidth: 100 },
-    { key: 'contact_person', label: 'איש קשר', defaultWidth: 150 },
-    { key: 'phone', label: 'טלפון', defaultWidth: 130 },
-    { key: 'email', label: 'אימייל', defaultWidth: 180 },
-    { key: 'address', label: 'כתובת', defaultWidth: 200 },
-    { key: 'website', label: 'אתר', defaultWidth: 180 },
-    { key: 'contacts_count', label: 'אנשי קשר', defaultWidth: 120 },
-    { key: 'is_active', label: 'סטטוס', defaultWidth: 100 },
-    { key: 'has_associated_data', label: 'נתונים משוייכים', defaultWidth: 140 },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 120 }
+    { key: "name", label: "שם ספק", alwaysVisible: true, defaultWidth: 180 },
+    { key: "display_name", label: "שם תצוגה", defaultWidth: 150 },
+    { key: "code", label: "קוד", defaultWidth: 100 },
+    { key: "contact_person", label: "איש קשר", defaultWidth: 150 },
+    { key: "phone", label: "טלפון", defaultWidth: 130 },
+    { key: "email", label: "אימייל", defaultWidth: 180 },
+    { key: "address", label: "כתובת", defaultWidth: 200 },
+    { key: "website", label: "אתר", defaultWidth: 180 },
+    { key: "contacts_count", label: "אנשי קשר", defaultWidth: 120 },
+    { key: "is_active", label: "סטטוס", defaultWidth: 100 },
+    { key: "has_associated_data", label: "נתונים משוייכים", defaultWidth: 140 },
+    { key: "actions", label: "פעולות", alwaysVisible: true, defaultWidth: 120 },
   ];
 
   // Read supplier filter from URL query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const supplierParam = params.get('supplier');
+    const supplierParam = params.get("supplier");
     if (supplierParam) {
       setSearchTerm(supplierParam);
     }
@@ -89,25 +134,24 @@ export default function ManageSuppliersPage() {
   /**
    * FRONTEND LOGIC (משודרג):
    * =========================
-   * 
+   *
    * לפני השדרוג:
    * ------------
    * 1. Supplier.list() - קריאה ראשונה
    * 2. SupplierContact.list() - קריאה שנייה
    * 3. חישוב contactsCountMap - ב-JavaScript של הדפדפן
-   * 
+   *
    * אחרי השדרוג:
    * ------------
    * 1. base44.functions.invoke('getManageSuppliersData') - קריאה אחת בלבד!
    * 2. קבלת נתונים מעובדים עם contacts_count מהשרת
    * 3. עדכון state ישירות
-   * 
+   *
    * = טעינה מהירה יותר, פחות עומס על הדפדפן!
    */
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getManageSuppliersData();
 
@@ -117,11 +161,13 @@ export default function ManageSuppliersPage() {
       if (success) {
         setSuppliers(payload.suppliers || []);
       } else {
-        throw new Error(response?.error || response?.data?.error || 'Failed to load data');
+        throw new Error(
+          response?.error || response?.data?.error || "Failed to load data",
+        );
       }
     } catch (error) {
-      toast.error('שגיאה בטעינת נתונים', {
-        description: 'לא ניתן היה לטעון את רשימת הספקים'
+      toast.error("שגיאה בטעינת נתונים", {
+        description: "לא ניתן היה לטעון את רשימת הספקים",
       });
     } finally {
       setLoading(false);
@@ -139,20 +185,21 @@ export default function ManageSuppliersPage() {
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(supplier =>
-        supplier.name?.toLowerCase().includes(term) ||
-        supplier.display_name?.toLowerCase().includes(term) ||
-        supplier.code?.toLowerCase().includes(term) ||
-        supplier.contact_person?.toLowerCase().includes(term) ||
-        supplier.phone?.toLowerCase().includes(term) ||
-        supplier.email?.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (supplier) =>
+          supplier.name?.toLowerCase().includes(term) ||
+          supplier.display_name?.toLowerCase().includes(term) ||
+          supplier.code?.toLowerCase().includes(term) ||
+          supplier.contact_person?.toLowerCase().includes(term) ||
+          supplier.phone?.toLowerCase().includes(term) ||
+          supplier.email?.toLowerCase().includes(term),
       );
     }
 
     // Status filter
-    if (statusFilter !== 'all') {
-      const isActive = statusFilter === 'active';
-      filtered = filtered.filter(supplier => supplier.is_active === isActive);
+    if (statusFilter !== "all") {
+      const isActive = statusFilter === "active";
+      filtered = filtered.filter((supplier) => supplier.is_active === isActive);
     }
 
     // Sort
@@ -161,18 +208,18 @@ export default function ManageSuppliersPage() {
       let bValue = b[sortConfig.key];
 
       // Handle strings
-      if (typeof aValue === 'string') {
-        aValue = aValue?.toLowerCase() || '';
-        bValue = bValue?.toLowerCase() || '';
+      if (typeof aValue === "string") {
+        aValue = aValue?.toLowerCase() || "";
+        bValue = bValue?.toLowerCase() || "";
       }
 
       // Handle booleans
-      if (typeof aValue === 'boolean') {
+      if (typeof aValue === "boolean") {
         aValue = aValue ? 1 : 0;
         bValue = bValue ? 1 : 0;
       }
 
-      if (sortConfig.direction === 'ascending') {
+      if (sortConfig.direction === "ascending") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -183,23 +230,26 @@ export default function ManageSuppliersPage() {
   }, [suppliers, searchTerm, statusFilter, sortConfig]);
 
   const handleSort = (key) => {
-    setSortConfig(prev => ({
+    setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending'
+      direction:
+        prev.key === key && prev.direction === "ascending"
+          ? "descending"
+          : "ascending",
     }));
   };
 
   const toggleColumnVisibility = (columnKey) => {
-    setVisibleColumns(prev =>
+    setVisibleColumns((prev) =>
       prev.includes(columnKey)
-        ? prev.filter(k => k !== columnKey)
-        : [...prev, columnKey]
+        ? prev.filter((k) => k !== columnKey)
+        : [...prev, columnKey],
     );
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
   };
 
   const handleEditSupplier = (supplier) => {
@@ -222,23 +272,23 @@ export default function ManageSuppliersPage() {
         // Soft delete
         await Supplier.update(supplierToDelete.id, {
           is_active: false,
-          deactivation_reason: 'הושבת על ידי המשתמש',
-          deactivated_date: new Date().toISOString()
+          deactivation_reason: "הושבת על ידי המשתמש",
+          deactivated_date: new Date().toISOString(),
         });
-        toast.success('הספק הושבת בהצלחה', {
-          description: 'הספק סומן כלא פעיל'
+        toast.success("הספק הושבת בהצלחה", {
+          description: "הספק סומן כלא פעיל",
         });
       } else {
         // Hard delete
         await Supplier.delete(supplierToDelete.id);
-        toast.success('הספק נמחק בהצלחה');
+        toast.success("הספק נמחק בהצלחה");
       }
-      
+
       await fetchData();
       setSupplierToDelete(null);
     } catch (error) {
-      toast.error('שגיאה במחיקת ספק', {
-        description: error.message
+      toast.error("שגיאה במחיקת ספק", {
+        description: error.message,
       });
     } finally {
       setDeletingSupplier(false);
@@ -247,66 +297,91 @@ export default function ManageSuppliersPage() {
 
   const renderCell = (supplier, columnKey) => {
     switch (columnKey) {
-      case 'name':
+      case "name":
+        return <span className="font-medium">{supplier.name}</span>;
+      case "display_name":
         return (
-          <span className="font-medium">
-            {supplier.name}
-          </span>
+          supplier.display_name || <span className="text-gray-400">-</span>
         );
-      case 'display_name':
-        return supplier.display_name || <span className="text-gray-400">-</span>;
-      case 'code':
+      case "code":
         return supplier.code || <span className="text-gray-400">-</span>;
-      case 'contact_person':
-        return supplier.contact_person || <span className="text-gray-400">-</span>;
-      case 'phone':
+      case "contact_person":
+        return (
+          supplier.contact_person || <span className="text-gray-400">-</span>
+        );
+      case "phone":
         return supplier.phone ? (
-          <a href={`tel:${supplier.phone}`} className="text-blue-600 hover:underline">
+          <a
+            href={`tel:${supplier.phone}`}
+            className="text-blue-600 hover:underline"
+          >
             {supplier.phone}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'email':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "email":
         return supplier.email ? (
-          <a href={`mailto:${supplier.email}`} className="text-blue-600 hover:underline">
+          <a
+            href={`mailto:${supplier.email}`}
+            className="text-blue-600 hover:underline"
+          >
             {supplier.email}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'address':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "address":
         return supplier.address || <span className="text-gray-400">-</span>;
-      case 'website':
+      case "website":
         return supplier.website ? (
-          <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          <a
+            href={supplier.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
             {supplier.website}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'contacts_count':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "contacts_count":
         const contactCount = supplier.contacts_count || 0;
         return (
           <Link
-            to={`${createPageUrl('Contacts')}?supplier=${encodeURIComponent(supplier.name)}`}
+            to={`${createPageUrl("Contacts")}?supplier=${encodeURIComponent(supplier.name)}`}
             className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
           >
             <Users className="h-4 w-4" />
-            <span>{contactCount} {contactCount === 1 ? 'איש קשר' : 'אנשי קשר'}</span>
+            <span>
+              {contactCount} {contactCount === 1 ? "איש קשר" : "אנשי קשר"}
+            </span>
           </Link>
         );
-      case 'is_active':
+      case "is_active":
         return supplier.is_active ? (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-300"
+          >
             פעיל
           </Badge>
         ) : (
-          <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-gray-700 border-gray-300"
+          >
             לא פעיל
           </Badge>
         );
-      case 'has_associated_data':
+      case "has_associated_data":
         return supplier.has_associated_data ? (
           <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
         ) : (
           <XCircle className="h-4 w-4 text-gray-400 mx-auto" />
         );
-      case 'actions':
+      case "actions":
         return (
           <div className="flex items-center justify-center gap-1">
             <Button
@@ -321,14 +396,14 @@ export default function ManageSuppliersPage() {
               variant="ghost"
               size="icon"
               onClick={() => setSupplierToDelete(supplier)}
-              title={supplier.has_associated_data ? 'השבת ספק' : 'מחק ספק'}
+              title={supplier.has_associated_data ? "השבת ספק" : "מחק ספק"}
             >
               <Trash2 className="h-4 w-4 text-red-600" />
             </Button>
           </div>
         );
       default:
-        return supplier[columnKey] || '';
+        return supplier[columnKey] || "";
     }
   };
 
@@ -352,10 +427,12 @@ export default function ManageSuppliersPage() {
           <Button onClick={fetchData} variant="outline" size="icon">
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => {
-            setEditingSupplier(null);
-            setShowSupplierForm(true);
-          }}>
+          <Button
+            onClick={() => {
+              setEditingSupplier(null);
+              setShowSupplierForm(true);
+            }}
+          >
             <Plus className="h-4 w-4 ms-2" />
             ספק חדש
           </Button>
@@ -401,15 +478,23 @@ export default function ManageSuppliersPage() {
                 <PopoverContent className="w-64" align="end">
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm">הצג עמודות</h4>
-                    {allColumns.map(column => (
-                      <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                    {allColumns.map((column) => (
+                      <div
+                        key={column.key}
+                        className="flex items-center space-x-2 space-x-reverse"
+                      >
                         <Checkbox
                           id={column.key}
                           checked={visibleColumns.includes(column.key)}
-                          onCheckedChange={() => toggleColumnVisibility(column.key)}
+                          onCheckedChange={() =>
+                            toggleColumnVisibility(column.key)
+                          }
                           disabled={column.alwaysVisible}
                         />
-                        <label htmlFor={column.key} className="text-sm cursor-pointer flex-1">
+                        <label
+                          htmlFor={column.key}
+                          className="text-sm cursor-pointer flex-1"
+                        >
                           {column.label}
                         </label>
                       </div>
@@ -450,14 +535,14 @@ export default function ManageSuppliersPage() {
 
       {/* Mobile Filter Sheet with Glassmorphism */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-md glassmorphism-dark"
           style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            background: "rgba(30, 41, 59, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <SheetHeader>
@@ -466,7 +551,7 @@ export default function ManageSuppliersPage() {
               בחר אפשרויות לסינון רשימת הספקים
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6 space-y-4">
             <div>
               <Label className="text-white">סטטוס</Label>
@@ -485,8 +570,11 @@ export default function ManageSuppliersPage() {
             <div>
               <Label className="text-white">עמודות גלויות</Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                {allColumns.map(column => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                {allColumns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={`mobile-${column.key}`}
                       checked={visibleColumns.includes(column.key)}
@@ -494,7 +582,10 @@ export default function ManageSuppliersPage() {
                       disabled={column.alwaysVisible}
                       className="border-white/30"
                     />
-                    <label htmlFor={`mobile-${column.key}`} className="text-sm text-white cursor-pointer flex-1">
+                    <label
+                      htmlFor={`mobile-${column.key}`}
+                      className="text-sm text-white cursor-pointer flex-1"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -503,10 +594,17 @@ export default function ManageSuppliersPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={clearFilters} className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20">
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
                 נקה
               </Button>
-              <Button onClick={() => setMobileFilterOpen(false)} className="flex-1 bg-white text-gray-900 hover:bg-white/90">
+              <Button
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-1 bg-white text-gray-900 hover:bg-white/90"
+              >
                 החל
               </Button>
             </div>
@@ -531,13 +629,17 @@ export default function ManageSuppliersPage() {
               data={filteredAndSortedSuppliers}
               visibleColumns={visibleColumns}
               sortField={sortConfig.key}
-              sortDirection={sortConfig.direction === 'ascending' ? 'asc' : 'desc'}
+              sortDirection={
+                sortConfig.direction === "ascending" ? "asc" : "desc"
+              }
               onSort={handleSort}
               renderCell={renderCell}
             />
             {filteredAndSortedSuppliers.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500">לא נמצאו ספקים התואמים את הסינון</p>
+                <p className="text-gray-500">
+                  לא נמצאו ספקים התואמים את הסינון
+                </p>
               </div>
             )}
           </CardContent>
@@ -547,10 +649,10 @@ export default function ManageSuppliersPage() {
       {/* Mobile Card View */}
       <div className="lg:hidden">
         {filteredAndSortedSuppliers.length > 0 ? (
-          filteredAndSortedSuppliers.map(supplier => (
-            <SupplierCard 
-              key={supplier.id} 
-              supplier={supplier} 
+          filteredAndSortedSuppliers.map((supplier) => (
+            <SupplierCard
+              key={supplier.id}
+              supplier={supplier}
               contactsCount={supplier.contacts_count || 0}
               onEdit={handleEditSupplier}
             />
@@ -569,7 +671,7 @@ export default function ManageSuppliersPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingSupplier ? 'עריכת ספק' : 'ספק חדש'}
+              {editingSupplier ? "עריכת ספק" : "ספק חדש"}
             </DialogTitle>
           </DialogHeader>
           <SupplierForm
@@ -584,42 +686,55 @@ export default function ManageSuppliersPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!supplierToDelete} onOpenChange={() => setSupplierToDelete(null)}>
+      <AlertDialog
+        open={!!supplierToDelete}
+        onOpenChange={() => setSupplierToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {supplierToDelete?.has_associated_data ? 'השבת ספק' : 'מחיקת ספק'}
+              {supplierToDelete?.has_associated_data ? "השבת ספק" : "מחיקת ספק"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {supplierToDelete?.has_associated_data ? (
                 <>
-                  לספק <strong>{supplierToDelete?.name}</strong> קיימים נתונים משוייכים (ריאגנטים, הזמנות וכו').
-                  <br /><br />
+                  לספק <strong>{supplierToDelete?.name}</strong> קיימים נתונים
+                  משוייכים (ריאגנטים, הזמנות וכו').
+                  <br />
+                  <br />
                   הספק יסומן כלא פעיל אך לא יימחק לחלוטין.
                 </>
               ) : (
                 <>
-                  האם אתה בטוח שברצונך למחוק את הספק <strong>{supplierToDelete?.name}</strong>?
-                  <br /><br />
+                  האם אתה בטוח שברצונך למחוק את הספק{" "}
+                  <strong>{supplierToDelete?.name}</strong>?
+                  <br />
+                  <br />
                   פעולה זו בלתי הפיכה.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingSupplier}>ביטול</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteSupplier} 
+            <AlertDialogCancel disabled={deletingSupplier}>
+              ביטול
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSupplier}
               disabled={deletingSupplier}
               className="bg-red-600 hover:bg-red-700"
             >
               {deletingSupplier ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin ms-2" />
-                  {supplierToDelete?.has_associated_data ? 'משבית...' : 'מוחק...'}
+                  {supplierToDelete?.has_associated_data
+                    ? "משבית..."
+                    : "מוחק..."}
                 </>
+              ) : supplierToDelete?.has_associated_data ? (
+                "השבת"
               ) : (
-                supplierToDelete?.has_associated_data ? 'השבת' : 'מחק'
+                "מחק"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

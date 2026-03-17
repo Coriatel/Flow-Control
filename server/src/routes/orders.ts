@@ -1,38 +1,51 @@
-import { Router, Request, Response } from 'express';
-import { orderService } from '../services';
-import prisma from '../utils/prisma';
-import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { validateBody } from '../middleware/validate';
-import { createOrderSchema, receiveOrderSchema, updateOrderItemSchema, addOrderItemSchema } from '../validation/schemas';
-import { ApiResponse, OrderStatus } from '../types';
+import { Router, Request, Response } from "express";
+import { orderService } from "../services";
+import prisma from "../utils/prisma";
+import { asyncHandler, AppError } from "../middleware/errorHandler";
+import { validateBody } from "../middleware/validate";
+import {
+  createOrderSchema,
+  receiveOrderSchema,
+  updateOrderItemSchema,
+  addOrderItemSchema,
+} from "../validation/schemas";
+import { ApiResponse, OrderStatus } from "../types";
 
 const router = Router();
 
 const mapOrderStatus = (status?: string | null) => {
   if (!status) return null;
   const normalized = status.toUpperCase();
-  if (normalized === 'DRAFT' || normalized === 'PENDING_SAP') return 'pending_sap_details';
-  if (normalized === 'APPROVED') return 'approved';
-  if (normalized === 'PARTIALLY_RECEIVED') return 'partially_received';
-  if (normalized === 'FULLY_RECEIVED') return 'fully_received';
-  if (normalized === 'CLOSED') return 'closed';
-  if (normalized === 'CANCELLED') return 'cancelled';
+  if (normalized === "DRAFT" || normalized === "PENDING_SAP")
+    return "pending_sap_details";
+  if (normalized === "APPROVED") return "approved";
+  if (normalized === "PARTIALLY_RECEIVED") return "partially_received";
+  if (normalized === "FULLY_RECEIVED") return "fully_received";
+  if (normalized === "CLOSED") return "closed";
+  if (normalized === "CANCELLED") return "cancelled";
   return status.toLowerCase();
 };
 
 const mapOrderType = (orderType?: string | null) => {
   if (!orderType) return null;
   const normalized = orderType.toUpperCase();
-  if (normalized === 'IMMEDIATE' || normalized === 'IMMEDIATE_DELIVERY') return 'immediate_delivery';
-  if (normalized === 'FRAMEWORK') return 'framework';
+  if (normalized === "IMMEDIATE" || normalized === "IMMEDIATE_DELIVERY")
+    return "immediate_delivery";
+  if (normalized === "FRAMEWORK") return "framework";
   return orderType.toLowerCase();
 };
 
 const mapOrderResponse = (order: any) => {
   const items = Array.isArray(order.items) ? order.items : [];
   const totalItems = items.length;
-  const totalQuantityOrdered = items.reduce((sum: number, item: any) => sum + (Number(item.requestedQuantity) || 0), 0);
-  const totalQuantityReceived = items.reduce((sum: number, item: any) => sum + (Number(item.receivedQuantity) || 0), 0);
+  const totalQuantityOrdered = items.reduce(
+    (sum: number, item: any) => sum + (Number(item.requestedQuantity) || 0),
+    0,
+  );
+  const totalQuantityReceived = items.reduce(
+    (sum: number, item: any) => sum + (Number(item.receivedQuantity) || 0),
+    0,
+  );
   const totalQuantityRemaining = items.reduce((sum: number, item: any) => {
     if (item.remainingQuantity != null) {
       return sum + (Number(item.remainingQuantity) || 0);
@@ -47,7 +60,8 @@ const mapOrderResponse = (order: any) => {
     order_number_temp: order.tempNumber,
     order_number_permanent: order.permanentNumber || null,
     purchase_order_number_sap: order.sapPurchaseOrder || null,
-    supplier_name_snapshot: order.supplierSnapshot || order.supplier?.name || null,
+    supplier_name_snapshot:
+      order.supplierSnapshot || order.supplier?.name || null,
     supplier: order.supplier?.name || order.supplierSnapshot || null,
     supplier_id: order.supplierId,
     order_date: order.orderDate?.toISOString() || null,
@@ -55,17 +69,31 @@ const mapOrderResponse = (order: any) => {
     updated_date: order.updatedAt?.toISOString() || null,
     status: mapOrderStatus(order.status),
     order_type: mapOrderType(order.orderType),
-    expected_delivery_start_date: order.expectedDeliveryStart?.toISOString() || null,
-    expected_delivery_end_date: order.expectedDeliveryEnd?.toISOString() || null,
-    notes: order.internalNotes || order.supplierNotes || '',
+    expected_delivery_start_date:
+      order.expectedDeliveryStart?.toISOString() || null,
+    expected_delivery_end_date:
+      order.expectedDeliveryEnd?.toISOString() || null,
+    notes: order.internalNotes || order.supplierNotes || "",
     total_items: totalItems,
     total_quantity_ordered: totalQuantityOrdered,
     total_quantity_received: totalQuantityReceived,
     total_quantity_remaining: totalQuantityRemaining,
-    linked_delivery_numbers: [],
-    linked_delivery_ids: [],
-    linked_withdrawals: [],
-    linked_withdrawal_request_ids: [],
+    // H6: Populate linked data from included relations when available
+    linked_delivery_numbers: Array.isArray(order.deliveries)
+      ? order.deliveries.map((d: any) => d.deliveryNumber)
+      : [],
+    linked_delivery_ids: Array.isArray(order.deliveries)
+      ? order.deliveries.map((d: any) => d.id)
+      : [],
+    linked_withdrawals: order.frameworkOrder?.withdrawalRequests
+      ? order.frameworkOrder.withdrawalRequests.map((wr: any) => ({
+          id: wr.id,
+          withdrawal_number: wr.withdrawalNumber,
+        }))
+      : [],
+    linked_withdrawal_request_ids: order.frameworkOrder?.withdrawalRequests
+      ? order.frameworkOrder.withdrawalRequests.map((wr: any) => wr.id)
+      : [],
   };
 };
 
@@ -74,7 +102,7 @@ const mapOrderResponse = (order: any) => {
  * Get all orders with optional filters
  */
 router.get(
-  '/',
+  "/",
   asyncHandler(async (req: Request, res: Response) => {
     const { id, supplierId, status, fromDate, toDate } = req.query;
 
@@ -104,7 +132,7 @@ router.get(
       meta: { total: mapped.length },
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -112,7 +140,7 @@ router.get(
  * Get orders needing attention (pending approval, overdue)
  */
 router.get(
-  '/attention',
+  "/attention",
   asyncHandler(async (_req: Request, res: Response) => {
     const data = await orderService.getOrdersNeedingAttention();
 
@@ -121,7 +149,7 @@ router.get(
       data,
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -129,7 +157,7 @@ router.get(
  * Get count of pending orders by supplier
  */
 router.get(
-  '/pending-by-supplier',
+  "/pending-by-supplier",
   asyncHandler(async (_req: Request, res: Response) => {
     const data = await orderService.getPendingBySupplier();
 
@@ -138,7 +166,7 @@ router.get(
       data,
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -146,13 +174,13 @@ router.get(
  * Get order by ID with full details
  */
 router.get(
-  '/:id',
+  "/:id",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const data = await orderService.getById(id);
 
     if (!data) {
-      throw new AppError('Order not found', 404);
+      throw new AppError("Order not found", 404);
     }
 
     const response: ApiResponse = {
@@ -160,7 +188,7 @@ router.get(
       data: mapOrderResponse(data),
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -168,7 +196,7 @@ router.get(
  * Create new order
  */
 router.post(
-  '/',
+  "/",
   validateBody(createOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const data = await orderService.create(req.body);
@@ -176,10 +204,10 @@ router.post(
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Order created successfully',
+      message: "Order created successfully",
     };
     res.status(201).json(response);
-  })
+  }),
 );
 
 /**
@@ -187,27 +215,27 @@ router.post(
  * Create order from replenishment suggestions
  */
 router.post(
-  '/from-suggestions',
+  "/from-suggestions",
   asyncHandler(async (req: Request, res: Response) => {
     const { supplierId, suggestions, createdBy } = req.body;
 
     if (!supplierId || !suggestions || !Array.isArray(suggestions)) {
-      throw new AppError('supplierId and suggestions array are required', 400);
+      throw new AppError("supplierId and suggestions array are required", 400);
     }
 
     const data = await orderService.createFromSuggestions(
       supplierId,
       suggestions,
-      createdBy
+      createdBy,
     );
 
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Order created from suggestions',
+      message: "Order created from suggestions",
     };
     res.status(201).json(response);
-  })
+  }),
 );
 
 /**
@@ -215,7 +243,7 @@ router.post(
  * Approve order
  */
 router.post(
-  '/:id/approve',
+  "/:id/approve",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { approvedBy } = req.body;
@@ -225,10 +253,10 @@ router.post(
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Order approved successfully',
+      message: "Order approved successfully",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -236,23 +264,23 @@ router.post(
  * Mark order as sent to supplier
  */
 router.post(
-  '/:id/mark-ordered',
+  "/:id/mark-ordered",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { orderedDate } = req.body;
 
     const data = await orderService.markOrdered(
       id,
-      orderedDate ? new Date(orderedDate) : undefined
+      orderedDate ? new Date(orderedDate) : undefined,
     );
 
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Order marked as ordered',
+      message: "Order marked as ordered",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -260,7 +288,7 @@ router.post(
  * Receive items from order
  */
 router.post(
-  '/:id/receive',
+  "/:id/receive",
   validateBody(receiveOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -271,10 +299,10 @@ router.post(
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Items received successfully',
+      message: "Items received successfully",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -282,7 +310,7 @@ router.post(
  * Cancel order
  */
 router.post(
-  '/:id/cancel',
+  "/:id/cancel",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { reason } = req.body;
@@ -292,10 +320,10 @@ router.post(
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Order cancelled',
+      message: "Order cancelled",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -303,23 +331,38 @@ router.post(
  * Update order details
  */
 router.put(
-  '/:id',
+  "/:id",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const body = req.body || {};
     const data: any = {};
 
-    if (body.order_number_permanent !== undefined || body.permanentNumber !== undefined) {
-      data.permanentNumber = body.order_number_permanent ?? body.permanentNumber;
+    if (
+      body.order_number_permanent !== undefined ||
+      body.permanentNumber !== undefined
+    ) {
+      data.permanentNumber =
+        body.order_number_permanent ?? body.permanentNumber;
     }
-    if (body.purchase_order_number_sap !== undefined || body.sapPurchaseOrder !== undefined) {
-      data.sapPurchaseOrder = body.purchase_order_number_sap ?? body.sapPurchaseOrder;
+    if (
+      body.purchase_order_number_sap !== undefined ||
+      body.sapPurchaseOrder !== undefined
+    ) {
+      data.sapPurchaseOrder =
+        body.purchase_order_number_sap ?? body.sapPurchaseOrder;
     }
-    if (body.expected_delivery_start_date !== undefined || body.expectedDeliveryStart !== undefined) {
-      const value = body.expected_delivery_start_date ?? body.expectedDeliveryStart;
+    if (
+      body.expected_delivery_start_date !== undefined ||
+      body.expectedDeliveryStart !== undefined
+    ) {
+      const value =
+        body.expected_delivery_start_date ?? body.expectedDeliveryStart;
       data.expectedDeliveryStart = value ? new Date(value) : null;
     }
-    if (body.expected_delivery_end_date !== undefined || body.expectedDeliveryEnd !== undefined) {
+    if (
+      body.expected_delivery_end_date !== undefined ||
+      body.expectedDeliveryEnd !== undefined
+    ) {
       const value = body.expected_delivery_end_date ?? body.expectedDeliveryEnd;
       data.expectedDeliveryEnd = value ? new Date(value) : null;
     }
@@ -330,9 +373,12 @@ router.put(
     if (Object.keys(data).length === 0) {
       const existing = await orderService.getById(id);
       if (!existing) {
-        throw new AppError('Order not found', 404);
+        throw new AppError("Order not found", 404);
       }
-      const response: ApiResponse = { success: true, data: mapOrderResponse(existing) };
+      const response: ApiResponse = {
+        success: true,
+        data: mapOrderResponse(existing),
+      };
       res.json(response);
       return;
     }
@@ -349,10 +395,10 @@ router.put(
     const response: ApiResponse = {
       success: true,
       data: mapOrderResponse(updated),
-      message: 'Order updated',
+      message: "Order updated",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -360,7 +406,7 @@ router.put(
  * Delete order (hard delete if possible, otherwise cancel)
  */
 router.delete(
-  '/:id',
+  "/:id",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -374,14 +420,17 @@ router.delete(
     });
 
     if (!existing) {
-      throw new AppError('Order not found', 404);
+      throw new AppError("Order not found", 404);
     }
 
     // If order has related deliveries or framework order, cancel instead of deleting
-    if ((existing.deliveries && existing.deliveries.length > 0) || existing.frameworkOrder) {
+    if (
+      (existing.deliveries && existing.deliveries.length > 0) ||
+      existing.frameworkOrder
+    ) {
       const cancelled = await prisma.order.update({
         where: { id },
-        data: { status: 'CANCELLED', closedDate: new Date() },
+        data: { status: "CANCELLED", closedDate: new Date() },
         include: {
           supplier: true,
           items: true,
@@ -390,7 +439,7 @@ router.delete(
       const response: ApiResponse = {
         success: true,
         data: mapOrderResponse(cancelled),
-        message: 'Order cancelled (related data exists)',
+        message: "Order cancelled (related data exists)",
       };
       res.json(response);
       return;
@@ -402,10 +451,10 @@ router.delete(
     const response: ApiResponse = {
       success: true,
       data: deleted,
-      message: 'Order deleted',
+      message: "Order deleted",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -413,7 +462,7 @@ router.delete(
  * Add item to order
  */
 router.post(
-  '/:id/items',
+  "/:id/items",
   validateBody(addOrderItemSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -423,10 +472,10 @@ router.post(
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Item added to order',
+      message: "Item added to order",
     };
     res.status(201).json(response);
-  })
+  }),
 );
 
 /**
@@ -434,21 +483,25 @@ router.post(
  * Update order item
  */
 router.put(
-  '/:id/items/:itemId',
+  "/:id/items/:itemId",
   validateBody(updateOrderItemSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { itemId } = req.params;
     const { requestedQuantity, notes } = req.body;
 
-    const data = await orderService.updateItem(itemId, requestedQuantity, notes);
+    const data = await orderService.updateItem(
+      itemId,
+      requestedQuantity,
+      notes,
+    );
 
     const response: ApiResponse = {
       success: true,
       data,
-      message: 'Item updated',
+      message: "Item updated",
     };
     res.json(response);
-  })
+  }),
 );
 
 /**
@@ -456,7 +509,7 @@ router.put(
  * Remove item from order
  */
 router.delete(
-  '/:id/items/:itemId',
+  "/:id/items/:itemId",
   asyncHandler(async (req: Request, res: Response) => {
     const { itemId } = req.params;
 
@@ -464,10 +517,10 @@ router.delete(
 
     const response: ApiResponse = {
       success: true,
-      message: 'Item removed from order',
+      message: "Item removed from order",
     };
     res.json(response);
-  })
+  }),
 );
 
 export default router;

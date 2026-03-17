@@ -1,26 +1,57 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { getWithdrawalRequestsData, deleteWithdrawal } from '@/api/functions';
-import { useNavigate, Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { getWithdrawalRequestsData, deleteWithdrawal } from "@/api/functions";
+import { useNavigate, Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
-  Plus, Search, Printer, Edit, Loader2, RefreshCw, Columns, MoreHorizontal, 
-  PackageCheck, ExternalLink, Filter, X, Trash2, AlertCircle
-} from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { he } from 'date-fns/locale';
+  Plus,
+  Search,
+  Printer,
+  Edit,
+  Loader2,
+  RefreshCw,
+  Columns,
+  MoreHorizontal,
+  PackageCheck,
+  ExternalLink,
+  Filter,
+  X,
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { he } from "date-fns/locale";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +62,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import BackButton from '@/components/ui/BackButton';
-import ResizableTable from '@/components/ui/ResizableTable';
-import PrintDialog from '@/components/ui/PrintDialog';
+import BackButton from "@/components/ui/BackButton";
+import ResizableTable from "@/components/ui/ResizableTable";
+import PrintDialog from "@/components/ui/PrintDialog";
 
 export default function WithdrawalRequestsPage() {
   const navigate = useNavigate();
@@ -42,11 +73,20 @@ export default function WithdrawalRequestsPage() {
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [urgencyFilter, setUrgencyFilter] = useState('all');
-  const [sortField, setSortField] = useState('request_date');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [urgencyFilter, setUrgencyFilter] = useState("all");
+  const [sortField, setSortField] = useState(
+    () =>
+      localStorage.getItem("withdrawalRequests_sortField") || "request_date",
+  );
+  const [sortDirection, setSortDirection] = useState(
+    () => localStorage.getItem("withdrawalRequests_sortDirection") || "desc",
+  );
+  useEffect(() => {
+    localStorage.setItem("withdrawalRequests_sortField", sortField);
+    localStorage.setItem("withdrawalRequests_sortDirection", sortDirection);
+  }, [sortField, sortDirection]);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [withdrawalToDelete, setWithdrawalToDelete] = useState(null);
@@ -54,24 +94,77 @@ export default function WithdrawalRequestsPage() {
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [printDocumentId, setPrintDocumentId] = useState(null);
 
-  const allColumns = useMemo(() => [
-    { key: 'withdrawal_number', label: 'מס\' משיכה', alwaysVisible: true, defaultWidth: 140, sortable: true },
-    { key: 'request_date', label: 'תאריך בקשה', alwaysVisible: true, defaultWidth: 120, sortable: true },
-    { key: 'framework_order_number', label: 'מס\' הזמנת מסגרת', defaultWidth: 160, sortable: true },
-    { key: 'supplier', label: 'ספק', defaultWidth: 150, sortable: true },
-    { key: 'urgency_level', label: 'דחיפות', defaultWidth: 100, sortable: true },
-    { key: 'status', label: 'סטטוס', defaultWidth: 120, sortable: true },
-    { key: 'linked_deliveries', label: 'משלוחים מקושרים', defaultWidth: 160, sortable: false },
-    { key: 'total_items', label: 'פריטים', defaultWidth: 80, sortable: true },
-    { key: 'total_quantity_requested', label: 'כמות מבוקשת', defaultWidth: 110, sortable: true },
-    { key: 'total_quantity_approved', label: 'כמות מאושרת', defaultWidth: 110, sortable: true },
-    { key: 'requested_delivery_date', label: 'תאריך אספקה מבוקש', defaultWidth: 140, sortable: true },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 100, sortable: false }
-  ], []);
+  const allColumns = useMemo(
+    () => [
+      {
+        key: "withdrawal_number",
+        label: "מס' משיכה",
+        alwaysVisible: true,
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "request_date",
+        label: "תאריך בקשה",
+        alwaysVisible: true,
+        defaultWidth: 120,
+        sortable: true,
+      },
+      {
+        key: "framework_order_number",
+        label: "מס' הזמנת מסגרת",
+        defaultWidth: 160,
+        sortable: true,
+      },
+      { key: "supplier", label: "ספק", defaultWidth: 150, sortable: true },
+      {
+        key: "urgency_level",
+        label: "דחיפות",
+        defaultWidth: 100,
+        sortable: true,
+      },
+      { key: "status", label: "סטטוס", defaultWidth: 120, sortable: true },
+      {
+        key: "linked_deliveries",
+        label: "משלוחים מקושרים",
+        defaultWidth: 160,
+        sortable: false,
+      },
+      { key: "total_items", label: "פריטים", defaultWidth: 80, sortable: true },
+      {
+        key: "total_quantity_requested",
+        label: "כמות מבוקשת",
+        defaultWidth: 110,
+        sortable: true,
+      },
+      {
+        key: "total_quantity_approved",
+        label: "כמות מאושרת",
+        defaultWidth: 110,
+        sortable: true,
+      },
+      {
+        key: "requested_delivery_date",
+        label: "תאריך אספקה מבוקש",
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "actions",
+        label: "פעולות",
+        alwaysVisible: true,
+        defaultWidth: 100,
+        sortable: false,
+      },
+    ],
+    [],
+  );
 
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    const alwaysVisibleKeys = allColumns.filter(col => col.alwaysVisible).map(col => col.key);
-    const saved = localStorage.getItem('withdrawalRequestsVisibleColumns');
+    const alwaysVisibleKeys = allColumns
+      .filter((col) => col.alwaysVisible)
+      .map((col) => col.key);
+    const saved = localStorage.getItem("withdrawalRequestsVisibleColumns");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -84,21 +177,23 @@ export default function WithdrawalRequestsPage() {
   });
 
   useEffect(() => {
-    const savableColumns = visibleColumns.filter(colKey => {
-      const columnDef = allColumns.find(c => c.key === colKey);
+    const savableColumns = visibleColumns.filter((colKey) => {
+      const columnDef = allColumns.find((c) => c.key === colKey);
       return columnDef ? !columnDef.alwaysVisible : true;
     });
-    localStorage.setItem('withdrawalRequestsVisibleColumns', JSON.stringify(savableColumns));
+    localStorage.setItem(
+      "withdrawalRequestsVisibleColumns",
+      JSON.stringify(savableColumns),
+    );
   }, [visibleColumns, allColumns]);
 
   const loadWithdrawals = useCallback(async () => {
     setLoading(true);
     try {
-
       const response = await getWithdrawalRequestsData({
-        status: statusFilter !== 'all' ? statusFilter : null,
-        urgency: urgencyFilter !== 'all' ? urgencyFilter : null,
-        limit: '200'
+        status: statusFilter !== "all" ? statusFilter : null,
+        urgency: urgencyFilter !== "all" ? urgencyFilter : null,
+        limit: "200",
       });
 
       const success = response?.success ?? response?.data?.success;
@@ -108,11 +203,15 @@ export default function WithdrawalRequestsPage() {
         setWithdrawals(payload.withdrawals || []);
         setSummary(payload.summary || {});
       } else {
-        throw new Error(response?.data?.error || response?.error || 'Failed to fetch withdrawals');
+        throw new Error(
+          response?.data?.error ||
+            response?.error ||
+            "Failed to fetch withdrawals",
+        );
       }
     } catch (err) {
-      toast.error('שגיאה בטעינת בקשות משיכה', {
-        description: err.message
+      toast.error("שגיאה בטעינת בקשות משיכה", {
+        description: err.message,
       });
     } finally {
       setLoading(false);
@@ -130,11 +229,17 @@ export default function WithdrawalRequestsPage() {
   };
 
   const filteredAndSortedWithdrawals = useMemo(() => {
-    let filtered = withdrawals.filter(withdrawal => {
+    let filtered = withdrawals.filter((withdrawal) => {
       const matchesSearch =
-        withdrawal.withdrawal_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        withdrawal.framework_order_number_snapshot?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        withdrawal.supplier_snapshot?.toLowerCase().includes(searchTerm.toLowerCase());
+        withdrawal.withdrawal_number
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        withdrawal.framework_order_number_snapshot
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        withdrawal.supplier_snapshot
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
       return matchesSearch;
     });
@@ -143,17 +248,17 @@ export default function WithdrawalRequestsPage() {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      if (sortField.includes('date')) {
+      if (sortField.includes("date")) {
         aValue = aValue ? new Date(aValue) : new Date(0);
         bValue = bValue ? new Date(bValue) : new Date(0);
       }
 
-      if (typeof aValue === 'string') {
+      if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
-        bValue = bValue?.toLowerCase() || '';
+        bValue = bValue?.toLowerCase() || "";
       }
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -165,18 +270,18 @@ export default function WithdrawalRequestsPage() {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleColumnToggle = (columnKey) => {
-    setVisibleColumns(prev =>
+    setVisibleColumns((prev) =>
       prev.includes(columnKey)
-        ? prev.filter(col => col !== columnKey)
-        : [...prev, columnKey]
+        ? prev.filter((col) => col !== columnKey)
+        : [...prev, columnKey],
     );
   };
 
@@ -197,19 +302,23 @@ export default function WithdrawalRequestsPage() {
     try {
       const response = await deleteWithdrawal({
         withdrawalId: withdrawalToDelete.id,
-        reason: 'Deleted by user from WithdrawalRequests page'
+        reason: "Deleted by user from WithdrawalRequests page",
       });
 
       const success = response?.success ?? response?.data?.success;
       if (success) {
-        toast.success('בקשת המשיכה נמחקה בהצלחה');
+        toast.success("בקשת המשיכה נמחקה בהצלחה");
         await loadWithdrawals();
       } else {
-        throw new Error(response?.error || response?.data?.error || 'Failed to delete withdrawal');
+        throw new Error(
+          response?.error ||
+            response?.data?.error ||
+            "Failed to delete withdrawal",
+        );
       }
     } catch (error) {
-      toast.error('שגיאה במחיקת בקשת המשיכה', {
-        description: error.message
+      toast.error("שגיאה במחיקת בקשת המשיכה", {
+        description: error.message,
       });
     } finally {
       setDeleting(false);
@@ -220,126 +329,142 @@ export default function WithdrawalRequestsPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'draft': { label: 'טיוטה', variant: 'secondary' },
-      'submitted': { label: 'הוגשה', variant: 'info' },
-      'approved': { label: 'אושרה', variant: 'success' },
-      'rejected': { label: 'נדחתה', variant: 'danger' },
-      'in_delivery': { label: 'במשלוח', variant: 'warning' },
-      'completed': { label: 'הושלמה', variant: 'success' },
-      'cancelled': { label: 'בוטלה', variant: 'danger' }
+      draft: { label: "טיוטה", variant: "secondary" },
+      submitted: { label: "הוגשה", variant: "info" },
+      approved: { label: "אושרה", variant: "success" },
+      rejected: { label: "נדחתה", variant: "danger" },
+      in_delivery: { label: "במשלוח", variant: "warning" },
+      completed: { label: "הושלמה", variant: "success" },
+      cancelled: { label: "בוטלה", variant: "danger" },
     };
 
-    const config = statusConfig[status] || statusConfig['submitted'];
+    const config = statusConfig[status] || statusConfig["submitted"];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getUrgencyBadge = (urgency) => {
     const urgencyConfig = {
-      'routine': { label: 'רגיל', variant: 'secondary' },
-      'urgent': { label: 'דחוף', variant: 'warning' },
-      'emergency': { label: 'חירום', variant: 'danger' }
+      routine: { label: "רגיל", variant: "secondary" },
+      urgent: { label: "דחוף", variant: "warning" },
+      emergency: { label: "חירום", variant: "danger" },
     };
 
-    const config = urgencyConfig[urgency] || urgencyConfig['routine'];
+    const config = urgencyConfig[urgency] || urgencyConfig["routine"];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'לא זמין';
+    if (!dateString) return "לא זמין";
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy');
+      return format(new Date(dateString), "dd/MM/yyyy");
     } catch {
-      return 'תאריך לא תקין';
+      return "תאריך לא תקין";
     }
   };
 
-  const renderCell = useCallback((withdrawal, columnKey) => {
-    switch (columnKey) {
-      case 'withdrawal_number':
-        return (
-          <Link
-            to={createPageUrl('EditWithdrawalRequest') + `?id=${withdrawal.id}`}
-            className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
-          >
-            {withdrawal.withdrawal_number}
-            <ExternalLink className="h-3 w-3" />
-          </Link>
-        );
-      case 'request_date':
-        return formatDate(withdrawal.request_date);
-      case 'framework_order_number':
-        return withdrawal.framework_order_number_snapshot || '-';
-      case 'supplier':
-        return withdrawal.supplier_snapshot || 'לא צוין';
-      case 'urgency_level':
-        return getUrgencyBadge(withdrawal.urgency_level);
-      case 'status':
-        return getStatusBadge(withdrawal.status);
-      case 'linked_deliveries':
-        return withdrawal.linked_delivery_numbers && withdrawal.linked_delivery_numbers.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {withdrawal.linked_delivery_numbers.slice(0, 2).map((deliveryNumber, idx) => {
-              const deliveryId = withdrawal.linked_delivery_ids?.[idx];
-              return (
-                <Link
-                  key={deliveryId || idx}
-                  to={createPageUrl(`EditDelivery?id=${deliveryId}`)}
-                  className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200 flex items-center gap-1"
-                >
-                  {deliveryNumber}
-                  <ExternalLink className="h-2 w-2" />
-                </Link>
-              );
-            })}
-            {withdrawal.linked_delivery_numbers.length > 2 && (
-              <span className="text-xs text-gray-500">
-                +{withdrawal.linked_delivery_numbers.length - 2}
-              </span>
-            )}
-          </div>
-        ) : '-';
-      case 'total_items':
-        return withdrawal.total_items || 0;
-      case 'total_quantity_requested':
-        return withdrawal.total_quantity_requested || 0;
-      case 'total_quantity_approved':
-        return withdrawal.total_quantity_approved || 0;
-      case 'requested_delivery_date':
-        return formatDate(withdrawal.requested_delivery_date);
-      case 'actions':
-        const canDelete = withdrawal.status === 'draft' || withdrawal.status === 'submitted';
-        return (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleRowPrint(withdrawal)}
+  const renderCell = useCallback(
+    (withdrawal, columnKey) => {
+      switch (columnKey) {
+        case "withdrawal_number":
+          return (
+            <Link
+              to={
+                createPageUrl("EditWithdrawalRequest") + `?id=${withdrawal.id}`
+              }
+              className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
             >
-              <Printer className="h-4 w-4" />
-            </Button>
-            <Link to={createPageUrl('EditWithdrawalRequest') + `?id=${withdrawal.id}`}>
-              <Button variant="ghost" size="sm">
-                <Edit className="h-4 w-4" />
-              </Button>
+              {withdrawal.withdrawal_number}
+              <ExternalLink className="h-3 w-3" />
             </Link>
-            {canDelete && (
-              <Button 
-                variant="ghost" 
+          );
+        case "request_date":
+          return formatDate(withdrawal.request_date);
+        case "framework_order_number":
+          return withdrawal.framework_order_number_snapshot || "-";
+        case "supplier":
+          return withdrawal.supplier_snapshot || "לא צוין";
+        case "urgency_level":
+          return getUrgencyBadge(withdrawal.urgency_level);
+        case "status":
+          return getStatusBadge(withdrawal.status);
+        case "linked_deliveries":
+          return withdrawal.linked_delivery_numbers &&
+            withdrawal.linked_delivery_numbers.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {withdrawal.linked_delivery_numbers
+                .slice(0, 2)
+                .map((deliveryNumber, idx) => {
+                  const deliveryId = withdrawal.linked_delivery_ids?.[idx];
+                  return (
+                    <Link
+                      key={deliveryId || idx}
+                      to={createPageUrl(`EditDelivery?id=${deliveryId}`)}
+                      className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200 flex items-center gap-1"
+                    >
+                      {deliveryNumber}
+                      <ExternalLink className="h-2 w-2" />
+                    </Link>
+                  );
+                })}
+              {withdrawal.linked_delivery_numbers.length > 2 && (
+                <span className="text-xs text-gray-500">
+                  +{withdrawal.linked_delivery_numbers.length - 2}
+                </span>
+              )}
+            </div>
+          ) : (
+            "-"
+          );
+        case "total_items":
+          return withdrawal.total_items || 0;
+        case "total_quantity_requested":
+          return withdrawal.total_quantity_requested || 0;
+        case "total_quantity_approved":
+          return withdrawal.total_quantity_approved || 0;
+        case "requested_delivery_date":
+          return formatDate(withdrawal.requested_delivery_date);
+        case "actions":
+          const canDelete =
+            withdrawal.status === "draft" || withdrawal.status === "submitted";
+          return (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => handleDeleteClick(withdrawal)}
+                onClick={() => handleRowPrint(withdrawal)}
               >
-                <Trash2 className="h-4 w-4 text-red-600" />
+                <Printer className="h-4 w-4" />
               </Button>
-            )}
-          </div>
-        );
-      default:
-        return withdrawal[columnKey] || '';
-    }
-  }, [getStatusBadge, getUrgencyBadge, formatDate]);
+              <Link
+                to={
+                  createPageUrl("EditWithdrawalRequest") +
+                  `?id=${withdrawal.id}`
+                }
+              >
+                <Button variant="ghost" size="sm">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </Link>
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteClick(withdrawal)}
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
+              )}
+            </div>
+          );
+        default:
+          return withdrawal[columnKey] || "";
+      }
+    },
+    [getStatusBadge, getUrgencyBadge, formatDate],
+  );
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -360,7 +485,7 @@ export default function WithdrawalRequestsPage() {
         </style>
       </head>
       <body>
-        <div class="print-date">הופק בתאריך: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+        <div class="print-date">הופק בתאריך: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
         <div class="header">
           <h1>דוח בקשות משיכה</h1>
           <p>מערכת ניהול מלאי ריאגנטים</p>
@@ -371,49 +496,66 @@ export default function WithdrawalRequestsPage() {
         <table>
           <thead>
             <tr>
-              ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_deliveries').map(col => {
-                const column = allColumns.find(c => c.key === col);
-                return `<th>${column?.label || col}</th>`;
-              }).join('')}
+              ${visibleColumns
+                .filter(
+                  (col) => col !== "actions" && col !== "linked_deliveries",
+                )
+                .map((col) => {
+                  const column = allColumns.find((c) => c.key === col);
+                  return `<th>${column?.label || col}</th>`;
+                })
+                .join("")}
             </tr>
           </thead>
           <tbody>
-            ${filteredAndSortedWithdrawals.map(withdrawal => `
+            ${filteredAndSortedWithdrawals
+              .map(
+                (withdrawal) => `
               <tr>
-                ${visibleColumns.filter(col => col !== 'actions' && col !== 'linked_deliveries').map(col => {
-                  let value = '';
-                  switch (col) {
-                    case 'request_date':
-                    case 'requested_delivery_date':
-                      value = formatDate(withdrawal[col]);
-                      break;
-                    case 'status':
-                      const statusLabels = {
-                        'draft': 'טיוטה',
-                        'submitted': 'הוגשה',
-                        'approved': 'אושרה',
-                        'rejected': 'נדחתה',
-                        'in_delivery': 'במשלוח',
-                        'completed': 'הושלמה',
-                        'cancelled': 'בוטלה'
-                      };
-                      value = statusLabels[withdrawal.status] || withdrawal.status;
-                      break;
-                    case 'urgency_level':
-                      const urgencyLabels = {
-                        'routine': 'רגיל',
-                        'urgent': 'דחוף',
-                        'emergency': 'חירום'
-                      };
-                      value = urgencyLabels[withdrawal.urgency_level] || withdrawal.urgency_level;
-                      break;
-                    default:
-                      value = withdrawal[col] || '';
-                  }
-                  return `<td>${value}</td>`;
-                }).join('')}
+                ${visibleColumns
+                  .filter(
+                    (col) => col !== "actions" && col !== "linked_deliveries",
+                  )
+                  .map((col) => {
+                    let value = "";
+                    switch (col) {
+                      case "request_date":
+                      case "requested_delivery_date":
+                        value = formatDate(withdrawal[col]);
+                        break;
+                      case "status":
+                        const statusLabels = {
+                          draft: "טיוטה",
+                          submitted: "הוגשה",
+                          approved: "אושרה",
+                          rejected: "נדחתה",
+                          in_delivery: "במשלוח",
+                          completed: "הושלמה",
+                          cancelled: "בוטלה",
+                        };
+                        value =
+                          statusLabels[withdrawal.status] || withdrawal.status;
+                        break;
+                      case "urgency_level":
+                        const urgencyLabels = {
+                          routine: "רגיל",
+                          urgent: "דחוף",
+                          emergency: "חירום",
+                        };
+                        value =
+                          urgencyLabels[withdrawal.urgency_level] ||
+                          withdrawal.urgency_level;
+                        break;
+                      default:
+                        value = withdrawal[col] || "";
+                    }
+                    return `<td>${value}</td>`;
+                  })
+                  .join("")}
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
       </body>
@@ -426,31 +568,31 @@ export default function WithdrawalRequestsPage() {
   };
 
   const statusLabels = {
-    'draft': 'טיוטה',
-    'submitted': 'הוגשה',
-    'approved': 'אושרה',
-    'rejected': 'נדחתה',
-    'in_delivery': 'במשלוח',
-    'completed': 'הושלמה',
-    'cancelled': 'בוטלה'
+    draft: "טיוטה",
+    submitted: "הוגשה",
+    approved: "אושרה",
+    rejected: "נדחתה",
+    in_delivery: "במשלוח",
+    completed: "הושלמה",
+    cancelled: "בוטלה",
   };
 
   const urgencyLabels = {
-    'routine': 'רגיל',
-    'urgent': 'דחוף',
-    'emergency': 'חירום'
+    routine: "רגיל",
+    urgent: "דחוף",
+    emergency: "חירום",
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setUrgencyFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setUrgencyFilter("all");
     setMobileFilterOpen(false);
   };
 
   const activeFiltersCount = [
-    statusFilter !== 'all',
-    urgencyFilter !== 'all'
+    statusFilter !== "all",
+    urgencyFilter !== "all",
   ].filter(Boolean).length;
 
   if (loading) {
@@ -476,14 +618,14 @@ export default function WithdrawalRequestsPage() {
               </h1>
             </div>
           </div>
-          
+
           {/* Desktop: Full Button */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="h-4 w-4 me-2" />
               הדפסה
             </Button>
-            <Link to={createPageUrl('NewWithdrawalRequest')}>
+            <Link to={createPageUrl("NewWithdrawalRequest")}>
               <Button className="bg-amber-500 hover:bg-amber-600 text-white">
                 <Plus className="h-4 w-4 me-2" />
                 בקשת משיכה חדשה
@@ -492,8 +634,14 @@ export default function WithdrawalRequestsPage() {
           </div>
 
           {/* Mobile: Icon Only Button */}
-          <Link to={createPageUrl('NewWithdrawalRequest')} className="sm:hidden flex-shrink-0">
-            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white px-3">
+          <Link
+            to={createPageUrl("NewWithdrawalRequest")}
+            className="sm:hidden flex-shrink-0"
+          >
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-3"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </Link>
@@ -529,7 +677,7 @@ export default function WithdrawalRequestsPage() {
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => setSearchTerm("")}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-4 w-4" />
@@ -546,7 +694,9 @@ export default function WithdrawalRequestsPage() {
             <SelectContent>
               <SelectItem value="all">כל הסטטוסים</SelectItem>
               {Object.entries(statusLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -558,7 +708,9 @@ export default function WithdrawalRequestsPage() {
             <SelectContent>
               <SelectItem value="all">כל הדחיפויות</SelectItem>
               {Object.entries(urgencyLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -571,8 +723,15 @@ export default function WithdrawalRequestsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
@@ -593,14 +752,22 @@ export default function WithdrawalRequestsPage() {
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">הצג עמודות</h4>
                 {allColumns.map((column) => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={column.key}
                       checked={visibleColumns.includes(column.key)}
-                      onCheckedChange={() => !column.alwaysVisible && handleColumnToggle(column.key)}
+                      onCheckedChange={() =>
+                        !column.alwaysVisible && handleColumnToggle(column.key)
+                      }
                       disabled={column.alwaysVisible}
                     />
-                    <label htmlFor={column.key} className="text-sm cursor-pointer">
+                    <label
+                      htmlFor={column.key}
+                      className="text-sm cursor-pointer"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -626,7 +793,7 @@ export default function WithdrawalRequestsPage() {
               </Badge>
             )}
           </Button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -638,8 +805,15 @@ export default function WithdrawalRequestsPage() {
                 <Printer className="h-4 w-4 ms-2" />
                 הדפס
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -660,14 +834,14 @@ export default function WithdrawalRequestsPage() {
 
       {/* Mobile Filter Sheet with Glassmorphism */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-md"
           style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            background: "rgba(30, 41, 59, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <SheetHeader>
@@ -676,7 +850,7 @@ export default function WithdrawalRequestsPage() {
               בחר אפשרויות לסינון רשימת בקשות המשיכה
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6 space-y-4">
             <div>
               <Label className="text-white">סטטוס</Label>
@@ -687,7 +861,9 @@ export default function WithdrawalRequestsPage() {
                 <SelectContent>
                   <SelectItem value="all">כל הסטטוסים</SelectItem>
                   {Object.entries(statusLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -702,7 +878,9 @@ export default function WithdrawalRequestsPage() {
                 <SelectContent>
                   <SelectItem value="all">כל הדחיפויות</SelectItem>
                   {Object.entries(urgencyLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -711,8 +889,11 @@ export default function WithdrawalRequestsPage() {
             <div>
               <Label className="text-white">עמודות גלויות</Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                {allColumns.map(column => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                {allColumns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={`mobile-${column.key}`}
                       checked={visibleColumns.includes(column.key)}
@@ -720,7 +901,10 @@ export default function WithdrawalRequestsPage() {
                       disabled={column.alwaysVisible}
                       className="border-white/30"
                     />
-                    <label htmlFor={`mobile-${column.key}`} className="text-sm text-white cursor-pointer flex-1">
+                    <label
+                      htmlFor={`mobile-${column.key}`}
+                      className="text-sm text-white cursor-pointer flex-1"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -729,15 +913,15 @@ export default function WithdrawalRequestsPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={clearFilters} 
+              <Button
+                variant="outline"
+                onClick={clearFilters}
                 className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 נקה
               </Button>
-              <Button 
-                onClick={() => setMobileFilterOpen(false)} 
+              <Button
+                onClick={() => setMobileFilterOpen(false)}
                 className="flex-1 bg-white text-gray-900 hover:bg-white/90"
               >
                 החל
@@ -756,7 +940,8 @@ export default function WithdrawalRequestsPage() {
               אישור מחיקה
             </AlertDialogTitle>
             <AlertDialogDescription>
-              האם אתה בטוח שברצונך למחוק את בקשת המשיכה <strong>{withdrawalToDelete?.withdrawal_number}</strong>?
+              האם אתה בטוח שברצונך למחוק את בקשת המשיכה{" "}
+              <strong>{withdrawalToDelete?.withdrawal_number}</strong>?
               <br />
               פעולה זו תסמן את הבקשה כמבוטלת ולא ניתן לבטלה.
             </AlertDialogDescription>
@@ -774,7 +959,7 @@ export default function WithdrawalRequestsPage() {
                   מוחק...
                 </>
               ) : (
-                'מחק בקשה'
+                "מחק בקשה"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -800,8 +985,12 @@ export default function WithdrawalRequestsPage() {
                 <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                   <PackageCheck className="h-7 w-7 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium mb-1">לא נמצאו בקשות משיכה</p>
-                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
+                <p className="text-slate-600 font-medium mb-1">
+                  לא נמצאו בקשות משיכה
+                </p>
+                <p className="text-sm text-slate-400">
+                  נסה לשנות את מילות החיפוש או להסיר מסננים
+                </p>
               </div>
             )}
           </CardContent>
@@ -816,18 +1005,27 @@ export default function WithdrawalRequestsPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <PackageCheck className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לא נמצאו בקשות משיכה</p>
-              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
+              <p className="text-slate-600 font-medium mb-1">
+                לא נמצאו בקשות משיכה
+              </p>
+              <p className="text-sm text-slate-400">
+                נסה לשנות את החיפוש או להסיר מסננים
+              </p>
             </div>
           </Card>
         ) : (
-          filteredAndSortedWithdrawals.map(withdrawal => (
-            <Card key={withdrawal.id} className="p-4 hover:shadow-md transition-shadow">
+          filteredAndSortedWithdrawals.map((withdrawal) => (
+            <Card
+              key={withdrawal.id}
+              className="p-4 hover:shadow-md transition-shadow"
+            >
               <div className="space-y-3">
                 {/* Header: Withdrawal Number + Actions */}
                 <div className="flex justify-between items-start gap-2">
-                  <Link 
-                    to={createPageUrl(`EditWithdrawalRequest?id=${withdrawal.id}`)}
+                  <Link
+                    to={createPageUrl(
+                      `EditWithdrawalRequest?id=${withdrawal.id}`,
+                    )}
                     className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                   >
                     {withdrawal.withdrawal_number}
@@ -840,16 +1038,27 @@ export default function WithdrawalRequestsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={() => handleRowPrint(withdrawal)}>
+                      <DropdownMenuItem
+                        onClick={() => handleRowPrint(withdrawal)}
+                      >
                         <Printer className="h-4 w-4 ms-2" />
                         הדפסה
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate(createPageUrl(`EditWithdrawalRequest?id=${withdrawal.id}`))}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          navigate(
+                            createPageUrl(
+                              `EditWithdrawalRequest?id=${withdrawal.id}`,
+                            ),
+                          )
+                        }
+                      >
                         <Edit className="h-4 w-4 ms-2" />
                         עריכה
                       </DropdownMenuItem>
-                      {(withdrawal.status === 'draft' || withdrawal.status === 'submitted') && (
-                        <DropdownMenuItem 
+                      {(withdrawal.status === "draft" ||
+                        withdrawal.status === "submitted") && (
+                        <DropdownMenuItem
                           onClick={() => handleDeleteClick(withdrawal)}
                           className="text-red-600"
                         >
@@ -865,9 +1074,13 @@ export default function WithdrawalRequestsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <PackageCheck className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{withdrawal.supplier_snapshot || 'לא צוין'}</span>
+                    <span className="font-medium text-gray-900">
+                      {withdrawal.supplier_snapshot || "לא צוין"}
+                    </span>
                   </div>
-                  <span className="text-gray-500">{formatDate(withdrawal.request_date)}</span>
+                  <span className="text-gray-500">
+                    {formatDate(withdrawal.request_date)}
+                  </span>
                 </div>
 
                 {/* Status and Urgency Badges */}
@@ -880,35 +1093,52 @@ export default function WithdrawalRequestsPage() {
                 <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
                   <div>
                     <span className="text-gray-500 text-xs block">פריטים</span>
-                    <span className="font-semibold text-gray-900">{withdrawal.total_items || 0}</span>
+                    <span className="font-semibold text-gray-900">
+                      {withdrawal.total_items || 0}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs block">כמות מבוקשת</span>
-                    <span className="font-semibold text-gray-900">{withdrawal.total_quantity_requested || 0}</span>
+                    <span className="text-gray-500 text-xs block">
+                      כמות מבוקשת
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {withdrawal.total_quantity_requested || 0}
+                    </span>
                   </div>
                   {withdrawal.framework_order_number_snapshot && (
                     <div className="col-span-2">
-                      <span className="text-gray-500 text-xs block">הזמנת מסגרת</span>
-                      <span className="font-medium text-gray-900">{withdrawal.framework_order_number_snapshot}</span>
+                      <span className="text-gray-500 text-xs block">
+                        הזמנת מסגרת
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {withdrawal.framework_order_number_snapshot}
+                      </span>
                     </div>
                   )}
                   {withdrawal.linked_delivery_count > 0 && (
                     <div className="col-span-2">
-                      <span className="text-gray-500 text-xs block mb-1">משלוחים מקושרים</span>
+                      <span className="text-gray-500 text-xs block mb-1">
+                        משלוחים מקושרים
+                      </span>
                       <div className="flex flex-wrap gap-1">
-                        {withdrawal.linked_delivery_numbers?.slice(0, 3).map((deliveryNumber, idx) => {
-                          const deliveryId = withdrawal.linked_delivery_ids?.[idx];
-                          return (
-                            <Link
-                              key={deliveryId || idx}
-                              to={createPageUrl(`EditDelivery?id=${deliveryId}`)}
-                              className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200 flex items-center gap-1"
-                            >
-                              {deliveryNumber}
-                              <ExternalLink className="h-2 w-2" />
-                            </Link>
-                          );
-                        })}
+                        {withdrawal.linked_delivery_numbers
+                          ?.slice(0, 3)
+                          .map((deliveryNumber, idx) => {
+                            const deliveryId =
+                              withdrawal.linked_delivery_ids?.[idx];
+                            return (
+                              <Link
+                                key={deliveryId || idx}
+                                to={createPageUrl(
+                                  `EditDelivery?id=${deliveryId}`,
+                                )}
+                                className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200 flex items-center gap-1"
+                              >
+                                {deliveryNumber}
+                                <ExternalLink className="h-2 w-2" />
+                              </Link>
+                            );
+                          })}
                         {withdrawal.linked_delivery_numbers?.length > 3 && (
                           <span className="text-xs text-gray-500">
                             +{withdrawal.linked_delivery_numbers.length - 3}

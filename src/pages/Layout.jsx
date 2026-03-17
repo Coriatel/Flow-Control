@@ -105,6 +105,9 @@ export default function Layout({ children, currentPageName }) {
     }
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [outStorageExpanded, setOutStorageExpanded] = useState(
+    () => location.pathname === createPageUrl("InventoryRemoval"),
+  );
 
   // State for open accordion groups, with localStorage integration
   const [openAccordionGroups, setOpenAccordionGroups] = useState(() => {
@@ -119,9 +122,9 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const [systemDisplay, setSystemDisplay] = useState({
-    mainHeaderName: "מערכת ניהול ריאגנטים",
-    sidebarHeaderName: "ניהול מלאי ריאגנטים",
-    logoUrl: "/favicon.svg",
+    mainHeaderName: "Flow Control",
+    sidebarHeaderName: "Flow Control",
+    logoUrl: "/logo-icon.png",
   });
 
   // Navigation history - improved implementation
@@ -142,11 +145,10 @@ export default function Layout({ children, currentPageName }) {
 
         if (settingsResult && settingsResult.length > 0) {
           setSystemDisplay({
-            mainHeaderName:
-              settingsResult[0].mainHeaderName || "מערכת ניהול ריאגנטים",
+            mainHeaderName: settingsResult[0].mainHeaderName || "Flow Control",
             sidebarHeaderName:
-              settingsResult[0].sidebarHeaderName || "ניהול מלאי ריאגנטים",
-            logoUrl: settingsResult[0].logoUrl || "/favicon.svg",
+              settingsResult[0].sidebarHeaderName || "Flow Control",
+            logoUrl: settingsResult[0].logoUrl || "/logo-icon.png",
           });
         }
       } catch (error) {
@@ -642,6 +644,99 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
 
+        {/* Quick Shortcuts */}
+        {!sidebarCollapsed && !searchTerm && (
+          <div className="px-4 mb-3 space-y-2">
+            {/* הכנסה למלאי */}
+            <Link
+              to={createPageUrl("NewDelivery")}
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                isNavItemActive("NewDelivery")
+                  ? "bg-emerald-600/30 text-emerald-100 ring-1 ring-emerald-400/50"
+                  : "bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25"
+              }`}
+            >
+              <ArrowDownToLine className="h-5 w-5 text-emerald-400" />
+              <span className="font-semibold text-sm">הכנסה למלאי</span>
+            </Link>
+
+            {/* הוצאה מהמלאי */}
+            <div>
+              <button
+                onClick={() => setOutStorageExpanded((p) => !p)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                  location.pathname === createPageUrl("InventoryRemoval")
+                    ? "bg-orange-600/30 text-orange-100 ring-1 ring-orange-400/50"
+                    : "bg-orange-600/15 text-orange-200 hover:bg-orange-600/25"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <PackageMinus className="h-5 w-5 text-orange-400" />
+                  <span className="font-semibold text-sm">הוצאה מהמלאי</span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-orange-300 transition-transform duration-200 ${outStorageExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {outStorageExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-2 gap-1.5 mt-1.5 px-1">
+                      {[
+                        {
+                          preset: "usage",
+                          label: "שימוש",
+                          Icon: Beaker,
+                          color: "text-emerald-400",
+                          bg: "hover:bg-emerald-600/20",
+                        },
+                        {
+                          preset: "shipment",
+                          label: "משלוח",
+                          Icon: Truck,
+                          color: "text-blue-400",
+                          bg: "hover:bg-blue-600/20",
+                        },
+                        {
+                          preset: "destroy",
+                          label: "השמדה",
+                          Icon: Trash2,
+                          color: "text-red-400",
+                          bg: "hover:bg-red-600/20",
+                        },
+                        {
+                          preset: "other",
+                          label: "סיבה אחרת",
+                          Icon: FileText,
+                          color: "text-slate-400",
+                          bg: "hover:bg-slate-600/20",
+                        },
+                      ].map(({ preset, label, Icon, color, bg }) => (
+                        <Link
+                          key={preset}
+                          to={`${createPageUrl("InventoryRemoval")}?preset=${preset}`}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-md text-xs font-medium text-slate-300 transition-colors ${bg}`}
+                        >
+                          <Icon className={`h-4 w-4 ${color}`} />
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
+
         {/* Accordion for Expanded Sidebar */}
         {!sidebarCollapsed && (
           <Accordion
@@ -974,14 +1069,17 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex-1" />
 
               {/* Left side (for RTL): App Logo + Name */}
-              <div className="flex items-center gap-4">
-                <span className="text-lg font-semibold text-slate-700 hidden lg:block">
-                  Flow Control
-                </span>
+              <div className="flex items-center gap-3">
                 <img
-                  src="/favicon.svg"
+                  src="/logo-text.png"
+                  alt="Flow Control"
+                  className="h-10 object-contain hidden lg:block"
+                  loading="lazy"
+                />
+                <img
+                  src="/logo-icon.png"
                   alt="לוגו"
-                  className="h-9 w-9 rounded-md object-contain hidden lg:block"
+                  className="h-10 w-10 rounded-md object-contain hidden lg:block"
                   loading="lazy"
                 />
               </div>

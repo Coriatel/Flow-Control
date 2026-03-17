@@ -1,38 +1,39 @@
-import { Router, Request, Response } from 'express';
-import prisma from '../utils/prisma';
-import { asyncHandler } from '../middleware/errorHandler';
-import { ApiResponse } from '../types';
+import { Router, Request, Response } from "express";
+import prisma from "../utils/prisma";
+import { asyncHandler } from "../middleware/errorHandler";
+import { ApiResponse } from "../types";
 
 const router = Router();
 
 // Default settings for when database is empty or unavailable
 const DEFAULT_SETTINGS = {
-    id: 'default',
-    key: 'display',
-    value: {
-        mainHeaderName: 'מערכת ניהול ריאגנטים',
-        sidebarHeaderName: 'ניהול מלאי ריאגנטים',
-        logoUrl: '/favicon.svg',
-    },
-    // Flatten for frontend compatibility
-    mainHeaderName: 'מערכת ניהול ריאגנטים',
-    sidebarHeaderName: 'ניהול מלאי ריאגנטים',
-    logoUrl: '/favicon.svg',
-    description: 'Default system settings',
+  id: "default",
+  key: "display",
+  value: {
+    mainHeaderName: "Flow Control",
+    sidebarHeaderName: "Flow Control",
+    logoUrl: "/logo-icon.png",
+  },
+  // Flatten for frontend compatibility
+  mainHeaderName: "Flow Control",
+  sidebarHeaderName: "Flow Control",
+  logoUrl: "/logo-icon.png",
+  description: "Default system settings",
 };
 
 // Helper to flatten settings for frontend
 function flattenSettings(settings: any) {
-    const value = typeof settings.value === 'string'
-        ? JSON.parse(settings.value)
-        : settings.value || {};
+  const value =
+    typeof settings.value === "string"
+      ? JSON.parse(settings.value)
+      : settings.value || {};
 
-    return {
-        ...settings,
-        mainHeaderName: value.mainHeaderName || 'מערכת ניהול ריאגנטים',
-        sidebarHeaderName: value.sidebarHeaderName || 'ניהול מלאי ריאגנטים',
-        logoUrl: value.logoUrl || '/favicon.svg',
-    };
+  return {
+    ...settings,
+    mainHeaderName: value.mainHeaderName || "Flow Control",
+    sidebarHeaderName: value.sidebarHeaderName || "Flow Control",
+    logoUrl: value.logoUrl || "/logo-icon.png",
+  };
 }
 
 /**
@@ -40,25 +41,25 @@ function flattenSettings(settings: any) {
  * List all system settings
  */
 router.get(
-    '/',
-    asyncHandler(async (_req: Request, res: Response) => {
-        try {
-            const settings = await prisma.systemSettings.findMany();
+  "/",
+  asyncHandler(async (_req: Request, res: Response) => {
+    try {
+      const settings = await prisma.systemSettings.findMany();
 
-            if (settings.length === 0) {
-                // Return default settings if none exist in database
-                return res.json([DEFAULT_SETTINGS]);
-            }
+      if (settings.length === 0) {
+        // Return default settings if none exist in database
+        return res.json([DEFAULT_SETTINGS]);
+      }
 
-            // Flatten settings for frontend compatibility
-            const flattenedSettings = settings.map(flattenSettings);
-            res.json(flattenedSettings);
-        } catch (error) {
-            // Fallback to default if database error
-            console.error('Error fetching system settings:', error);
-            res.json([DEFAULT_SETTINGS]);
-        }
-    })
+      // Flatten settings for frontend compatibility
+      const flattenedSettings = settings.map(flattenSettings);
+      res.json(flattenedSettings);
+    } catch (error) {
+      // Fallback to default if database error
+      console.error("Error fetching system settings:", error);
+      res.json([DEFAULT_SETTINGS]);
+    }
+  }),
 );
 
 /**
@@ -66,28 +67,28 @@ router.get(
  * Get single system setting
  */
 router.get(
-    '/:id',
-    asyncHandler(async (req: Request, res: Response) => {
-        const { id } = req.params;
+  "/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        try {
-            const setting = await prisma.systemSettings.findUnique({
-                where: { id },
-            });
+    try {
+      const setting = await prisma.systemSettings.findUnique({
+        where: { id },
+      });
 
-            if (!setting) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Setting not found',
-                });
-            }
+      if (!setting) {
+        return res.status(404).json({
+          success: false,
+          error: "Setting not found",
+        });
+      }
 
-            res.json(flattenSettings(setting));
-        } catch (error) {
-            console.error('Error fetching system setting:', error);
-            res.json(DEFAULT_SETTINGS);
-        }
-    })
+      res.json(flattenSettings(setting));
+    } catch (error) {
+      console.error("Error fetching system setting:", error);
+      res.json(DEFAULT_SETTINGS);
+    }
+  }),
 );
 
 /**
@@ -95,54 +96,58 @@ router.get(
  * Create system settings
  */
 router.post(
-    '/',
-    asyncHandler(async (req: Request, res: Response) => {
-        const data = req.body;
+  "/",
+  asyncHandler(async (req: Request, res: Response) => {
+    const data = req.body;
 
-        try {
-            // If key+value provided (simple key-value pair), use upsert
-            if (data.key && data.value !== undefined && typeof data.value === 'string') {
-                const result = await prisma.systemSettings.upsert({
-                    where: { key: data.key },
-                    update: { value: data.value },
-                    create: {
-                        key: data.key,
-                        value: data.value,
-                        description: data.description,
-                    },
-                });
-                return res.status(201).json({ success: true, data: result });
-            }
+    try {
+      // If key+value provided (simple key-value pair), use upsert
+      if (
+        data.key &&
+        data.value !== undefined &&
+        typeof data.value === "string"
+      ) {
+        const result = await prisma.systemSettings.upsert({
+          where: { key: data.key },
+          update: { value: data.value },
+          create: {
+            key: data.key,
+            value: data.value,
+            description: data.description,
+          },
+        });
+        return res.status(201).json({ success: true, data: result });
+      }
 
-            // Build the value JSON from individual fields (legacy display settings)
-            const valueJson = {
-                mainHeaderName: data.mainHeaderName || 'מערכת ניהול ריאגנטים',
-                sidebarHeaderName: data.sidebarHeaderName || 'ניהול מלאי ריאגנטים',
-                logoUrl: data.logoUrl || '/favicon.svg',
-                ...data.value,
-            };
+      // Build the value JSON from individual fields (legacy display settings)
+      const valueJson = {
+        mainHeaderName: data.mainHeaderName || "Flow Control",
+        sidebarHeaderName: data.sidebarHeaderName || "Flow Control",
+        logoUrl: data.logoUrl || "/logo-icon.png",
+        ...data.value,
+      };
 
-            const created = await prisma.systemSettings.create({
-                data: {
-                    key: data.key || 'display',
-                    value: valueJson,
-                    description: data.description,
-                },
-            });
+      const created = await prisma.systemSettings.create({
+        data: {
+          key: data.key || "display",
+          value: valueJson,
+          description: data.description,
+        },
+      });
 
-            const response: ApiResponse = {
-                success: true,
-                data: flattenSettings(created),
-            };
-            res.status(201).json(response);
-        } catch (error) {
-            console.error('Error creating system setting:', error);
-            res.status(500).json({
-                success: false,
-                error: 'Failed to create system setting',
-            });
-        }
-    })
+      const response: ApiResponse = {
+        success: true,
+        data: flattenSettings(created),
+      };
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error creating system setting:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to create system setting",
+      });
+    }
+  }),
 );
 
 /**
@@ -150,49 +155,50 @@ router.post(
  * Update system settings
  */
 router.put(
-    '/:id',
-    asyncHandler(async (req: Request, res: Response) => {
-        const { id } = req.params;
-        const data = req.body;
+  "/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const data = req.body;
 
-        try {
-            // Get existing settings to merge
-            const existing = await prisma.systemSettings.findUnique({
-                where: { id },
-            });
+    try {
+      // Get existing settings to merge
+      const existing = await prisma.systemSettings.findUnique({
+        where: { id },
+      });
 
-            const existingValue = existing?.value as any || {};
+      const existingValue = (existing?.value as any) || {};
 
-            // Build the value JSON from individual fields
-            const valueJson = {
-                ...existingValue,
-                mainHeaderName: data.mainHeaderName ?? existingValue.mainHeaderName,
-                sidebarHeaderName: data.sidebarHeaderName ?? existingValue.sidebarHeaderName,
-                logoUrl: data.logoUrl ?? existingValue.logoUrl,
-                ...data.value,
-            };
+      // Build the value JSON from individual fields
+      const valueJson = {
+        ...existingValue,
+        mainHeaderName: data.mainHeaderName ?? existingValue.mainHeaderName,
+        sidebarHeaderName:
+          data.sidebarHeaderName ?? existingValue.sidebarHeaderName,
+        logoUrl: data.logoUrl ?? existingValue.logoUrl,
+        ...data.value,
+      };
 
-            const updated = await prisma.systemSettings.update({
-                where: { id },
-                data: {
-                    value: valueJson,
-                    description: data.description ?? existing?.description,
-                },
-            });
+      const updated = await prisma.systemSettings.update({
+        where: { id },
+        data: {
+          value: valueJson,
+          description: data.description ?? existing?.description,
+        },
+      });
 
-            const response: ApiResponse = {
-                success: true,
-                data: flattenSettings(updated),
-            };
-            res.json(response);
-        } catch (error) {
-            console.error('Error updating system setting:', error);
-            res.status(500).json({
-                success: false,
-                error: 'Failed to update system setting',
-            });
-        }
-    })
+      const response: ApiResponse = {
+        success: true,
+        data: flattenSettings(updated),
+      };
+      res.json(response);
+    } catch (error) {
+      console.error("Error updating system setting:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to update system setting",
+      });
+    }
+  }),
 );
 
 /**
@@ -200,27 +206,27 @@ router.put(
  * Delete system setting
  */
 router.delete(
-    '/:id',
-    asyncHandler(async (req: Request, res: Response) => {
-        const { id } = req.params;
+  "/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        try {
-            await prisma.systemSettings.delete({
-                where: { id },
-            });
+    try {
+      await prisma.systemSettings.delete({
+        where: { id },
+      });
 
-            res.json({
-                success: true,
-                message: 'Setting deleted',
-            });
-        } catch (error) {
-            console.error('Error deleting system setting:', error);
-            res.status(500).json({
-                success: false,
-                error: 'Failed to delete system setting',
-            });
-        }
-    })
+      res.json({
+        success: true,
+        message: "Setting deleted",
+      });
+    } catch (error) {
+      console.error("Error deleting system setting:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to delete system setting",
+      });
+    }
+  }),
 );
 
 export default router;

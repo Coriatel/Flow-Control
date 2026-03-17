@@ -1,28 +1,59 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { getOutgoingShipmentsData } from '@/api/functions';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { getOutgoingShipmentsData } from "@/api/functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
-  Plus, Search, Printer, Edit, Loader2, RefreshCw, Columns3, MoreHorizontal,
-  Package, AlertTriangle, CheckCircle2, ExternalLink, Filter, X
-} from 'lucide-react';
-import { format, parseISO, isValid } from 'date-fns';
-import { he } from 'date-fns/locale';
+  Plus,
+  Search,
+  Printer,
+  Edit,
+  Loader2,
+  RefreshCw,
+  Columns3,
+  MoreHorizontal,
+  Package,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Filter,
+  X,
+} from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
+import { he } from "date-fns/locale";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import BackButton from '@/components/ui/BackButton';
-import ResizableTable from '@/components/ui/ResizableTable';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import BackButton from "@/components/ui/BackButton";
+import ResizableTable from "@/components/ui/ResizableTable";
 
 export default function OutgoingShipmentsPage() {
   const [shipments, setShipments] = useState([]);
@@ -30,28 +61,85 @@ export default function OutgoingShipmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [recipientTypeFilter, setRecipientTypeFilter] = useState('all');
-  const [sortField, setSortField] = useState('shipment_date');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [recipientTypeFilter, setRecipientTypeFilter] = useState("all");
+  const [sortField, setSortField] = useState(
+    () =>
+      localStorage.getItem("outgoingShipments_sortField") || "shipment_date",
+  );
+  const [sortDirection, setSortDirection] = useState(
+    () => localStorage.getItem("outgoingShipments_sortDirection") || "desc",
+  );
+  useEffect(() => {
+    localStorage.setItem("outgoingShipments_sortField", sortField);
+    localStorage.setItem("outgoingShipments_sortDirection", sortDirection);
+  }, [sortField, sortDirection]);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  const allColumns = useMemo(() => [
-    { key: 'shipment_number', label: 'מס\' משלוח', alwaysVisible: true, defaultWidth: 140, sortable: true },
-    { key: 'shipment_date', label: 'תאריך שליחה', alwaysVisible: true, defaultWidth: 120, sortable: true },
-    { key: 'recipient_name', label: 'נמען', defaultWidth: 180, sortable: true },
-    { key: 'recipient_type', label: 'סוג נמען', defaultWidth: 110, sortable: true },
-    { key: 'status', label: 'סטטוס', defaultWidth: 110, sortable: true },
-    { key: 'total_items_sent', label: 'פריטים', defaultWidth: 90, sortable: true },
-    { key: 'special_requirements', label: 'דרישות מיוחדות', defaultWidth: 140, sortable: false },
-    { key: 'confirmation_status', label: 'אישור קבלה', defaultWidth: 120, sortable: false },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 100, sortable: false }
-  ], []);
+  const allColumns = useMemo(
+    () => [
+      {
+        key: "shipment_number",
+        label: "מס' משלוח",
+        alwaysVisible: true,
+        defaultWidth: 140,
+        sortable: true,
+      },
+      {
+        key: "shipment_date",
+        label: "תאריך שליחה",
+        alwaysVisible: true,
+        defaultWidth: 120,
+        sortable: true,
+      },
+      {
+        key: "recipient_name",
+        label: "נמען",
+        defaultWidth: 180,
+        sortable: true,
+      },
+      {
+        key: "recipient_type",
+        label: "סוג נמען",
+        defaultWidth: 110,
+        sortable: true,
+      },
+      { key: "status", label: "סטטוס", defaultWidth: 110, sortable: true },
+      {
+        key: "total_items_sent",
+        label: "פריטים",
+        defaultWidth: 90,
+        sortable: true,
+      },
+      {
+        key: "special_requirements",
+        label: "דרישות מיוחדות",
+        defaultWidth: 140,
+        sortable: false,
+      },
+      {
+        key: "confirmation_status",
+        label: "אישור קבלה",
+        defaultWidth: 120,
+        sortable: false,
+      },
+      {
+        key: "actions",
+        label: "פעולות",
+        alwaysVisible: true,
+        defaultWidth: 100,
+        sortable: false,
+      },
+    ],
+    [],
+  );
 
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    const alwaysVisibleKeys = allColumns.filter(col => col.alwaysVisible).map(col => col.key);
-    const saved = localStorage.getItem('outgoingShipmentsVisibleColumns');
+    const alwaysVisibleKeys = allColumns
+      .filter((col) => col.alwaysVisible)
+      .map((col) => col.key);
+    const saved = localStorage.getItem("outgoingShipmentsVisibleColumns");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -64,22 +152,25 @@ export default function OutgoingShipmentsPage() {
   });
 
   useEffect(() => {
-    const savableColumns = visibleColumns.filter(colKey => {
-      const columnDef = allColumns.find(c => c.key === colKey);
+    const savableColumns = visibleColumns.filter((colKey) => {
+      const columnDef = allColumns.find((c) => c.key === colKey);
       return columnDef ? !columnDef.alwaysVisible : true;
     });
-    localStorage.setItem('outgoingShipmentsVisibleColumns', JSON.stringify(savableColumns));
+    localStorage.setItem(
+      "outgoingShipmentsVisibleColumns",
+      JSON.stringify(savableColumns),
+    );
   }, [visibleColumns, allColumns]);
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
     try {
-
       const response = await getOutgoingShipmentsData({
-        status: statusFilter !== 'all' ? statusFilter : null,
-        recipientType: recipientTypeFilter !== 'all' ? recipientTypeFilter : null,
-        includeDeleted: 'false',
-        limit: '500'
+        status: statusFilter !== "all" ? statusFilter : null,
+        recipientType:
+          recipientTypeFilter !== "all" ? recipientTypeFilter : null,
+        includeDeleted: "false",
+        limit: "500",
       });
 
       const success = response?.success ?? response?.data?.success;
@@ -89,12 +180,16 @@ export default function OutgoingShipmentsPage() {
         setShipments(payload.shipments || []);
         setSummary(payload.summary || {});
       } else {
-        throw new Error(response?.error || response?.data?.error || 'Failed to fetch shipments');
+        throw new Error(
+          response?.error ||
+            response?.data?.error ||
+            "Failed to fetch shipments",
+        );
       }
     } catch (err) {
       setError(`שגיאה בטעינת משלוחים: ${err.message}`);
-      toast.error('שגיאה בטעינת משלוחים', {
-        description: err.message
+      toast.error("שגיאה בטעינת משלוחים", {
+        description: err.message,
       });
     } finally {
       setLoading(false);
@@ -112,12 +207,18 @@ export default function OutgoingShipmentsPage() {
   };
 
   const filteredAndSortedShipments = useMemo(() => {
-    let filtered = shipments.filter(shipment => {
-      const matchesSearch = 
-        shipment.shipment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shipment.recipient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shipment.contact_person?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+    let filtered = shipments.filter((shipment) => {
+      const matchesSearch =
+        shipment.shipment_number
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        shipment.recipient_name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        shipment.contact_person
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
       return matchesSearch;
     });
 
@@ -125,17 +226,17 @@ export default function OutgoingShipmentsPage() {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      if (sortField.includes('date')) {
+      if (sortField.includes("date")) {
         aValue = aValue ? parseISO(aValue) : new Date(0);
         bValue = bValue ? parseISO(bValue) : new Date(0);
       }
-      
-      if (typeof aValue === 'string') {
+
+      if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
-        bValue = bValue?.toLowerCase() || '';
+        bValue = bValue?.toLowerCase() || "";
       }
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -147,96 +248,111 @@ export default function OutgoingShipmentsPage() {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleColumnToggle = (columnKey) => {
-    setVisibleColumns(prev => 
-      prev.includes(columnKey) 
-        ? prev.filter(col => col !== columnKey)
-        : [...prev, columnKey]
+    setVisibleColumns((prev) =>
+      prev.includes(columnKey)
+        ? prev.filter((col) => col !== columnKey)
+        : [...prev, columnKey],
     );
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'draft': { label: 'טיוטה', variant: 'secondary' },
-      'prepared': { label: 'מוכן', variant: 'info' },
-      'sent': { label: 'נשלח', variant: 'warning' },
-      'delivered': { label: 'הגיע ליעד', variant: 'success' },
-      'confirmed': { label: 'אושר', variant: 'success' },
-      'cancelled': { label: 'בוטל', variant: 'danger' }
+      draft: { label: "טיוטה", variant: "secondary" },
+      prepared: { label: "מוכן", variant: "info" },
+      sent: { label: "נשלח", variant: "warning" },
+      delivered: { label: "הגיע ליעד", variant: "success" },
+      confirmed: { label: "אושר", variant: "success" },
+      cancelled: { label: "בוטל", variant: "danger" },
     };
 
-    const config = statusConfig[status] || statusConfig['draft'];
+    const config = statusConfig[status] || statusConfig["draft"];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'לא זמין';
+    if (!dateString) return "לא זמין";
     const date = parseISO(dateString);
-    return isValid(date) ? format(date, 'dd/MM/yyyy', { locale: he }) : 'תאריך לא תקין';
+    return isValid(date)
+      ? format(date, "dd/MM/yyyy", { locale: he })
+      : "תאריך לא תקין";
   };
 
   const renderCell = (shipment, columnKey) => {
     switch (columnKey) {
-      case 'shipment_number':
+      case "shipment_number":
         return (
-          <Link 
-            to={createPageUrl('EditShipment') + `?id=${shipment.id}`}
+          <Link
+            to={createPageUrl("EditShipment") + `?id=${shipment.id}`}
             className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
           >
             {shipment.shipment_number}
             <ExternalLink className="h-3 w-3" />
           </Link>
         );
-      case 'shipment_date':
+      case "shipment_date":
         return formatDate(shipment.shipment_date);
-      case 'recipient_name':
-        return shipment.recipient_name || 'לא צוין';
-      case 'recipient_type':
+      case "recipient_name":
+        return shipment.recipient_name || "לא צוין";
+      case "recipient_type":
         const recipientTypes = {
-          'internal': 'פנימי',
-          'external': 'חיצוני',
-          'supplier': 'ספק',
-          'other': 'אחר'
+          internal: "פנימי",
+          external: "חיצוני",
+          supplier: "ספק",
+          other: "אחר",
         };
-        return recipientTypes[shipment.recipient_type] || shipment.recipient_type || '';
-      case 'status':
+        return (
+          recipientTypes[shipment.recipient_type] ||
+          shipment.recipient_type ||
+          ""
+        );
+      case "status":
         return getStatusBadge(shipment.status);
-      case 'total_items_sent':
+      case "total_items_sent":
         return shipment.total_items_sent || 0;
-      case 'special_requirements':
+      case "special_requirements":
         return (
           <div className="flex gap-1 flex-wrap">
             {shipment.requires_cold_storage && (
-              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              <Badge
+                variant="outline"
+                className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+              >
                 קירור
               </Badge>
             )}
             {shipment.requires_special_handling && (
-              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+              <Badge
+                variant="outline"
+                className="text-xs bg-amber-50 text-amber-700 border-amber-200"
+              >
                 טיפול מיוחד
               </Badge>
             )}
             {shipment.emergency_items > 0 && (
-              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+              <Badge
+                variant="outline"
+                className="text-xs bg-red-50 text-red-700 border-red-200"
+              >
                 חירום
               </Badge>
             )}
           </div>
         );
-      case 'confirmation_status':
+      case "confirmation_status":
         return shipment.confirmation_received ? (
           <div className="flex items-center text-green-600">
             <CheckCircle2 className="h-4 w-4 me-1" />
             <span className="text-xs">אושר</span>
           </div>
-        ) : shipment.status === 'sent' ? (
+        ) : shipment.status === "sent" ? (
           <div className="flex items-center text-amber-600">
             <AlertTriangle className="h-4 w-4 me-1" />
             <span className="text-xs">ממתין</span>
@@ -244,10 +360,10 @@ export default function OutgoingShipmentsPage() {
         ) : (
           <span className="text-xs text-gray-400">-</span>
         );
-      case 'actions':
+      case "actions":
         return (
           <div className="flex items-center gap-2">
-            <Link to={createPageUrl('EditShipment') + `?id=${shipment.id}`}>
+            <Link to={createPageUrl("EditShipment") + `?id=${shipment.id}`}>
               <Button variant="ghost" size="sm">
                 <Edit className="h-4 w-4" />
               </Button>
@@ -255,12 +371,12 @@ export default function OutgoingShipmentsPage() {
           </div>
         );
       default:
-        return shipment[columnKey] || '';
+        return shipment[columnKey] || "";
     }
   };
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -282,7 +398,7 @@ export default function OutgoingShipmentsPage() {
         </style>
       </head>
       <body>
-        <div class="print-date">הופק בתאריך: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+        <div class="print-date">הופק בתאריך: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
         <div class="header">
           <h1>דוח משלוחים יוצאים</h1>
           <p>מערכת ניהול מלאי ריאגנטים</p>
@@ -294,57 +410,93 @@ export default function OutgoingShipmentsPage() {
         <table>
           <thead>
             <tr>
-              ${visibleColumns.filter(col => col !== 'actions' && col !== 'special_requirements' && col !== 'confirmation_status').map(col => {
-                const column = allColumns.find(c => c.key === col);
-                return `<th>${column?.label || col}</th>`;
-              }).join('')}
+              ${visibleColumns
+                .filter(
+                  (col) =>
+                    col !== "actions" &&
+                    col !== "special_requirements" &&
+                    col !== "confirmation_status",
+                )
+                .map((col) => {
+                  const column = allColumns.find((c) => c.key === col);
+                  return `<th>${column?.label || col}</th>`;
+                })
+                .join("")}
             </tr>
           </thead>
           <tbody>
-            ${filteredAndSortedShipments.map(shipment => `
+            ${filteredAndSortedShipments
+              .map(
+                (shipment) => `
               <tr>
-                ${visibleColumns.filter(col => col !== 'actions' && col !== 'special_requirements' && col !== 'confirmation_status').map(col => {
-                  let value = '';
-                  switch (col) {
-                    case 'shipment_date':
-                      value = formatDate(shipment.shipment_date);
-                      break;
-                    case 'status':
-                      const statusLabels = { 'draft': 'טיוטה', 'prepared': 'מוכן', 'sent': 'נשלח', 'delivered': 'הגיע', 'confirmed': 'אושר', 'cancelled': 'בוטל' };
-                      value = statusLabels[shipment.status] || shipment.status;
-                      break;
-                    case 'recipient_type':
-                      const types = { 'internal': 'פנימי', 'external': 'חיצוני', 'supplier': 'ספק', 'other': 'אחר' };
-                      value = types[shipment.recipient_type] || shipment.recipient_type || '';
-                      break;
-                    default:
-                      value = shipment[col] || '';
-                  }
-                  return `<td>${value}</td>`;
-                }).join('')}
+                ${visibleColumns
+                  .filter(
+                    (col) =>
+                      col !== "actions" &&
+                      col !== "special_requirements" &&
+                      col !== "confirmation_status",
+                  )
+                  .map((col) => {
+                    let value = "";
+                    switch (col) {
+                      case "shipment_date":
+                        value = formatDate(shipment.shipment_date);
+                        break;
+                      case "status":
+                        const statusLabels = {
+                          draft: "טיוטה",
+                          prepared: "מוכן",
+                          sent: "נשלח",
+                          delivered: "הגיע",
+                          confirmed: "אושר",
+                          cancelled: "בוטל",
+                        };
+                        value =
+                          statusLabels[shipment.status] || shipment.status;
+                        break;
+                      case "recipient_type":
+                        const types = {
+                          internal: "פנימי",
+                          external: "חיצוני",
+                          supplier: "ספק",
+                          other: "אחר",
+                        };
+                        value =
+                          types[shipment.recipient_type] ||
+                          shipment.recipient_type ||
+                          "";
+                        break;
+                      default:
+                        value = shipment[col] || "";
+                    }
+                    return `<td>${value}</td>`;
+                  })
+                  .join("")}
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
       </body>
       </html>
     `;
-    
+
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.print();
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setRecipientTypeFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setRecipientTypeFilter("all");
     setMobileFilterOpen(false);
   };
 
   const activeFiltersCount = [
-    statusFilter !== 'all',
-    recipientTypeFilter !== 'all'
+    statusFilter !== "all",
+    recipientTypeFilter !== "all",
   ].filter(Boolean).length;
 
   if (loading) {
@@ -369,13 +521,17 @@ export default function OutgoingShipmentsPage() {
                 <span className="truncate">משלוחים יוצאים</span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                מציג {filteredAndSortedShipments.length} משלוחים מתוך {shipments.length}
+                מציג {filteredAndSortedShipments.length} משלוחים מתוך{" "}
+                {shipments.length}
               </p>
             </div>
           </div>
-          
+
           {/* Desktop: Full Button */}
-          <Link to={createPageUrl('NewShipment')} className="hidden sm:block flex-shrink-0">
+          <Link
+            to={createPageUrl("NewShipment")}
+            className="hidden sm:block flex-shrink-0"
+          >
             <Button className="bg-amber-500 hover:bg-amber-600 text-white">
               <Plus className="h-4 w-4 me-2" />
               משלוח חדש
@@ -383,8 +539,14 @@ export default function OutgoingShipmentsPage() {
           </Link>
 
           {/* Mobile: Icon Only Button */}
-          <Link to={createPageUrl('NewShipment')} className="sm:hidden flex-shrink-0">
-            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white px-3">
+          <Link
+            to={createPageUrl("NewShipment")}
+            className="sm:hidden flex-shrink-0"
+          >
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-3"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </Link>
@@ -400,7 +562,8 @@ export default function OutgoingShipmentsPage() {
               הגיעו: <strong>{summary.byStatus?.delivered || 0}</strong>
             </span>
             <span className="bg-yellow-50 px-2 py-1 rounded">
-              ממתינים לאישור: <strong>{summary.awaitingConfirmation || 0}</strong>
+              ממתינים לאישור:{" "}
+              <strong>{summary.awaitingConfirmation || 0}</strong>
             </span>
             <span className="bg-purple-50 px-2 py-1 rounded">
               סה"כ פריטים: <strong>{summary.totalItemsSent || 0}</strong>
@@ -422,7 +585,7 @@ export default function OutgoingShipmentsPage() {
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => setSearchTerm("")}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-4 w-4" />
@@ -447,7 +610,10 @@ export default function OutgoingShipmentsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={recipientTypeFilter} onValueChange={setRecipientTypeFilter}>
+          <Select
+            value={recipientTypeFilter}
+            onValueChange={setRecipientTypeFilter}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="סוג נמען" />
             </SelectTrigger>
@@ -468,8 +634,15 @@ export default function OutgoingShipmentsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
@@ -490,14 +663,22 @@ export default function OutgoingShipmentsPage() {
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">הצג עמודות</h4>
                 {allColumns.map((column) => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={column.key}
                       checked={visibleColumns.includes(column.key)}
-                      onCheckedChange={() => !column.alwaysVisible && handleColumnToggle(column.key)}
+                      onCheckedChange={() =>
+                        !column.alwaysVisible && handleColumnToggle(column.key)
+                      }
                       disabled={column.alwaysVisible}
                     />
-                    <label htmlFor={column.key} className="text-sm cursor-pointer">
+                    <label
+                      htmlFor={column.key}
+                      className="text-sm cursor-pointer"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -523,7 +704,7 @@ export default function OutgoingShipmentsPage() {
               </Badge>
             )}
           </Button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -531,8 +712,15 @@ export default function OutgoingShipmentsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={manualRefresh} disabled={isManualRefreshing}>
-                {isManualRefreshing ? <Loader2 className="h-4 w-4 ms-2 animate-spin" /> : <RefreshCw className="h-4 w-4 ms-2" />}
+              <DropdownMenuItem
+                onClick={manualRefresh}
+                disabled={isManualRefreshing}
+              >
+                {isManualRefreshing ? (
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 ms-2" />
+                )}
                 רענון
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
@@ -546,14 +734,14 @@ export default function OutgoingShipmentsPage() {
 
       {/* Mobile Filter Sheet with Glassmorphism */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-md"
           style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            background: "rgba(30, 41, 59, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <SheetHeader>
@@ -562,7 +750,7 @@ export default function OutgoingShipmentsPage() {
               בחר אפשרויות לסינון רשימת המשלוחים
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6 space-y-4">
             <div>
               <Label className="text-white">סטטוס</Label>
@@ -584,7 +772,10 @@ export default function OutgoingShipmentsPage() {
 
             <div>
               <Label className="text-white">סוג נמען</Label>
-              <Select value={recipientTypeFilter} onValueChange={setRecipientTypeFilter}>
+              <Select
+                value={recipientTypeFilter}
+                onValueChange={setRecipientTypeFilter}
+              >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -601,8 +792,11 @@ export default function OutgoingShipmentsPage() {
             <div>
               <Label className="text-white">עמודות גלויות</Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                {allColumns.map(column => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                {allColumns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={`mobile-${column.key}`}
                       checked={visibleColumns.includes(column.key)}
@@ -610,7 +804,10 @@ export default function OutgoingShipmentsPage() {
                       disabled={column.alwaysVisible}
                       className="border-white/30"
                     />
-                    <label htmlFor={`mobile-${column.key}`} className="text-sm text-white cursor-pointer flex-1">
+                    <label
+                      htmlFor={`mobile-${column.key}`}
+                      className="text-sm text-white cursor-pointer flex-1"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -619,15 +816,15 @@ export default function OutgoingShipmentsPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={clearFilters} 
+              <Button
+                variant="outline"
+                onClick={clearFilters}
                 className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 נקה
               </Button>
-              <Button 
-                onClick={() => setMobileFilterOpen(false)} 
+              <Button
+                onClick={() => setMobileFilterOpen(false)}
                 className="flex-1 bg-white text-gray-900 hover:bg-white/90"
               >
                 החל
@@ -650,14 +847,18 @@ export default function OutgoingShipmentsPage() {
               onSort={handleSort}
               renderCell={renderCell}
             />
-            
+
             {filteredAndSortedShipments.length === 0 && (
               <div className="text-center py-16">
                 <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                   <Package className="h-7 w-7 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
-                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
+                <p className="text-slate-600 font-medium mb-1">
+                  לא נמצאו משלוחים
+                </p>
+                <p className="text-sm text-slate-400">
+                  נסה לשנות את מילות החיפוש או להסיר מסננים
+                </p>
               </div>
             )}
           </CardContent>
@@ -672,17 +873,24 @@ export default function OutgoingShipmentsPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <Package className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לא נמצאו משלוחים</p>
-              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
+              <p className="text-slate-600 font-medium mb-1">
+                לא נמצאו משלוחים
+              </p>
+              <p className="text-sm text-slate-400">
+                נסה לשנות את החיפוש או להסיר מסננים
+              </p>
             </div>
           </Card>
         ) : (
-          filteredAndSortedShipments.map(shipment => (
-            <Card key={shipment.id} className="p-4 hover:shadow-md transition-shadow">
+          filteredAndSortedShipments.map((shipment) => (
+            <Card
+              key={shipment.id}
+              className="p-4 hover:shadow-md transition-shadow"
+            >
               <div className="space-y-3">
                 {/* Header: Shipment Number + Actions */}
                 <div className="flex justify-between items-start gap-2">
-                  <Link 
+                  <Link
                     to={createPageUrl(`EditShipment?id=${shipment.id}`)}
                     className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                   >
@@ -696,7 +904,13 @@ export default function OutgoingShipmentsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl(`EditShipment?id=${shipment.id}`)}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          (window.location.href = createPageUrl(
+                            `EditShipment?id=${shipment.id}`,
+                          ))
+                        }
+                      >
                         <Edit className="h-4 w-4 ms-2" />
                         עריכה
                       </DropdownMenuItem>
@@ -708,21 +922,31 @@ export default function OutgoingShipmentsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{shipment.recipient_name || 'לא צוין'}</span>
+                    <span className="font-medium text-gray-900">
+                      {shipment.recipient_name || "לא צוין"}
+                    </span>
                   </div>
-                  <span className="text-gray-500">{formatDate(shipment.shipment_date)}</span>
+                  <span className="text-gray-500">
+                    {formatDate(shipment.shipment_date)}
+                  </span>
                 </div>
 
                 {/* Status Badge */}
                 <div className="flex flex-wrap gap-2">
                   {getStatusBadge(shipment.status)}
                   {shipment.requires_cold_storage && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-blue-50 text-blue-700"
+                    >
                       קירור
                     </Badge>
                   )}
                   {shipment.requires_special_handling && (
-                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700">
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-amber-50 text-amber-700"
+                    >
                       טיפול מיוחד
                     </Badge>
                   )}
@@ -732,21 +956,31 @@ export default function OutgoingShipmentsPage() {
                 <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
                   <div>
                     <span className="text-gray-500 text-xs block">פריטים</span>
-                    <span className="font-semibold text-gray-900">{shipment.total_items_sent || 0}</span>
+                    <span className="font-semibold text-gray-900">
+                      {shipment.total_items_sent || 0}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs block">סוג נמען</span>
+                    <span className="text-gray-500 text-xs block">
+                      סוג נמען
+                    </span>
                     <span className="font-semibold text-gray-900">
-                      {shipment.recipient_type === 'internal' ? 'פנימי' : 
-                       shipment.recipient_type === 'external' ? 'חיצוני' : 
-                       shipment.recipient_type === 'supplier' ? 'ספק' : 'אחר'}
+                      {shipment.recipient_type === "internal"
+                        ? "פנימי"
+                        : shipment.recipient_type === "external"
+                          ? "חיצוני"
+                          : shipment.recipient_type === "supplier"
+                            ? "ספק"
+                            : "אחר"}
                     </span>
                   </div>
                   {shipment.confirmation_received && (
                     <div className="col-span-2">
                       <div className="flex items-center gap-1 text-green-600">
                         <CheckCircle2 className="h-4 w-4" />
-                        <span className="text-xs font-medium">קבלת המשלוח אושרה</span>
+                        <span className="text-xs font-medium">
+                          קבלת המשלוח אושרה
+                        </span>
                       </div>
                     </div>
                   )}

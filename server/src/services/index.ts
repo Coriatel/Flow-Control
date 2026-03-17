@@ -1,8 +1,9 @@
-export { reagentService } from './reagentService';
-export { dashboardService } from './dashboardService';
-export { inventoryService } from './inventoryService';
-export { batchService } from './batchService';
-export { supplierService } from './supplierService';
-export { orderService } from './orderService';
-export { barcodeService } from './barcodeService';
-export { dispenseService } from './dispenseService';
+export { reagentService } from "./reagentService";
+export { dashboardService } from "./dashboardService";
+export { inventoryService } from "./inventoryService";
+export { batchService } from "./batchService";
+export { supplierService } from "./supplierService";
+export { orderService } from "./orderService";
+export { barcodeService } from "./barcodeService";
+export { dispenseService } from "./dispenseService";
+export { updateReagentAggregates } from "./reagentAggregates";

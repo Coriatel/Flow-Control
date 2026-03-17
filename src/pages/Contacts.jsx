@@ -1,20 +1,35 @@
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom'; // Keep Link for potential future use or if createPageUrl links to other pages
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom"; // Keep Link for potential future use or if createPageUrl links to other pages
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,59 +39,93 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { createPageUrl } from '@/utils';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { createPageUrl } from "@/utils";
 import {
-  Plus, Search, RefreshCw, Loader2, Columns3, Edit2, Trash2, SlidersHorizontal, FileDown, Users
-} from 'lucide-react';
-import BackButton from '@/components/ui/BackButton';
-import ResizableTable from '@/components/ui/ResizableTable';
-import ContactCard from '../components/contacts/ContactCard';
-import ContactForm from '../components/contacts/ContactForm';
-import { getContactsData } from '@/api/functions';
-import { SupplierContact } from '@/api/entities';
+  Plus,
+  Search,
+  RefreshCw,
+  Loader2,
+  Columns3,
+  Edit2,
+  Trash2,
+  SlidersHorizontal,
+  FileDown,
+  Users,
+} from "lucide-react";
+import BackButton from "@/components/ui/BackButton";
+import ResizableTable from "@/components/ui/ResizableTable";
+import ContactCard from "../components/contacts/ContactCard";
+import ContactForm from "../components/contacts/ContactForm";
+import { getContactsData } from "@/api/functions";
+import { SupplierContact } from "@/api/entities";
 
 export default function ContactsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [supplierFilter, setSupplierFilter] = useState('all');
-  const [contactTypeFilter, setContactTypeFilter] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'ascending' });
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("all");
+  const [contactTypeFilter, setContactTypeFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState(() => {
+    try {
+      const s = localStorage.getItem("contacts_sortConfig");
+      return s ? JSON.parse(s) : { key: "full_name", direction: "ascending" };
+    } catch {
+      return { key: "full_name", direction: "ascending" };
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem("contacts_sortConfig", JSON.stringify(sortConfig));
+  }, [sortConfig]);
   const [contactToDelete, setContactToDelete] = useState(null);
   const [deletingContact, setDeletingContact] = useState(false);
-  
+
   const [editingContact, setEditingContact] = useState(null);
   const [showContactForm, setShowContactForm] = useState(false);
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const [visibleColumns, setVisibleColumns] = useState([
-    'full_name', 'supplier', 'contact_type', 'phone', 'mobile', 'email', 'actions'
+    "full_name",
+    "supplier",
+    "contact_type",
+    "phone",
+    "mobile",
+    "email",
+    "actions",
   ]);
 
   const allColumns = [
-    { key: 'full_name', label: 'שם מלא', alwaysVisible: true, defaultWidth: 180 },
-    { key: 'supplier', label: 'ספק', defaultWidth: 150 },
-    { key: 'contact_type', label: 'סוג קשר', defaultWidth: 120 },
-    { key: 'job_title', label: 'תפקיד', defaultWidth: 150 },
-    { key: 'phone', label: 'טלפון', defaultWidth: 130 },
-    { key: 'mobile', label: 'נייד', defaultWidth: 130 },
-    { key: 'email', label: 'אימייל', defaultWidth: 200 },
-    { key: 'department', label: 'מחלקה', defaultWidth: 120 },
-    { key: 'preferred_contact_method', label: 'דרך קשר מועדפת', defaultWidth: 150 },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 120 }
+    {
+      key: "full_name",
+      label: "שם מלא",
+      alwaysVisible: true,
+      defaultWidth: 180,
+    },
+    { key: "supplier", label: "ספק", defaultWidth: 150 },
+    { key: "contact_type", label: "סוג קשר", defaultWidth: 120 },
+    { key: "job_title", label: "תפקיד", defaultWidth: 150 },
+    { key: "phone", label: "טלפון", defaultWidth: 130 },
+    { key: "mobile", label: "נייד", defaultWidth: 130 },
+    { key: "email", label: "אימייל", defaultWidth: 200 },
+    { key: "department", label: "מחלקה", defaultWidth: 120 },
+    {
+      key: "preferred_contact_method",
+      label: "דרך קשר מועדפת",
+      defaultWidth: 150,
+    },
+    { key: "actions", label: "פעולות", alwaysVisible: true, defaultWidth: 120 },
   ];
 
   // Read supplier filter from URL query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const supplierParam = params.get('supplier');
+    const supplierParam = params.get("supplier");
     if (supplierParam) {
       setSupplierFilter(supplierParam);
     }
@@ -85,23 +134,22 @@ export default function ContactsPage() {
   /**
    * FRONTEND LOGIC (משודרג):
    * =========================
-   * 
+   *
    * לפני השדרוג:
    * ------------
    * 1. SupplierContact.list() - טעינת כל הרשימה
-   * 
+   *
    * אחרי השדרוג:
    * ------------
    * 1. base44.functions.invoke('getContactsData') - קריאה אחת מהירה!
    * 2. קבלת נתונים מעובדים מהשרת
    * 3. עדכון state ישירות
-   * 
+   *
    * = טעינה מהירה יותר, מוכן להרחבה עתידית!
    */
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      
       // 🎯 קריאה אחת בלבד - כל הלוגיקה בשרת!
       const response = await getContactsData();
 
@@ -112,11 +160,11 @@ export default function ContactsPage() {
       if (success) {
         setContacts(payload.contacts || []);
       } else {
-        throw new Error(errorMessage || 'Failed to load data');
+        throw new Error(errorMessage || "Failed to load data");
       }
     } catch (error) {
-      toast.error('שגיאה בטעינת נתונים', {
-        description: 'לא ניתן היה לטעון את רשימת אנשי הקשר'
+      toast.error("שגיאה בטעינת נתונים", {
+        description: "לא ניתן היה לטעון את רשימת אנשי הקשר",
       });
     } finally {
       setLoading(false);
@@ -133,25 +181,30 @@ export default function ContactsPage() {
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(contact =>
-        contact.full_name?.toLowerCase().includes(term) ||
-        contact.supplier?.toLowerCase().includes(term) ||
-        contact.job_title?.toLowerCase().includes(term) ||
-        contact.phone?.toLowerCase().includes(term) ||
-        contact.mobile?.toLowerCase().includes(term) ||
-        contact.email?.toLowerCase().includes(term) ||
-        contact.department?.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (contact) =>
+          contact.full_name?.toLowerCase().includes(term) ||
+          contact.supplier?.toLowerCase().includes(term) ||
+          contact.job_title?.toLowerCase().includes(term) ||
+          contact.phone?.toLowerCase().includes(term) ||
+          contact.mobile?.toLowerCase().includes(term) ||
+          contact.email?.toLowerCase().includes(term) ||
+          contact.department?.toLowerCase().includes(term),
       );
     }
 
     // Supplier filter
-    if (supplierFilter !== 'all') {
-      filtered = filtered.filter(contact => contact.supplier === supplierFilter);
+    if (supplierFilter !== "all") {
+      filtered = filtered.filter(
+        (contact) => contact.supplier === supplierFilter,
+      );
     }
 
     // Contact type filter
-    if (contactTypeFilter !== 'all') {
-      filtered = filtered.filter(contact => contact.contact_type === contactTypeFilter);
+    if (contactTypeFilter !== "all") {
+      filtered = filtered.filter(
+        (contact) => contact.contact_type === contactTypeFilter,
+      );
     }
 
     // Sort
@@ -160,12 +213,12 @@ export default function ContactsPage() {
       let bValue = b[sortConfig.key];
 
       // Handle strings
-      if (typeof aValue === 'string') {
-        aValue = aValue?.toLowerCase() || '';
-        bValue = bValue?.toLowerCase() || '';
+      if (typeof aValue === "string") {
+        aValue = aValue?.toLowerCase() || "";
+        bValue = bValue?.toLowerCase() || "";
       }
 
-      if (sortConfig.direction === 'ascending') {
+      if (sortConfig.direction === "ascending") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -176,29 +229,34 @@ export default function ContactsPage() {
   }, [contacts, searchTerm, supplierFilter, contactTypeFilter, sortConfig]);
 
   const uniqueSuppliers = useMemo(() => {
-    const suppliers = [...new Set(contacts.map(c => c.supplier).filter(Boolean))];
+    const suppliers = [
+      ...new Set(contacts.map((c) => c.supplier).filter(Boolean)),
+    ];
     return suppliers.sort();
   }, [contacts]);
 
   const handleSort = (key) => {
-    setSortConfig(prev => ({
+    setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending'
+      direction:
+        prev.key === key && prev.direction === "ascending"
+          ? "descending"
+          : "ascending",
     }));
   };
 
   const toggleColumnVisibility = (columnKey) => {
-    setVisibleColumns(prev =>
+    setVisibleColumns((prev) =>
       prev.includes(columnKey)
-        ? prev.filter(k => k !== columnKey)
-        : [...prev, columnKey]
+        ? prev.filter((k) => k !== columnKey)
+        : [...prev, columnKey],
     );
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setSupplierFilter('all');
-    setContactTypeFilter('all');
+    setSearchTerm("");
+    setSupplierFilter("all");
+    setContactTypeFilter("all");
   };
 
   const handleEditContact = (contact) => {
@@ -218,12 +276,12 @@ export default function ContactsPage() {
     setDeletingContact(true);
     try {
       await SupplierContact.delete(contactToDelete.id);
-      toast.success('איש הקשר נמחק בהצלחה');
+      toast.success("איש הקשר נמחק בהצלחה");
       await fetchData();
       setContactToDelete(null);
     } catch (error) {
-      toast.error('שגיאה במחיקת איש קשר', {
-        description: error.message
+      toast.error("שגיאה במחיקת איש קשר", {
+        description: error.message,
       });
     } finally {
       setDeletingContact(false);
@@ -231,72 +289,106 @@ export default function ContactsPage() {
   };
 
   const exportToCSV = () => {
-    const headers = ['שם מלא', 'ספק', 'סוג קשר', 'תפקיד', 'טלפון', 'נייד', 'אימייל', 'מחלקה', 'הערות'];
-    const csvData = filteredAndSortedContacts.map(contact => [
-      contact.full_name || '',
-      contact.supplier || '',
-      contact.contact_type || '',
-      contact.job_title || '',
-      contact.phone || '',
-      contact.mobile || '',
-      contact.email || '',
-      contact.department || '',
-      contact.notes || ''
+    const headers = [
+      "שם מלא",
+      "ספק",
+      "סוג קשר",
+      "תפקיד",
+      "טלפון",
+      "נייד",
+      "אימייל",
+      "מחלקה",
+      "הערות",
+    ];
+    const csvData = filteredAndSortedContacts.map((contact) => [
+      contact.full_name || "",
+      contact.supplier || "",
+      contact.contact_type || "",
+      contact.job_title || "",
+      contact.phone || "",
+      contact.mobile || "",
+      contact.email || "",
+      contact.department || "",
+      contact.notes || "",
     ]);
 
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${(cell + '').replace(/"/g, '""')}"`).join(',')) // Handle commas and quotes within cells
-    ].join('\n');
+      headers.join(","),
+      ...csvData.map((row) =>
+        row.map((cell) => `"${(cell + "").replace(/"/g, '""')}"`).join(","),
+      ), // Handle commas and quotes within cells
+    ].join("\n");
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // Add BOM for UTF-8 in Excel
-    const link = document.createElement('a');
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    }); // Add BOM for UTF-8 in Excel
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `אנשי_קשר_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `אנשי_קשר_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
   };
 
   const renderCell = (contact, columnKey) => {
     switch (columnKey) {
-      case 'full_name':
+      case "full_name":
         return <span className="font-medium">{contact.full_name}</span>;
-      case 'supplier':
+      case "supplier":
         return contact.supplier || <span className="text-gray-400">-</span>;
-      case 'contact_type':
+      case "contact_type":
         return contact.contact_type || <span className="text-gray-400">-</span>;
-      case 'job_title':
+      case "job_title":
         return contact.job_title || <span className="text-gray-400">-</span>;
-      case 'phone':
+      case "phone":
         return contact.phone ? (
-          <a href={`tel:${contact.phone}`} className="text-blue-600 hover:underline">
+          <a
+            href={`tel:${contact.phone}`}
+            className="text-blue-600 hover:underline"
+          >
             {contact.phone}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'mobile':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "mobile":
         return contact.mobile ? (
-          <a href={`tel:${contact.mobile}`} className="text-blue-600 hover:underline">
+          <a
+            href={`tel:${contact.mobile}`}
+            className="text-blue-600 hover:underline"
+          >
             {contact.mobile}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'email':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "email":
         return contact.email ? (
-          <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:underline"
+          >
             {contact.email}
           </a>
-        ) : <span className="text-gray-400">-</span>;
-      case 'department':
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "department":
         return contact.department || <span className="text-gray-400">-</span>;
-      case 'preferred_contact_method':
+      case "preferred_contact_method":
         // Assuming preferred_contact_method values are already human-readable or can be mapped here
         const methodLabels = {
-          phone: 'טלפון',
-          mobile: 'נייד',
-          email: 'אימייל',
-          any: 'כל דרך',
-          '': '-' // Handle empty string case
+          phone: "טלפון",
+          mobile: "נייד",
+          email: "אימייל",
+          any: "כל דרך",
+          "": "-", // Handle empty string case
         };
-        return methodLabels[contact.preferred_contact_method] || contact.preferred_contact_method || <span className="text-gray-400">-</span>;
-      case 'actions':
+        return (
+          methodLabels[contact.preferred_contact_method] ||
+          contact.preferred_contact_method || (
+            <span className="text-gray-400">-</span>
+          )
+        );
+      case "actions":
         return (
           <div className="flex items-center justify-center gap-1">
             <Button
@@ -318,7 +410,7 @@ export default function ContactsPage() {
           </div>
         );
       default:
-        return contact[columnKey] || '';
+        return contact[columnKey] || "";
     }
   };
 
@@ -346,10 +438,12 @@ export default function ContactsPage() {
           <Button onClick={fetchData} variant="outline" size="icon">
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => {
-            setEditingContact(null);
-            setShowContactForm(true);
-          }}>
+          <Button
+            onClick={() => {
+              setEditingContact(null);
+              setShowContactForm(true);
+            }}
+          >
             <Plus className="h-4 w-4 ms-2" />
             איש קשר חדש
           </Button>
@@ -376,13 +470,18 @@ export default function ContactsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הספקים</SelectItem>
-                {uniqueSuppliers.map(supplier => (
-                  <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                {uniqueSuppliers.map((supplier) => (
+                  <SelectItem key={supplier} value={supplier}>
+                    {supplier}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={contactTypeFilter} onValueChange={setContactTypeFilter}>
+            <Select
+              value={contactTypeFilter}
+              onValueChange={setContactTypeFilter}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="כל סוגי הקשר" />
               </SelectTrigger>
@@ -413,15 +512,23 @@ export default function ContactsPage() {
                 <PopoverContent className="w-64" align="end">
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm">הצג עמודות</h4>
-                    {allColumns.map(column => (
-                      <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                    {allColumns.map((column) => (
+                      <div
+                        key={column.key}
+                        className="flex items-center space-x-2 space-x-reverse"
+                      >
                         <Checkbox
                           id={column.key}
                           checked={visibleColumns.includes(column.key)}
-                          onCheckedChange={() => toggleColumnVisibility(column.key)}
+                          onCheckedChange={() =>
+                            toggleColumnVisibility(column.key)
+                          }
                           disabled={column.alwaysVisible}
                         />
-                        <label htmlFor={column.key} className="text-sm cursor-pointer flex-1">
+                        <label
+                          htmlFor={column.key}
+                          className="text-sm cursor-pointer flex-1"
+                        >
                           {column.label}
                         </label>
                       </div>
@@ -462,14 +569,14 @@ export default function ContactsPage() {
 
       {/* Mobile Filter Sheet */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-md glassmorphism-dark"
           style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            background: "rgba(30, 41, 59, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <SheetHeader>
@@ -478,7 +585,7 @@ export default function ContactsPage() {
               בחר אפשרויות לסינון רשימת אנשי הקשר
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6 space-y-4">
             <div>
               <Label className="text-white">ספק</Label>
@@ -488,8 +595,10 @@ export default function ContactsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">כל הספקים</SelectItem>
-                  {uniqueSuppliers.map(supplier => (
-                    <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                  {uniqueSuppliers.map((supplier) => (
+                    <SelectItem key={supplier} value={supplier}>
+                      {supplier}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -497,7 +606,10 @@ export default function ContactsPage() {
 
             <div>
               <Label className="text-white">סוג קשר</Label>
-              <Select value={contactTypeFilter} onValueChange={setContactTypeFilter}>
+              <Select
+                value={contactTypeFilter}
+                onValueChange={setContactTypeFilter}
+              >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -518,8 +630,11 @@ export default function ContactsPage() {
             <div>
               <Label className="text-white">עמודות גלויות</Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                {allColumns.map(column => (
-                  <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                {allColumns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="flex items-center space-x-2 space-x-reverse"
+                  >
                     <Checkbox
                       id={`mobile-${column.key}`}
                       checked={visibleColumns.includes(column.key)}
@@ -527,7 +642,10 @@ export default function ContactsPage() {
                       disabled={column.alwaysVisible}
                       className="border-white/30"
                     />
-                    <label htmlFor={`mobile-${column.key}`} className="text-sm text-white cursor-pointer flex-1">
+                    <label
+                      htmlFor={`mobile-${column.key}`}
+                      className="text-sm text-white cursor-pointer flex-1"
+                    >
                       {column.label}
                     </label>
                   </div>
@@ -536,10 +654,17 @@ export default function ContactsPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={clearFilters} className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20">
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
                 נקה
               </Button>
-              <Button onClick={() => setMobileFilterOpen(false)} className="flex-1 bg-white text-gray-900 hover:bg-white/90">
+              <Button
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-1 bg-white text-gray-900 hover:bg-white/90"
+              >
                 החל
               </Button>
             </div>
@@ -564,7 +689,9 @@ export default function ContactsPage() {
               data={filteredAndSortedContacts}
               visibleColumns={visibleColumns}
               sortField={sortConfig.key}
-              sortDirection={sortConfig.direction === 'ascending' ? 'asc' : 'desc'}
+              sortDirection={
+                sortConfig.direction === "ascending" ? "asc" : "desc"
+              }
               onSort={handleSort}
               renderCell={renderCell}
             />
@@ -573,8 +700,12 @@ export default function ContactsPage() {
                 <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                   <Users className="h-7 w-7 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium mb-1">לא נמצאו אנשי קשר</p>
-                <p className="text-sm text-slate-400">נסה לשנות את מילות החיפוש או להסיר מסננים</p>
+                <p className="text-slate-600 font-medium mb-1">
+                  לא נמצאו אנשי קשר
+                </p>
+                <p className="text-sm text-slate-400">
+                  נסה לשנות את מילות החיפוש או להסיר מסננים
+                </p>
               </div>
             )}
           </CardContent>
@@ -584,9 +715,9 @@ export default function ContactsPage() {
       {/* Mobile Card View */}
       <div className="lg:hidden">
         {filteredAndSortedContacts.length > 0 ? (
-          filteredAndSortedContacts.map(contact => (
-            <ContactCard 
-              key={contact.id} 
+          filteredAndSortedContacts.map((contact) => (
+            <ContactCard
+              key={contact.id}
               contact={contact}
               onEdit={handleEditContact}
               onDelete={() => setContactToDelete(contact)}
@@ -598,8 +729,12 @@ export default function ContactsPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <Users className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לא נמצאו אנשי קשר</p>
-              <p className="text-sm text-slate-400">נסה לשנות את החיפוש או להסיר מסננים</p>
+              <p className="text-slate-600 font-medium mb-1">
+                לא נמצאו אנשי קשר
+              </p>
+              <p className="text-sm text-slate-400">
+                נסה לשנות את החיפוש או להסיר מסננים
+              </p>
             </div>
           </Card>
         )}
@@ -610,7 +745,7 @@ export default function ContactsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingContact ? 'עריכת איש קשר' : 'איש קשר חדש'}
+              {editingContact ? "עריכת איש קשר" : "איש קשר חדש"}
             </DialogTitle>
           </DialogHeader>
           <ContactForm
@@ -625,20 +760,26 @@ export default function ContactsPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}> {/* Simplified onOpenChange */}
+      <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}>
+        {" "}
+        {/* Simplified onOpenChange */}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>מחיקת איש קשר</AlertDialogTitle>
             <AlertDialogDescription>
-              האם אתה בטוח שברצונך למחוק את איש הקשר <strong>{contactToDelete?.full_name}</strong>?
-              <br /><br />
+              האם אתה בטוח שברצונך למחוק את איש הקשר{" "}
+              <strong>{contactToDelete?.full_name}</strong>?
+              <br />
+              <br />
               פעולה זו בלתי הפיכה.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingContact}>ביטול</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteContact} 
+            <AlertDialogCancel disabled={deletingContact}>
+              ביטול
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteContact}
               disabled={deletingContact}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -648,7 +789,7 @@ export default function ContactsPage() {
                   מוחק...
                 </>
               ) : (
-                'מחק'
+                "מחק"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

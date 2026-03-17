@@ -1,5 +1,6 @@
-import prisma from '../utils/prisma';
-import { OrderStatus, TransactionType } from '../types';
+import prisma from "../utils/prisma";
+import { OrderStatus, TransactionType } from "../types";
+import { updateReagentAggregates } from "./reagentAggregates";
 
 export interface OrderFilters {
   supplierId?: string;
@@ -58,7 +59,7 @@ export const orderService = {
           include: { reagent: true },
         },
       },
-      orderBy: { orderDate: 'desc' },
+      orderBy: { orderDate: "desc" },
     });
 
     return orders.map((order) => ({
@@ -101,32 +102,35 @@ export const orderService = {
     });
 
     // Wrap number generation + order + items in a single transaction
-    const order = await prisma.$transaction(async (tx) => {
-      const orderNumber = await this.generateOrderNumber(tx);
+    const order = await prisma.$transaction(
+      async (tx) => {
+        const orderNumber = await this.generateOrderNumber(tx);
 
-      const created = await tx.order.create({
-        data: {
-          tempNumber: orderNumber,
-          supplierId: data.supplierId,
-          supplierSnapshot: supplier?.name || data.supplierId,
-          status: OrderStatus.DRAFT,
-          internalNotes: data.notes,
-        },
-      });
-
-      for (const item of data.items) {
-        await tx.orderItem.create({
+        const created = await tx.order.create({
           data: {
-            orderId: created.id,
-            reagentId: item.reagentId,
-            requestedQuantity: item.requestedQuantity,
-            notes: item.notes,
+            tempNumber: orderNumber,
+            supplierId: data.supplierId,
+            supplierSnapshot: supplier?.name || data.supplierId,
+            status: OrderStatus.DRAFT,
+            internalNotes: data.notes,
           },
         });
-      }
 
-      return created;
-    }, { isolationLevel: 'Serializable' });
+        for (const item of data.items) {
+          await tx.orderItem.create({
+            data: {
+              orderId: created.id,
+              reagentId: item.reagentId,
+              requestedQuantity: item.requestedQuantity,
+              notes: item.notes,
+            },
+          });
+        }
+
+        return created;
+      },
+      { isolationLevel: "Serializable" },
+    );
 
     // Return order with supplier and items
     const items = await prisma.orderItem.findMany({
@@ -158,18 +162,18 @@ export const orderService = {
           startsWith: prefix,
         },
       },
-      orderBy: { tempNumber: 'desc' },
+      orderBy: { tempNumber: "desc" },
     });
 
     let sequence = 1;
     if (lastOrder && lastOrder.tempNumber) {
-      const lastSeq = parseInt(lastOrder.tempNumber.replace(prefix, ''));
+      const lastSeq = parseInt(lastOrder.tempNumber.replace(prefix, ""));
       if (!isNaN(lastSeq)) {
         sequence = lastSeq + 1;
       }
     }
 
-    return `${prefix}${sequence.toString().padStart(4, '0')}`;
+    return `${prefix}${sequence.toString().padStart(4, "0")}`;
   },
 
   /**
@@ -254,11 +258,15 @@ export const orderService = {
   /**
    * Receive items (partial or full) - simplified for basic pg client
    */
-  async receiveItems(orderId: string, items: ReceiveItemInput[], receivedBy?: string) {
+  async receiveItems(
+    orderId: string,
+    items: ReceiveItemInput[],
+    receivedBy?: string,
+  ) {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
 
     if (!order) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
 
     const orderItems = await prisma.orderItem.findMany({
@@ -291,7 +299,7 @@ export const orderService = {
           initialQuantity: item.receivedQuantity,
           currentQuantity: item.receivedQuantity,
           receivedDate: new Date(),
-          status: 'ACTIVE',
+          status: "ACTIVE",
           generalNotes: item.notes,
         },
       });
@@ -320,10 +328,10 @@ export const orderService = {
     });
 
     const allReceived = updatedItems.every(
-      (i: any) => Number(i.receivedQuantity) >= Number(i.requestedQuantity)
+      (i: any) => Number(i.receivedQuantity) >= Number(i.requestedQuantity),
     );
     const someReceived = updatedItems.some(
-      (i: any) => Number(i.receivedQuantity) > 0
+      (i: any) => Number(i.receivedQuantity) > 0,
     );
 
     let newStatus: OrderStatus = order.status as OrderStatus;
@@ -356,7 +364,7 @@ export const orderService = {
       data: {
         status: OrderStatus.CANCELLED,
         internalNotes: reason
-          ? `${reason}\n(קודם: ${existingOrder?.internalNotes || ''})`
+          ? `${reason}\n(קודם: ${existingOrder?.internalNotes || ""})`
           : existingOrder?.internalNotes,
       },
     });
@@ -370,7 +378,14 @@ export const orderService = {
   async getPendingBySupplier() {
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: [OrderStatus.DRAFT, OrderStatus.PENDING_SAP, OrderStatus.APPROVED, OrderStatus.PARTIALLY_RECEIVED] },
+        status: {
+          in: [
+            OrderStatus.DRAFT,
+            OrderStatus.PENDING_SAP,
+            OrderStatus.APPROVED,
+            OrderStatus.PARTIALLY_RECEIVED,
+          ],
+        },
       },
     });
 
@@ -392,7 +407,7 @@ export const orderService = {
   async getOrdersNeedingAttention() {
     const pendingApprovalOrders = await prisma.order.findMany({
       where: { status: OrderStatus.PENDING_SAP },
-      orderBy: { orderDate: 'asc' },
+      orderBy: { orderDate: "asc" },
     });
 
     // Add supplier and count for each order
@@ -420,7 +435,7 @@ export const orderService = {
         status: OrderStatus.APPROVED,
         orderDate: { lt: overdueDate },
       },
-      orderBy: { orderDate: 'asc' },
+      orderBy: { orderDate: "asc" },
     });
 
     const overdue = [];
@@ -450,7 +465,7 @@ export const orderService = {
   async createFromSuggestions(
     supplierId: string,
     suggestions: { reagentId: string; suggestedQuantity: number }[],
-    createdBy?: string
+    createdBy?: string,
   ) {
     const items = suggestions.map((s) => ({
       reagentId: s.reagentId,
@@ -461,52 +476,14 @@ export const orderService = {
       supplierId,
       items,
       createdBy,
-      notes: 'נוצר אוטומטית מהצעות השלמה',
+      notes: "נוצר אוטומטית מהצעות השלמה",
     });
   },
 
   /**
-   * Helper: Update reagent aggregates after batch changes
+   * Helper: Update reagent aggregates after batch changes (delegates to canonical implementation)
    */
   async updateReagentAggregates(reagentId: string) {
-    const activeBatches = await prisma.reagentBatch.findMany({
-      where: {
-        reagentId,
-        status: 'ACTIVE',
-      },
-      orderBy: { expiryDate: 'asc' },
-    });
-
-    const totalQuantity = activeBatches.reduce(
-      (sum, b) => sum + Number(b.currentQuantity),
-      0
-    );
-
-    // Fetch reagent to compute stock status and months of stock
-    const reagent = await prisma.reagent.findUnique({ where: { id: reagentId } });
-    const effectiveUsage = reagent?.useManualUsage && reagent?.manualMonthlyUsage
-      ? Number(reagent.manualMonthlyUsage)
-      : Number(reagent?.averageMonthlyUsage) || 0;
-    const monthsOfStock = effectiveUsage > 0 ? totalQuantity / effectiveUsage : null;
-
-    let currentStockStatus: string = 'NORMAL';
-    if (totalQuantity === 0) {
-      currentStockStatus = 'OUT_OF_STOCK';
-    } else if (monthsOfStock !== null && monthsOfStock < 1) {
-      currentStockStatus = 'CRITICAL';
-    } else if (monthsOfStock !== null && monthsOfStock < 2) {
-      currentStockStatus = 'LOW';
-    }
-
-    await prisma.reagent.update({
-      where: { id: reagentId },
-      data: {
-        totalQuantity,
-        activeBatchesCount: activeBatches.length,
-        nearestExpiryDate: activeBatches[0]?.expiryDate || null,
-        currentStockStatus,
-        monthsOfStock,
-      },
-    });
+    await updateReagentAggregates(reagentId);
   },
 };

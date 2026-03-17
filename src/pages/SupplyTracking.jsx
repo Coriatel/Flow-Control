@@ -1,27 +1,45 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { getSupplyTrackingData } from '@/api/functions';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { getSupplyTrackingData } from "@/api/functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from 'sonner';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import {
-  Search, RefreshCw, Loader2, Columns3, Package, Truck, Clock, AlertCircle
+  Search,
+  RefreshCw,
+  Loader2,
+  Columns3,
+  Package,
+  Truck,
+  Clock,
+  AlertCircle,
+  ArrowDownToLine,
 } from "lucide-react";
-import { format, parseISO, isValid, differenceInDays } from 'date-fns';
-import { he } from 'date-fns/locale';
-import BackButton from '@/components/ui/BackButton';
+import { format, parseISO, isValid, differenceInDays } from "date-fns";
+import { he } from "date-fns/locale";
+import BackButton from "@/components/ui/BackButton";
 import { useNavigate, Link } from "react-router-dom";
-import ResizableTable from '@/components/ui/ResizableTable';
+import ResizableTable from "@/components/ui/ResizableTable";
 
 /**
  * SupplyTracking Frontend Logic
  * ==============================
- * 
+ *
  * מה שקורה ב-FRONTEND:
  * --------------------
  * 1. קריאה אחת לפונקציית Backend: getSupplyTrackingData()
@@ -29,37 +47,37 @@ import ResizableTable from '@/components/ui/ResizableTable';
  * 3. סינון מקומי בלבד (searchTerm, typeFilter, urgencyFilter, supplierFilter)
  * 4. מיון מקומי (sortField, sortDirection)
  * 5. הצגת הנתונים בטבלה או כרטיסים
- * 
+ *
  * מה שלא קורה ב-FRONTEND (הועבר לשרת):
  * -------------------------------------
  * ❌ אין קריאות מרובות ל-Order, WithdrawalRequest, OrderItem, WithdrawalItem
  * ❌ אין לוגיקה של איחוד הזמנות ובקשות משיכה
  * ❌ אין חישוב של days_waiting
  * ❌ אין העשרת נתונים עם פריטים
- * 
+ *
  * מה שקורה ב-BACKEND (functions/getSupplyTrackingData.js):
  * ========================================================
- * 
+ *
  * 1. טעינת כל הנתונים הדרושים במקביל:
  *    - Order (approved, partially_received)
  *    - WithdrawalRequest (submitted, approved, in_delivery)
  *    - OrderItem (open, partially_received)
  *    - WithdrawalItem (pending, approved)
- * 
+ *
  * 2. איחוד למבנה אחיד:
  *    - כל הזמנה/בקשה הופכת לאובייקט Supply
  *    - הוספת שדות: type, document_number, days_waiting, items
- * 
+ *
  * 3. חישובים:
  *    - days_waiting לכל אספקה
  *    - סיכום: totalSupplies, ordersCount, withdrawalsCount, urgentCount
- * 
+ *
  * 4. מיון ראשוני (לפי request_date)
- * 
+ *
  * 5. החזרת JSON מובנה:
  *    - supplies: [...]
  *    - summary: {...}
- * 
+ *
  * יתרונות הגישה החדשה:
  * =====================
  * ✅ קריאה אחת במקום 4 קריאות נפרדות
@@ -74,31 +92,51 @@ export default function SupplyTracking() {
   const [loading, setLoading] = useState(true);
   const [supplies, setSupplies] = useState([]);
   const [summary, setSummary] = useState({});
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
-  const [sortField, setSortField] = useState('request_date');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [sortField, setSortField] = useState(
+    () => localStorage.getItem("supplyTracking_sortField") || "request_date",
+  );
+  const [sortDirection, setSortDirection] = useState(
+    () => localStorage.getItem("supplyTracking_sortDirection") || "desc",
+  );
+  useEffect(() => {
+    localStorage.setItem("supplyTracking_sortField", sortField);
+    localStorage.setItem("supplyTracking_sortDirection", sortDirection);
+  }, [sortField, sortDirection]);
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState([
-    'document_number', 'type', 'request_date', 'supplier', 'status', 'urgency', 'days_waiting', 'actions'
+    "document_number",
+    "type",
+    "request_date",
+    "supplier",
+    "status",
+    "urgency",
+    "days_waiting",
+    "actions",
   ]);
 
   const allColumns = [
-    { key: 'document_number', label: 'מס\' מסמך', alwaysVisible: true, defaultWidth: 180 },
-    { key: 'type', label: 'סוג', alwaysVisible: true, defaultWidth: 140 },
-    { key: 'request_date', label: 'תאריך בקשה', defaultWidth: 120 },
-    { key: 'expected_delivery', label: 'אספקה צפויה', defaultWidth: 120 },
-    { key: 'supplier', label: 'ספק', defaultWidth: 150 },
-    { key: 'status', label: 'סטטוס', defaultWidth: 120 },
-    { key: 'urgency', label: 'דחיפות', defaultWidth: 100 },
-    { key: 'total_items', label: 'פריטים', defaultWidth: 100 },
-    { key: 'days_waiting', label: 'ימי המתנה', defaultWidth: 110 },
-    { key: 'actions', label: 'פעולות', alwaysVisible: true, defaultWidth: 100 }
+    {
+      key: "document_number",
+      label: "מס' מסמך",
+      alwaysVisible: true,
+      defaultWidth: 180,
+    },
+    { key: "type", label: "סוג", alwaysVisible: true, defaultWidth: 140 },
+    { key: "request_date", label: "תאריך בקשה", defaultWidth: 120 },
+    { key: "expected_delivery", label: "אספקה צפויה", defaultWidth: 120 },
+    { key: "supplier", label: "ספק", defaultWidth: 150 },
+    { key: "status", label: "סטטוס", defaultWidth: 120 },
+    { key: "urgency", label: "דחיפות", defaultWidth: 100 },
+    { key: "total_items", label: "פריטים", defaultWidth: 100 },
+    { key: "days_waiting", label: "ימי המתנה", defaultWidth: 110 },
+    { key: "actions", label: "פעולות", alwaysVisible: true, defaultWidth: 100 },
   ];
 
   /**
@@ -107,10 +145,9 @@ export default function SupplyTracking() {
   const fetchSupplies = useCallback(async () => {
     setLoading(true);
     try {
-
       const response = await getSupplyTrackingData({
-        limit: '100',
-        sortBy: sortDirection === 'desc' ? `-${sortField}` : sortField
+        limit: "100",
+        sortBy: sortDirection === "desc" ? `-${sortField}` : sortField,
       });
 
       const success = response?.data?.success ?? response?.success;
@@ -120,11 +157,15 @@ export default function SupplyTracking() {
         setSupplies(payload.supplies || []);
         setSummary(payload.summary || {});
       } else {
-        throw new Error(response?.data?.error || response?.error || 'Failed to fetch supplies');
+        throw new Error(
+          response?.data?.error ||
+            response?.error ||
+            "Failed to fetch supplies",
+        );
       }
     } catch (error) {
-      toast.error('שגיאה בטעינת אספקות', {
-        description: error.message
+      toast.error("שגיאה בטעינת אספקות", {
+        description: error.message,
       });
       setSupplies([]);
     } finally {
@@ -138,7 +179,7 @@ export default function SupplyTracking() {
 
   // Get unique suppliers for filter
   const uniqueSuppliers = useMemo(() => {
-    const suppliers = new Set(supplies.map(s => s.supplier).filter(Boolean));
+    const suppliers = new Set(supplies.map((s) => s.supplier).filter(Boolean));
     return Array.from(suppliers).sort();
   }, [supplies]);
 
@@ -150,25 +191,30 @@ export default function SupplyTracking() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(supply =>
-        supply.document_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supply.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (supply) =>
+          supply.document_number
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          supply.supplier?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Type filter
     if (typeFilter !== "all") {
-      filtered = filtered.filter(supply => supply.type === typeFilter);
+      filtered = filtered.filter((supply) => supply.type === typeFilter);
     }
 
     // Urgency filter
     if (urgencyFilter !== "all") {
-      filtered = filtered.filter(supply => supply.urgency === urgencyFilter);
+      filtered = filtered.filter((supply) => supply.urgency === urgencyFilter);
     }
 
     // Supplier filter
     if (supplierFilter !== "all") {
-      filtered = filtered.filter(supply => supply.supplier === supplierFilter);
+      filtered = filtered.filter(
+        (supply) => supply.supplier === supplierFilter,
+      );
     }
 
     return filtered;
@@ -176,41 +222,41 @@ export default function SupplyTracking() {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const toggleColumnVisibility = (columnKey) => {
-    const column = allColumns.find(c => c.key === columnKey);
+    const column = allColumns.find((c) => c.key === columnKey);
     if (column?.alwaysVisible) return;
 
-    setVisibleColumns(prev =>
+    setVisibleColumns((prev) =>
       prev.includes(columnKey)
-        ? prev.filter(k => k !== columnKey)
-        : [...prev, columnKey]
+        ? prev.filter((k) => k !== columnKey)
+        : [...prev, columnKey],
     );
   };
 
   const getStatusBadge = (status, type) => {
     const statusMap = {
-      approved: { label: 'מאושר', variant: 'success' },
-      partially_received: { label: 'התקבל חלקי', variant: 'warning' },
-      submitted: { label: 'נשלח', variant: 'info' },
-      in_delivery: { label: 'באספקה', variant: 'warning' }
+      approved: { label: "מאושר", variant: "success" },
+      partially_received: { label: "התקבל חלקי", variant: "warning" },
+      submitted: { label: "נשלח", variant: "info" },
+      in_delivery: { label: "באספקה", variant: "warning" },
     };
 
-    const config = statusMap[status] || { label: status, variant: 'secondary' };
+    const config = statusMap[status] || { label: status, variant: "secondary" };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getUrgencyBadge = (urgency) => {
     const urgencyMap = {
-      routine: { label: 'שגרתי', variant: 'secondary' },
-      urgent: { label: 'דחוף', variant: 'warning' },
-      emergency: { label: 'חירום', variant: 'danger' }
+      routine: { label: "שגרתי", variant: "secondary" },
+      urgent: { label: "דחוף", variant: "warning" },
+      emergency: { label: "חירום", variant: "danger" },
     };
 
     const config = urgencyMap[urgency] || urgencyMap.routine;
@@ -219,8 +265,8 @@ export default function SupplyTracking() {
 
   const getTypeBadge = (type) => {
     const typeMap = {
-      order: { label: 'דרישת רכש', variant: 'info', icon: Package },
-      withdrawal: { label: 'משיכה', variant: 'default', icon: Truck }
+      order: { label: "דרישת רכש", variant: "info", icon: Package },
+      withdrawal: { label: "משיכה", variant: "default", icon: Truck },
     };
 
     const config = typeMap[type];
@@ -235,60 +281,97 @@ export default function SupplyTracking() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '---';
+    if (!dateString) return "---";
     const date = parseISO(dateString);
-    return isValid(date) ? format(date, 'dd/MM/yyyy', { locale: he }) : '---';
+    return isValid(date) ? format(date, "dd/MM/yyyy", { locale: he }) : "---";
   };
 
   const renderCell = (supply, columnKey) => {
     switch (columnKey) {
-      case 'document_number':
-        const targetPage = supply.type === 'order' ? 'EditOrder' : 'EditWithdrawalRequest';
+      case "document_number":
+        const targetPage =
+          supply.type === "order" ? "EditOrder" : "EditWithdrawalRequest";
         return (
-          <Link 
+          <Link
             to={createPageUrl(`${targetPage}?id=${supply.id}`)}
             className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
           >
             {supply.document_number}
           </Link>
         );
-      case 'type':
+      case "type":
         return getTypeBadge(supply.type);
-      case 'request_date':
+      case "request_date":
         return formatDate(supply.request_date);
-      case 'expected_delivery':
+      case "expected_delivery":
         return formatDate(supply.expected_delivery);
-      case 'supplier':
-        return supply.supplier || '-';
-      case 'status':
+      case "supplier":
+        return supply.supplier || "-";
+      case "status":
         return getStatusBadge(supply.status, supply.type);
-      case 'urgency':
+      case "urgency":
         return getUrgencyBadge(supply.urgency);
-      case 'total_items':
+      case "total_items":
         return <Badge variant="outline">{supply.total_items}</Badge>;
-      case 'days_waiting':
+      case "days_waiting":
         return (
-          <div className={`inline-flex items-center gap-1 ${
-            supply.days_waiting > 14 ? 'text-red-600' :
-            supply.days_waiting > 7 ? 'text-orange-600' : 'text-gray-600'
-          }`}>
+          <div
+            className={`inline-flex items-center gap-1 ${
+              supply.days_waiting > 14
+                ? "text-red-600"
+                : supply.days_waiting > 7
+                  ? "text-orange-600"
+                  : "text-gray-600"
+            }`}
+          >
             {supply.days_waiting > 7 && <AlertCircle className="h-4 w-4" />}
             <span className="font-medium">{supply.days_waiting || 0}</span>
           </div>
         );
-      case 'actions':
-        const page = supply.type === 'order' ? 'EditOrder' : 'EditWithdrawalRequest';
+      case "actions":
+        const page =
+          supply.type === "order" ? "EditOrder" : "EditWithdrawalRequest";
+        const receivableStatuses =
+          supply.type === "order"
+            ? [
+                "approved",
+                "partially_received",
+                "pending_sap_permanent_id",
+                "pending_sap_po_number",
+                "pending_sap_details",
+              ]
+            : ["submitted", "approved", "in_delivery"];
+        const canReceive = receivableStatuses.includes(supply.status);
+        const deliveryParam =
+          supply.type === "order"
+            ? `order_id=${supply.id}`
+            : `withdrawal_id=${supply.id}`;
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(createPageUrl(`${page}?id=${supply.id}`))}
-          >
-            פרטים
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(createPageUrl(`${page}?id=${supply.id}`))}
+            >
+              פרטים
+            </Button>
+            {canReceive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                onClick={() =>
+                  navigate(createPageUrl(`NewDelivery?${deliveryParam}`))
+                }
+                title="קלוט משלוח"
+              >
+                <ArrowDownToLine className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         );
       default:
-        return supply[columnKey] || '';
+        return supply[columnKey] || "";
     }
   };
 
@@ -304,7 +387,7 @@ export default function SupplyTracking() {
   return (
     <div className="max-w-full mx-auto p-4 sm:p-6" dir="rtl">
       <BackButton />
-      
+
       <Card className="mt-4">
         <CardHeader className="border-b border-gray-200 bg-gradient-to-l from-blue-50 to-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -318,7 +401,9 @@ export default function SupplyTracking() {
                   <span>הזמנות: {summary.ordersCount || 0}</span>
                   <span>משיכות: {summary.withdrawalsCount || 0}</span>
                   {summary.urgentCount > 0 && (
-                    <span className="text-orange-600 font-medium">דחופות: {summary.urgentCount}</span>
+                    <span className="text-orange-600 font-medium">
+                      דחופות: {summary.urgentCount}
+                    </span>
                   )}
                 </div>
               )}
@@ -329,7 +414,11 @@ export default function SupplyTracking() {
               onClick={fetchSupplies}
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               <span className="me-2">רענן</span>
             </Button>
           </div>
@@ -365,8 +454,10 @@ export default function SupplyTracking() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הספקים</SelectItem>
-                {uniqueSuppliers.map(supplier => (
-                  <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                {uniqueSuppliers.map((supplier) => (
+                  <SelectItem key={supplier} value={supplier}>
+                    {supplier}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -393,12 +484,17 @@ export default function SupplyTracking() {
               <PopoverContent className="w-56" align="end">
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">הצג עמודות</h4>
-                  {allColumns.map(column => (
-                    <div key={column.key} className="flex items-center space-x-2 space-x-reverse">
+                  {allColumns.map((column) => (
+                    <div
+                      key={column.key}
+                      className="flex items-center space-x-2 space-x-reverse"
+                    >
                       <Checkbox
                         id={column.key}
                         checked={visibleColumns.includes(column.key)}
-                        onCheckedChange={() => toggleColumnVisibility(column.key)}
+                        onCheckedChange={() =>
+                          toggleColumnVisibility(column.key)
+                        }
                         disabled={column.alwaysVisible}
                       />
                       <label
@@ -420,8 +516,12 @@ export default function SupplyTracking() {
               <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                 <Package className="h-7 w-7 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">אין אספקות ממתינות</p>
-              <p className="text-sm text-slate-400">כל האספקות הושלמו או שאין הזמנות פתוחות</p>
+              <p className="text-slate-600 font-medium mb-1">
+                אין אספקות ממתינות
+              </p>
+              <p className="text-sm text-slate-400">
+                כל האספקות הושלמו או שאין הזמנות פתוחות
+              </p>
             </div>
           ) : (
             <div className="hidden md:block">
@@ -443,11 +543,13 @@ export default function SupplyTracking() {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
-            {filteredAndSortedSupplies.map(supply => (
+            {filteredAndSortedSupplies.map((supply) => (
               <Card key={`${supply.type}-${supply.id}`} className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <Link 
-                    to={createPageUrl(`${supply.type === 'order' ? 'EditOrder' : 'EditWithdrawalRequest'}?id=${supply.id}`)}
+                  <Link
+                    to={createPageUrl(
+                      `${supply.type === "order" ? "EditOrder" : "EditWithdrawalRequest"}?id=${supply.id}`,
+                    )}
                     className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline"
                   >
                     {supply.document_number}
@@ -457,7 +559,9 @@ export default function SupplyTracking() {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">ספק:</span>
-                    <span className="font-medium">{supply.supplier || '-'}</span>
+                    <span className="font-medium">
+                      {supply.supplier || "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">תאריך:</span>
@@ -469,12 +573,21 @@ export default function SupplyTracking() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">ימי המתנה:</span>
-                    <div className={`inline-flex items-center gap-1 ${
-                      supply.days_waiting > 14 ? 'text-red-600' :
-                      supply.days_waiting > 7 ? 'text-orange-600' : 'text-gray-600'
-                    }`}>
-                      {supply.days_waiting > 7 && <AlertCircle className="h-4 w-4" />}
-                      <span className="font-medium">{supply.days_waiting || 0}</span>
+                    <div
+                      className={`inline-flex items-center gap-1 ${
+                        supply.days_waiting > 14
+                          ? "text-red-600"
+                          : supply.days_waiting > 7
+                            ? "text-orange-600"
+                            : "text-gray-600"
+                      }`}
+                    >
+                      {supply.days_waiting > 7 && (
+                        <AlertCircle className="h-4 w-4" />
+                      )}
+                      <span className="font-medium">
+                        {supply.days_waiting || 0}
+                      </span>
                     </div>
                   </div>
                 </div>

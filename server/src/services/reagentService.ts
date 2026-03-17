@@ -1,6 +1,7 @@
-import prisma from '../utils/prisma';
-import { Category, StockStatus, Reagent, ReagentBatch } from '../types';
-import { AppError } from '../middleware/errorHandler';
+import prisma from "../utils/prisma";
+import { Category, StockStatus, Reagent, ReagentBatch } from "../types";
+import { AppError } from "../middleware/errorHandler";
+import { updateReagentAggregates } from "./reagentAggregates";
 
 export interface CreateReagentInput {
   name: string;
@@ -17,7 +18,7 @@ export interface UpdateReagentInput extends Partial<CreateReagentInput> {
   useManualUsage?: boolean;
 }
 
-export interface ReagentWithBatches extends Omit<Reagent, 'supplier'> {
+export interface ReagentWithBatches extends Omit<Reagent, "supplier"> {
   batches: ReagentBatch[];
   supplier?: { id: string; name: string };
 }
@@ -56,7 +57,7 @@ class ReagentService {
 
     const reagents = await prisma.reagent.findMany({
       where,
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
 
     // Manually add supplier info
@@ -64,14 +65,18 @@ class ReagentService {
     for (const reagent of reagents) {
       let supplier = null;
       if (reagent.supplierId) {
-        supplier = await prisma.supplier.findUnique({ where: { id: reagent.supplierId } });
+        supplier = await prisma.supplier.findUnique({
+          where: { id: reagent.supplierId },
+        });
       }
 
       // Filter by search in memory
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesName = reagent.name?.toLowerCase().includes(searchLower);
-        const matchesCatalog = reagent.catalogNumber?.toLowerCase().includes(searchLower);
+        const matchesCatalog = reagent.catalogNumber
+          ?.toLowerCase()
+          .includes(searchLower);
         if (!matchesName && !matchesCatalog) continue;
       }
 
@@ -89,12 +94,14 @@ class ReagentService {
   /**
    * Get reagents grouped by supplier and category
    */
-  async getBySupplierAndCategory(): Promise<Record<string, Record<string, Reagent[]>>> {
+  async getBySupplierAndCategory(): Promise<
+    Record<string, Record<string, Reagent[]>>
+  > {
     const reagents = await this.getAll();
     const grouped: Record<string, Record<string, Reagent[]>> = {};
 
     for (const reagent of reagents) {
-      const supplierName = (reagent as any).supplier?.name || 'Unknown';
+      const supplierName = (reagent as any).supplier?.name || "Unknown";
       const category = reagent.category;
 
       if (!grouped[supplierName]) {
@@ -119,23 +126,29 @@ class ReagentService {
     // Get supplier info
     let supplier = null;
     if (reagent.supplierId) {
-      const s = await prisma.supplier.findUnique({ where: { id: reagent.supplierId } });
+      const s = await prisma.supplier.findUnique({
+        where: { id: reagent.supplierId },
+      });
       if (s) supplier = { id: s.id, name: s.name };
     }
 
     // Get active batches
     const allBatches = await prisma.reagentBatch.findMany({
       where: { reagentId: id },
-      orderBy: { expiryDate: 'asc' },
+      orderBy: { expiryDate: "asc" },
     });
 
     // Filter out destroyed batches in memory
-    const batches = allBatches.filter((b: any) => b.status !== 'DESTROYED');
+    const batches = allBatches.filter((b: any) => b.status !== "DESTROYED");
 
     return {
       ...reagent,
-      totalQuantity: reagent.totalQuantity ? Number(reagent.totalQuantity) : null,
-      monthsOfStock: reagent.monthsOfStock ? Number(reagent.monthsOfStock) : null,
+      totalQuantity: reagent.totalQuantity
+        ? Number(reagent.totalQuantity)
+        : null,
+      monthsOfStock: reagent.monthsOfStock
+        ? Number(reagent.monthsOfStock)
+        : null,
       supplier,
       batches: batches.map((b: any) => ({
         ...b,
@@ -154,7 +167,7 @@ class ReagentService {
     });
 
     if (!supplier) {
-      throw new AppError('Supplier not found', 404);
+      throw new AppError("Supplier not found", 404);
     }
 
     // Check for duplicate name with same supplier
@@ -167,14 +180,17 @@ class ReagentService {
     });
 
     if (existing) {
-      throw new AppError('Reagent with this name already exists for this supplier', 400);
+      throw new AppError(
+        "Reagent with this name already exists for this supplier",
+        400,
+      );
     }
 
     const result = await prisma.reagent.create({
       data: {
         name: data.name,
         catalogNumber: data.catalogNumber,
-        category: data.category || 'REAGENT',
+        category: data.category || "REAGENT",
         supplierId: data.supplierId,
         isConsumable: data.isConsumable || false,
         requiresBatches: data.requiresBatches ?? true,
@@ -196,7 +212,7 @@ class ReagentService {
     const reagent = await prisma.reagent.findUnique({ where: { id } });
 
     if (!reagent) {
-      throw new AppError('Reagent not found', 404);
+      throw new AppError("Reagent not found", 404);
     }
 
     const result = await prisma.reagent.update({
@@ -217,7 +233,7 @@ class ReagentService {
     const reagent = await prisma.reagent.findUnique({ where: { id } });
 
     if (!reagent) {
-      throw new AppError('Reagent not found', 404);
+      throw new AppError("Reagent not found", 404);
     }
 
     const result = await prisma.reagent.update({
@@ -232,56 +248,10 @@ class ReagentService {
   }
 
   /**
-   * Update aggregated fields (called after batch changes)
+   * Update aggregated fields (called after batch changes) — delegates to canonical implementation
    */
   async updateAggregates(reagentId: string): Promise<void> {
-    const batches = await prisma.reagentBatch.findMany({
-      where: {
-        reagentId,
-        status: 'ACTIVE',
-      },
-      orderBy: { expiryDate: 'asc' },
-    });
-
-    const totalQuantity = batches.reduce(
-      (sum, b) => sum + Number(b.currentQuantity),
-      0
-    );
-    const activeBatchesCount = batches.length;
-    const nearestExpiryDate = batches[0]?.expiryDate || null;
-
-    // Determine stock status
-    let currentStockStatus: StockStatus = StockStatus.NORMAL;
-    const reagent = await prisma.reagent.findUnique({ where: { id: reagentId } });
-
-    if (reagent) {
-      const monthlyUsage = reagent.useManualUsage
-        ? Number(reagent.manualMonthlyUsage || 0)
-        : Number(reagent.averageMonthlyUsage || 0);
-
-      if (monthlyUsage > 0) {
-        const monthsOfStock = totalQuantity / monthlyUsage;
-        if (monthsOfStock < 1) {
-          currentStockStatus = StockStatus.CRITICAL;
-        } else if (monthsOfStock < 2) {
-          currentStockStatus = StockStatus.LOW;
-        }
-      }
-
-      if (totalQuantity === 0) {
-        currentStockStatus = StockStatus.OUT_OF_STOCK;
-      }
-    }
-
-    await prisma.reagent.update({
-      where: { id: reagentId },
-      data: {
-        totalQuantity,
-        activeBatchesCount,
-        nearestExpiryDate,
-        currentStockStatus,
-      },
-    });
+    await updateReagentAggregates(reagentId);
   }
 }
 
