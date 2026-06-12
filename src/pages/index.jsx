@@ -18,10 +18,6 @@ const InventoryCount = React.lazy(() => import("./InventoryCount"));
 const SecuritySettings = React.lazy(() => import("./SecuritySettings"));
 const SystemDocumentation = React.lazy(() => import("./SystemDocumentation"));
 const CodeAnalysis = React.lazy(() => import("./CodeAnalysis"));
-const TestingStrategy = React.lazy(() => import("./TestingStrategy"));
-const ProcessCompletedCount = React.lazy(
-  () => import("./processCompletedCount"),
-);
 const AdminPanel = React.lazy(() => import("./AdminPanel"));
 const DevelopmentStrategy = React.lazy(() => import("./DevelopmentStrategy"));
 const TechnicalSpecs = React.lazy(() => import("./TechnicalSpecs"));
@@ -37,18 +33,12 @@ const InventoryReplenishment = React.lazy(
 );
 const NewWithdrawalRequest = React.lazy(() => import("./NewWithdrawalRequest"));
 const QualityAssurance = React.lazy(() => import("./QualityAssurance"));
-const CleanupData = React.lazy(() => import("./CleanupData"));
-const QuickCleanup = React.lazy(() => import("./QuickCleanup"));
-const BackendManagement = React.lazy(() => import("./BackendManagement"));
-const FixReagents = React.lazy(() => import("./FixReagents"));
 const NewReagent = React.lazy(() => import("./NewReagent"));
-const SystemAnalysis = React.lazy(() => import("./SystemAnalysis"));
 const WithdrawalRequests = React.lazy(() => import("./WithdrawalRequests"));
 const SupplyTracking = React.lazy(() => import("./SupplyTracking"));
 const EditWithdrawalRequest = React.lazy(
   () => import("./EditWithdrawalRequest"),
 );
-const PerformanceAnalysis = React.lazy(() => import("./PerformanceAnalysis"));
 const ActivityLog = React.lazy(() => import("./ActivityLog"));
 const Contacts = React.lazy(() => import("./Contacts"));
 const DashboardNotes = React.lazy(() => import("./DashboardNotes"));
@@ -83,8 +73,6 @@ const PAGES = {
   SecuritySettings,
   SystemDocumentation,
   CodeAnalysis,
-  TestingStrategy,
-  processCompletedCount: ProcessCompletedCount,
   AdminPanel,
   DevelopmentStrategy,
   TechnicalSpecs,
@@ -98,16 +86,10 @@ const PAGES = {
   InventoryReplenishment,
   NewWithdrawalRequest,
   QualityAssurance,
-  CleanupData,
-  QuickCleanup,
-  BackendManagement,
-  FixReagents,
   NewReagent,
-  SystemAnalysis,
   WithdrawalRequests,
   SupplyTracking,
   EditWithdrawalRequest,
-  PerformanceAnalysis,
   ActivityLog,
   Contacts,
   DashboardNotes,
@@ -225,26 +207,6 @@ function PagesContent() {
             <ProtectedRoute>
               <Layout currentPageName={currentPage}>
                 <CodeAnalysis />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/TestingStrategy"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <TestingStrategy />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/processCompletedCount"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <ProcessCompletedCount />
               </Layout>
             </ProtectedRoute>
           }
@@ -380,61 +342,11 @@ function PagesContent() {
           }
         />
         <Route
-          path="/CleanupData"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <CleanupData />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/QuickCleanup"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <QuickCleanup />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/BackendManagement"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <BackendManagement />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/FixReagents"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <FixReagents />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/NewReagent"
           element={
             <ProtectedRoute>
               <Layout currentPageName={currentPage}>
                 <NewReagent />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/SystemAnalysis"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <SystemAnalysis />
               </Layout>
             </ProtectedRoute>
           }
@@ -465,16 +377,6 @@ function PagesContent() {
             <ProtectedRoute>
               <Layout currentPageName={currentPage}>
                 <EditWithdrawalRequest />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/PerformanceAnalysis"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <PerformanceAnalysis />
               </Layout>
             </ProtectedRoute>
           }
