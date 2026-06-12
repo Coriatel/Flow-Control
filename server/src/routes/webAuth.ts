@@ -188,7 +188,7 @@ router.get(
     );
 
     // Redirect into the SPA.
-    res.redirect("/dashboard");
+    res.redirect("/Dashboard");
   }),
 );
 

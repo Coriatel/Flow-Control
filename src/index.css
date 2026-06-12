@@ -128,3 +128,55 @@
     -webkit-backdrop-filter: blur(8px);
   }
 }
+
+@layer components {
+  .flow-demo-panel {
+    background:
+      radial-gradient(circle at top right, rgba(20, 184, 166, 0.10), transparent 34%),
+      #fff;
+  }
+
+  .flow-demo-panel__header {
+    background: linear-gradient(90deg, rgba(240, 253, 250, 0.85), #fff);
+  }
+
+  .flow-reco-row {
+    @apply grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center;
+    border-inline-start: 4px solid rgb(20 184 166 / 0.65);
+  }
+
+  .flow-reco-row--critical {
+    background: linear-gradient(90deg, rgba(254, 242, 242, 0.72), #fff);
+    border-inline-start-color: rgb(220 38 38);
+  }
+
+  .flow-reco-row__meta {
+    @apply mt-1 flex flex-wrap justify-end gap-x-3 gap-y-1 text-xs text-slate-500;
+  }
+
+  .flow-reco-row__action {
+    @apply rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2 text-center md:min-w-36;
+  }
+
+  .flow-demo-panel__footer {
+    @apply flex items-center justify-end gap-2 border-t border-teal-100 bg-teal-50/50 px-4 py-2 text-xs text-slate-600;
+  }
+
+  @media (max-width: 640px) {
+    .flow-info-row {
+      @apply grid grid-cols-2 gap-x-2 gap-y-1 items-start rounded-lg mx-2 my-1 border border-slate-100 bg-white/70;
+    }
+
+    .flow-info-cell {
+      @apply whitespace-normal break-words text-right;
+    }
+
+    .flow-info-cell:first-child {
+      @apply col-span-2 text-sm;
+    }
+
+    .flow-reco-row__action {
+      @apply text-right;
+    }
+  }
+}

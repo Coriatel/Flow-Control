@@ -35,6 +35,7 @@ import CriticalActions from "../components/dashboard/CriticalActions";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import ExpiryCalendar from "../components/dashboard/ExpiryCalendar";
 import MessagesFeed from "../components/dashboard/MessagesFeed";
+import OrderRecommendations from "../components/dashboard/OrderRecommendations";
 
 const statusLabels = {
   DRAFT: "טיוטה",
@@ -357,6 +358,12 @@ export default function Dashboard() {
             />
           </div>
         </div>
+
+        {/* ═══ SECTOR 1.5: Order Recommendations ═══ */}
+        <OrderRecommendations
+          lowStockReagents={lowStockReagents}
+          onOrderQuantity={dashboardData.onOrderQuantity}
+        />
 
         {/* ═══ SECTOR 2: Alerts & Notes ═══ */}
         <div>
