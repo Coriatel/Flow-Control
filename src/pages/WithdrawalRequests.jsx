@@ -112,7 +112,7 @@ export default function WithdrawalRequestsPage() {
       },
       {
         key: "framework_order_number",
-        label: "מס' הזמנת מסגרת",
+        label: "מס' הסכם מסגרת",
         defaultWidth: 160,
         sortable: true,
       },
@@ -670,7 +670,7 @@ export default function WithdrawalRequestsPage() {
         <div className="relative flex-1 min-w-[200px] sm:min-w-[unset]">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="חיפוש לפי מס' משיכה, הזמנה, ספק..."
+            placeholder="חיפוש לפי מס' משיכה, דרישה, ספק..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pe-10"
@@ -1108,7 +1108,7 @@ export default function WithdrawalRequestsPage() {
                   {withdrawal.framework_order_number_snapshot && (
                     <div className="col-span-2">
                       <span className="text-gray-500 text-xs block">
-                        הזמנת מסגרת
+                        הסכם מסגרת
                       </span>
                       <span className="font-medium text-gray-900">
                         {withdrawal.framework_order_number_snapshot}

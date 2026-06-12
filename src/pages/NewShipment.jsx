@@ -341,7 +341,7 @@ export default function NewShipmentPage() {
         }
         if (shipmentData.linked_order_id) {
           rows.push([
-            escapeCsvField("מספר הזמנה מקורית:"),
+            escapeCsvField("מספר דרישה מקורית:"),
             escapeCsvField(shipmentData.linked_order_id),
             "", "", "", ""
           ].join(","));
@@ -1060,9 +1060,9 @@ export default function NewShipmentPage() {
                         />
                       </div>
                       <div>
-                        <Label>הזמנה מקושרת (אופציונלי)</Label>
+                        <Label>דרישה מקושרת (אופציונלי)</Label>
                         <Input
-                          placeholder="מספר הזמנה או דרישה מקורית"
+                          placeholder="מספר דרישה מקורית"
                           name="linked_order_id"
                           value={shipmentDetails.linked_order_id}
                           onChange={handleShipmentDetailChange}

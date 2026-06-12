@@ -448,7 +448,7 @@ export default function Layout({ children, currentPageName }) {
       iconColor: "text-teal-300",
     },
     procurement: {
-      title: "רכש והזמנות",
+      title: "רכש ודרישות",
       emoji: "🛒",
       textColor: "text-amber-200",
       bgColor: "bg-amber-600/20",

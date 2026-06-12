@@ -636,8 +636,8 @@ export default function InventoryReplenishmentPage() {
       if (relevantFrameworkOrders.length === 0) {
         const supplierLabel = supplierName || supplierId || "לא ידוע";
         toast({
-          title: "לא נמצאה הזמנת מסגרת",
-          description: `לא קיימת הזמנת מסגרת (גם לא זמנית) עבור ספק ${supplierLabel}.`,
+          title: "לא נמצא הסכם מסגרת",
+          description: `לא קיים הסכם מסגרת (גם לא זמני) עבור ספק ${supplierLabel}.`,
           variant: "destructive",
         });
         setLoading(false);
@@ -666,8 +666,8 @@ export default function InventoryReplenishmentPage() {
       if (!selectedFrameworkOrder) {
         const supplierLabel = supplierName || supplierId || "לא ידוע";
         toast({
-          title: "לא נמצאה הזמנת מסגרת מתאימה",
-          description: `לא נמצאה הזמנת מסגרת אחת שיכולה לספק את כל הפריטים שנבחרו מספק ${supplierLabel}.`,
+          title: "לא נמצא הסכם מסגרת מתאים",
+          description: `לא נמצא הסכם מסגרת אחד שיכול לספק את כל הפריטים שנבחרו מספק ${supplierLabel}.`,
           variant: "destructive",
         });
         setLoading(false);
@@ -1022,7 +1022,7 @@ export default function InventoryReplenishmentPage() {
                           <div className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium cursor-help">
                             <Info className="h-3 w-3" />
                             <span>
-                              {itemsWithTemporaryOrders} עם הזמנות זמניות
+                              {itemsWithTemporaryOrders} עם דרישות זמניות
                             </span>
                           </div>
                         </TooltipTrigger>
@@ -1090,7 +1090,7 @@ export default function InventoryReplenishmentPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הצג הכל</SelectItem>
-                  <SelectItem value="suggested">הצג מוצעים להזמנה</SelectItem>
+                  <SelectItem value="suggested">הצג מוצעים לדרישה</SelectItem>
                   <SelectItem value="low_stock">מלאי נמוך</SelectItem>
                   <SelectItem value="out_of_stock">אזל מהמלאי</SelectItem>
                 </SelectContent>
@@ -1170,7 +1170,7 @@ export default function InventoryReplenishmentPage() {
                               >
                                 <p className="text-sm">
                                   סנן פריטים לפי קיום יתרות זמינות למשיכה
-                                  מהזמנות מסגרת (מתאים במיוחד למובייל)
+                                  מהסכמי מסגרת (מתאים במיוחד למובייל)
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -1260,7 +1260,7 @@ export default function InventoryReplenishmentPage() {
                   {reagent.has_temporary_orders && (
                     <div className="bg-purple-50 border border-purple-200 rounded-md px-2 py-1 mb-2 flex items-center gap-1 text-xs text-purple-700">
                       <Info className="h-3 w-3" />
-                      <span>מתחשב בהזמנות זמניות</span>
+                      <span>מתחשב בדרישות זמניות</span>
                     </div>
                   )}
                   <div className="flex items-start gap-3">
@@ -1410,7 +1410,7 @@ export default function InventoryReplenishmentPage() {
                             htmlFor={`q-${reagent.id}`}
                             className="text-xs font-medium text-slate-600 mb-1 block"
                           >
-                            כמות להזמנה
+                            כמות לדרישה
                           </Label>
                           <div className="flex items-center gap-1">
                             <Input
@@ -1769,12 +1769,12 @@ export default function InventoryReplenishmentPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-xl">
               <AlertCircle className="h-6 w-6 text-amber-500" />
-              נמצאה הזמנת מסגרת, אך חסר מספר הזמנה קבוע
+              נמצא הסכם מסגרת, אך חסר מספר הזמנת רכש (SAP)
             </AlertDialogTitle>
             <AlertDialogDescription className="text-right space-y-4 text-base">
               <p className="font-semibold text-gray-800">
-                המערכת מצאה הזמנת מסגרת מתאימה עם יתרות זמינות, אך אין לה עדיין{" "}
-                <span className="text-amber-600">מספר הזמנה קבוע</span> (מספר
+                המערכת מצאה הסכם מסגרת מתאים עם יתרות זמינות, אך אין לו עדיין{" "}
+                <span className="text-amber-600">מספר הזמנת רכש (SAP)</span> (מספר
                 קבוע מה-SAP או מספר PO).
               </p>
 
@@ -1784,10 +1784,10 @@ export default function InventoryReplenishmentPage() {
                 </h4>
                 <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside me-2">
                   <li>
-                    מספר הזמנה קבוע דרוש למעקב ותיעוד מול הספק ומערכת ה-SAP.
+                    מספר הזמנת רכש (SAP) דרוש למעקב ותיעוד מול הספק ומערכת ה-SAP.
                   </li>
                   <li>
-                    ללא מספר קבוע, עלול להיווצר קושי בזיהוי וטיפול בהזמנה בעתיד.
+                    ללא מספר קבוע, עלול להיווצר קושי בזיהוי וטיפול בדרישה בעתיד.
                   </li>
                   <li>יתכנו עיכובים באספקה אם הספק לא יקבל מספר PO רשמי.</li>
                 </ul>
@@ -1799,7 +1799,7 @@ export default function InventoryReplenishmentPage() {
                 </h4>
                 <p className="text-sm text-blue-700">
                   מומלץ לעבור תחילה למסך <strong>"ניהול דרישות רכש"</strong>,
-                  למצוא את ההזמנה (מספר דרישה זמני:{" "}
+                  למצוא את הדרישה (מספר דרישה פנימי:{" "}
                   {pendingWithdrawalAction?.frameworkOrderNumber || "לא זמין"}),
                   ולהשלים את המספר הקבוע לפני ביצוע המשיכה.
                 </p>

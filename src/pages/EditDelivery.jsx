@@ -58,7 +58,7 @@ const statusColors = {
 };
 
 const deliveryTypeLabels = {
-  with_order: "עם הזמנה",
+  with_order: "עם דרישה",
   no_charge: "ללא תמורה",
   replacement: "החלפה",
   other: "אחר",
@@ -664,13 +664,13 @@ export default function EditDeliveryPage() {
               <CardHeader className="pb-3 border-b border-amber-200">
                 <CardTitle className="text-base font-semibold text-amber-900 flex items-center gap-2">
                   <FileText className="h-4 w-4 text-amber-600" />
-                  הזמנה מקושרת
+                  דרישה מקושרת
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-2">
                 <div>
                   <Label className="text-xs font-medium text-amber-700">
-                    מספר הזמנה זמני
+                    מספר דרישה פנימי
                   </Label>
                   <Link
                     to={createPageUrl(`EditOrder?id=${linkedOrder.id}`)}
@@ -684,7 +684,7 @@ export default function EditDeliveryPage() {
                 {linkedOrder.order_number_permanent && (
                   <div>
                     <Label className="text-xs font-medium text-amber-700">
-                      מספר הזמנה קבוע
+                      מספר הזמנת רכש (SAP)
                     </Label>
                     <p className="text-sm text-amber-900 mt-1">
                       {linkedOrder.order_number_permanent}
@@ -704,7 +704,7 @@ export default function EditDeliveryPage() {
                 )}
                 <div>
                   <Label className="text-xs font-medium text-amber-700">
-                    תאריך הזמנה
+                    תאריך דרישה
                   </Label>
                   <p className="text-sm text-amber-900 mt-1">
                     {linkedOrder.order_date

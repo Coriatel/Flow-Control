@@ -8,6 +8,14 @@ import { ClipboardList, PackageCheck, ShoppingCart, TrendingDown } from "lucide-
 
 function calcSuggestedQuantity(item) {
   const current = Number(item.currentQuantity || 0);
+  const min = Number(item.minStockLevel || 0);
+  const max = Number(item.maxStockLevel || 0);
+  if (min > 0) {
+    // מדיניות מינ'/מקס': מתחת למינימום — השלמה עד המקסימום
+    if (current >= min) return 0;
+    const target = max > min ? max : min;
+    return Math.max(1, Math.ceil(target - current));
+  }
   const monthly = Number(item.averageUsage || 0);
   const target = Math.max(monthly * 2, current <= 0 ? 2 : 1);
   return Math.max(1, Math.ceil(target - current));
@@ -39,7 +47,7 @@ export default function OrderRecommendations({ lowStockReagents = [], onOrderQua
               <ShoppingCart className="h-5 w-5 text-teal-700" />
             </div>
             <div>
-              <h3 className="text-base font-bold">המלצות הזמנה וצריכת מלאי</h3>
+              <h3 className="text-base font-bold">המלצות דרישה וצריכת מלאי</h3>
               <p className="text-xs font-normal text-slate-500 mt-0.5">
                 חישוב לפי כמות נוכחית, צריכה חודשית וחודשי מלאי זמינים
               </p>
@@ -58,7 +66,7 @@ export default function OrderRecommendations({ lowStockReagents = [], onOrderQua
       <CardContent className="p-0">
         {recommendations.length === 0 ? (
           <div className="p-5 text-center text-sm text-slate-500">
-            אין כרגע המלצות הזמנה — המלאי נראה מאוזן.
+            אין כרגע המלצות דרישה — המלאי נראה מאוזן.
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -91,6 +99,13 @@ export default function OrderRecommendations({ lowStockReagents = [], onOrderQua
                         צריכה חודשית: {Number(item.averageUsage || 0).toLocaleString("he-IL")}
                       </span>
                       <span>מלאי: {formatMonths(item.monthsOfStock)}</span>
+                      {Number(item.minStockLevel || 0) > 0 && (
+                        <span>
+                          מינ׳: {Number(item.minStockLevel).toLocaleString("he-IL")}
+                          {Number(item.maxStockLevel || 0) > 0 &&
+                            ` · מקס׳: ${Number(item.maxStockLevel).toLocaleString("he-IL")}`}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flow-reco-row__action">
@@ -101,7 +116,7 @@ export default function OrderRecommendations({ lowStockReagents = [], onOrderQua
                     <Button asChild size="sm" variant="outline" className="mt-2 h-8 border-teal-200 text-teal-800 hover:bg-teal-50">
                       <Link to={createPageUrl(`NewOrder?reagent_id=${item.id}`)}>
                         <ClipboardList className="h-3.5 w-3.5 ms-1" />
-                        פתח הזמנה
+                        פתח דרישה
                       </Link>
                     </Button>
                   </div>
@@ -112,7 +127,7 @@ export default function OrderRecommendations({ lowStockReagents = [], onOrderQua
         )}
         <div className="flow-demo-panel__footer">
           <PackageCheck className="h-4 w-4 text-teal-700" />
-          <span>המספרים נועדו לדמו: יעד ברירת מחדל הוא כשני חודשי מלאי.</span>
+          <span>פריט עם מינימום/מקסימום מוגדרים — השלמה עד המקסימום; אחרת יעד של כשני חודשי מלאי.</span>
         </div>
       </CardContent>
     </Card>

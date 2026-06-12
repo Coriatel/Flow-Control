@@ -12,7 +12,7 @@ const getStatusDisplay = (status) => {
     const statusMap = {
         'draft': 'טיוטה',
         'pending_sap_permanent_id': 'ממתין למספר דרישה קבוע',
-        'pending_sap_po_number': 'ממתין למספר הזמנה',
+        'pending_sap_po_number': 'ממתין למספר הזמנת רכש (SAP)',
         'approved': 'מאושר',
         'partially_received': 'התקבל חלקי',
         'fully_received': 'התקבל במלואו',
@@ -38,7 +38,7 @@ export default function DocumentPrint({ order, children, iconOnly = false }) {
 
   const handlePrint = async () => {
     if (!order) {
-      toast({ title: "שגיאה", description: "לא ניתן להדפיס, לא נמצאה הזמנה.", variant: "destructive" });
+      toast({ title: "שגיאה", description: "לא ניתן להדפיס, לא נמצאה דרישה.", variant: "destructive" });
       return;
     }
 
@@ -177,7 +177,7 @@ export default function DocumentPrint({ order, children, iconOnly = false }) {
                 <div class="detail-value">${order.supplier || 'לא צוין'}</div>
               </div>
               <div class="detail-item">
-                <div class="detail-label">סוג הזמנה:</div>
+                <div class="detail-label">סוג דרישה:</div>
                 <div class="detail-value">${getOrderTypeDisplay(order.order_type)}</div>
               </div>
               <div class="detail-item">
@@ -185,7 +185,7 @@ export default function DocumentPrint({ order, children, iconOnly = false }) {
                 <div class="detail-value">${order.order_number_permanent || 'טרם הוקצה'}</div>
               </div>
               <div class="detail-item">
-                <div class="detail-label">מספר הזמנה SAP:</div>
+                <div class="detail-label">מספר הזמנת רכש (SAP):</div>
                 <div class="detail-value">${order.purchase_order_number_sap || 'טרם הוקצה'}</div>
               </div>
               <div class="detail-item">

@@ -142,14 +142,14 @@ export default function OrdersPage() {
     },
     {
       key: "order_number_temp",
-      label: "מס' הזמנה זמני",
+      label: "מס' דרישה פנימי",
       alwaysVisible: true,
       defaultWidth: 140,
       sortable: true,
     },
     {
       key: "order_number_permanent",
-      label: "מס' הזמנה קבוע",
+      label: "מס' הזמנת רכש (SAP)",
       defaultWidth: 140,
       sortable: true,
     },
@@ -161,7 +161,7 @@ export default function OrdersPage() {
     },
     {
       key: "order_date",
-      label: "תאריך הזמנה",
+      label: "תאריך דרישה",
       alwaysVisible: true,
       defaultWidth: 120,
       sortable: true,
@@ -169,7 +169,7 @@ export default function OrdersPage() {
     { key: "supplier", label: "ספק", defaultWidth: 150, sortable: true },
     {
       key: "order_type",
-      label: "סוג הזמנה",
+      label: "סוג דרישה",
       defaultWidth: 120,
       sortable: true,
     },
@@ -248,7 +248,7 @@ export default function OrdersPage() {
         );
       }
     } catch (err) {
-      toast.error("שגיאה בטעינת הזמנות", {
+      toast.error("שגיאה בטעינת דרישות רכש", {
         description: err.message,
       });
     } finally {
@@ -367,7 +367,7 @@ export default function OrdersPage() {
 
   const startPrintQueue = (ids) => {
     if (!ids || ids.length === 0) {
-      toast.error("בחר הזמנה אחת לפחות להדפסה");
+      toast.error("בחר דרישה אחת לפחות להדפסה");
       return;
     }
     setPrintQueue(ids);
@@ -386,7 +386,7 @@ export default function OrdersPage() {
 
   const requestDelete = (ids) => {
     if (!ids || ids.length === 0) {
-      toast.error("בחר הזמנה אחת לפחות למחיקה");
+      toast.error("בחר דרישה אחת לפחות למחיקה");
       return;
     }
     setDeleteTargets(ids);
@@ -422,14 +422,14 @@ export default function OrdersPage() {
       }
 
       if (failed.length > 0) {
-        toast.error("חלק מההזמנות לא נמחקו", {
+        toast.error("חלק מהדרישות לא נמחקו", {
           description: `נכשלו ${failed.length} מתוך ${ids.length}`,
         });
       } else {
-        toast.success("ההזמנות נמחקו בהצלחה");
+        toast.success("הדרישות נמחקו בהצלחה");
       }
     } catch (error) {
-      toast.error("שגיאה במחיקת הזמנות", {
+      toast.error("שגיאה במחיקת דרישות", {
         description: error.message,
       });
     } finally {
@@ -478,7 +478,7 @@ export default function OrdersPage() {
   const getOrderTypeBadge = (orderType) => {
     const typeConfig = {
       immediate_delivery: { label: "אספקה מיידית", variant: "default" },
-      framework: { label: "הזמנת מסגרת", variant: "info" },
+      framework: { label: "הסכם מסגרת", variant: "info" },
     };
 
     const config = typeConfig[orderType] || {
@@ -669,7 +669,7 @@ export default function OrdersPage() {
             <!DOCTYPE html>
             <html dir="rtl">
             <head>
-                <title>דוח הזמנות</title>
+                <title>דוח דרישות רכש</title>
                 <meta charset="utf-8">
                 <style>
                     body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; direction: rtl; }
@@ -687,11 +687,11 @@ export default function OrdersPage() {
             <body>
                 <div class="print-date">הופק בתאריך: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
                 <div class="header">
-                    <h1>דוח הזמנות</h1>
+                    <h1>דוח דרישות רכש</h1>
                     <p>מערכת ניהול מלאי ריאגנטים</p>
                 </div>
                 <div class="summary">
-                    <strong>סיכום:</strong> סה"כ ${filteredAndSortedOrders.length} הזמנות
+                    <strong>סיכום:</strong> סה"כ ${filteredAndSortedOrders.length} דרישות רכש
                 </div>
                 <table>
                     <thead>
@@ -754,7 +754,7 @@ export default function OrdersPage() {
                                       case "order_type":
                                         const typeLabels = {
                                           immediate_delivery: "אספקה מיידית",
-                                          framework: "הזמנת מסגרת",
+                                          framework: "הסכם מסגרת",
                                         };
                                         value =
                                           typeLabels[order.order_type] ||
@@ -794,7 +794,7 @@ export default function OrdersPage() {
 
   const orderTypeLabels = {
     immediate_delivery: "אספקה מיידית",
-    framework: "הזמנת מסגרת",
+    framework: "הסכם מסגרת",
   };
 
   const clearFilters = () => {
@@ -826,7 +826,7 @@ export default function OrdersPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="me-2">טוען הזמנות...</span>
+        <span className="me-2">טוען דרישות רכש...</span>
       </div>
     );
   }
@@ -894,7 +894,7 @@ export default function OrdersPage() {
         <div className="relative flex-1 min-w-[200px] sm:min-w-[unset]">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="חיפוש לפי מס' הזמנה, ספק..."
+            placeholder="חיפוש לפי מס' דרישה, ספק..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pe-10"
@@ -927,7 +927,7 @@ export default function OrdersPage() {
 
           <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="סוג הזמנה" />
+              <SelectValue placeholder="סוג דרישה" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל הסוגים</SelectItem>
@@ -1093,9 +1093,9 @@ export default function OrdersPage() {
           }}
         >
           <SheetHeader>
-            <SheetTitle className="text-white">סינון הזמנות</SheetTitle>
+            <SheetTitle className="text-white">סינון דרישות רכש</SheetTitle>
             <SheetDescription className="text-gray-300">
-              בחר אפשרויות לסינון רשימת ההזמנות
+              בחר אפשרויות לסינון רשימת הדרישות
             </SheetDescription>
           </SheetHeader>
 
@@ -1118,7 +1118,7 @@ export default function OrdersPage() {
             </div>
 
             <div>
-              <Label className="text-white">סוג הזמנה</Label>
+              <Label className="text-white">סוג דרישה</Label>
               <Select
                 value={orderTypeFilter}
                 onValueChange={setOrderTypeFilter}
@@ -1203,7 +1203,7 @@ export default function OrdersPage() {
                   <FileText className="h-7 w-7 text-slate-400" />
                 </div>
                 <p className="text-slate-600 font-medium mb-1">
-                  לא נמצאו הזמנות
+                  לא נמצאו דרישות רכש
                 </p>
                 <p className="text-sm text-slate-400">
                   נסה לשנות את מילות החיפוש או להסיר מסננים
@@ -1222,7 +1222,7 @@ export default function OrdersPage() {
               <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <FileText className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-1">לא נמצאו הזמנות</p>
+              <p className="text-slate-600 font-medium mb-1">לא נמצאו דרישות רכש</p>
               <p className="text-sm text-slate-400">
                 נסה לשנות את החיפוש או להסיר מסננים
               </p>

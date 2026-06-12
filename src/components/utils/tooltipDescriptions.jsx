@@ -11,35 +11,35 @@ export const STATUS_DESCRIPTIONS = {
     order: {
         pending_sap_details: {
             label: 'ממתין לפרטי SAP',
-            description: 'ההזמנה נוצרה במערכת אך טרם התקבלו פרטי הזמנה קבועים ממערכת SAP'
+            description: 'הדרישה נוצרה במערכת אך טרם התקבלו פרטי הזמנת רכש קבועים ממערכת SAP'
         },
         pending_sap_permanent_id: {
-            label: 'ממתין למספר הזמנה קבוע',
-            description: 'ההזמנה ממתינה למספר הזמנה קבוע ממערכת SAP'
+            label: 'ממתין למספר הזמנת רכש (SAP)',
+            description: 'הדרישה ממתינה למספר הזמנת רכש (SAP) ממערכת SAP'
         },
         pending_sap_po_number: {
             label: 'ממתין למספר PO',
-            description: 'ההזמנה ממתינה למספר הזמנת רכש (PO) ממערכת SAP'
+            description: 'הדרישה ממתינה למספר הזמנת רכש (PO) ממערכת SAP'
         },
         approved: {
             label: 'מאושרת',
-            description: 'ההזמנה אושרה וממתינה לאספקה'
+            description: 'הדרישה אושרה וממתינה לאספקה'
         },
         partially_received: {
             label: 'התקבלה חלקית',
-            description: 'חלק מהפריטים בהזמנה התקבלו, אך עדיין יש יתרה פתוחה'
+            description: 'חלק מהפריטים בדרישה התקבלו, אך עדיין יש יתרה פתוחה'
         },
         fully_received: {
             label: 'התקבלה במלואה',
-            description: 'כל הפריטים בהזמנה התקבלו'
+            description: 'כל הפריטים בדרישה התקבלו'
         },
         closed: {
             label: 'סגורה',
-            description: 'ההזמנה נסגרה (ללא תלות בכמות שהתקבלה)'
+            description: 'הדרישה נסגרה (ללא תלות בכמות שהתקבלה)'
         },
         cancelled: {
             label: 'בוטלה',
-            description: 'ההזמנה בוטלה ולא תתקבל'
+            description: 'הדרישה בוטלה ולא תתקבל'
         }
     },
     
@@ -119,25 +119,25 @@ export const COLUMN_DESCRIPTIONS = {
         effective_monthly_usage: 'צריכה חודשית ממוצעת - מבוססת על שימוש ממשי או הזנה ידנית',
         total_quantity_all_batches: 'סך המלאי הזמין כעת מכל האצוות הפעילות',
         months_of_stock: 'כמה חודשים אנחנו מכוסים עם המלאי הנוכחי (מלאי / צריכה חודשית)',
-        available_framework_quantity: 'יתרות זמינות למשיכה מהזמנות מסגרת פעילות. המספר בסוגריים מציג כמה פריטים כבר נמצאים בבקשות משיכה ממתינות',
-        suggested_order_quantity: 'כמות מוצעת להזמנה בהתבסס על צריכה חודשית ומלאי ביטחון'
+        available_framework_quantity: 'יתרות זמינות למשיכה מהסכמי מסגרת פעילים. המספר בסוגריים מציג כמה פריטים כבר נמצאים בבקשות משיכה ממתינות',
+        suggested_order_quantity: 'כמות מוצעת לדרישה בהתבסס על צריכה חודשית ומלאי ביטחון'
     },
 
     // Orders
     orders: {
         order_number_temp: 'מספר דרישה זמני שהוקצה במערכת',
-        order_number_permanent: 'מספר הזמנה קבוע שהתקבל ממערכת SAP',
+        order_number_permanent: 'מספר הזמנת רכש (SAP) שהתקבל ממערכת SAP',
         purchase_order_number_sap: 'מספר הזמנת רכש (PO) ממערכת SAP',
-        supplier_name_snapshot: 'שם הספק בזמן יצירת ההזמנה',
-        order_date: 'תאריך יצירת ההזמנה/דרישה',
-        order_type: 'סוג ההזמנה: "מיידי" לאספקה מיידית, "מסגרת" להזמנת מסגרת עם משיכות עתידיות',
-        status: 'סטטוס ההזמנה - מצב עדכני של ההזמנה במערכת'
+        supplier_name_snapshot: 'שם הספק בזמן יצירת הדרישה',
+        order_date: 'תאריך יצירת הדרישה',
+        order_type: 'סוג הדרישה: "מיידי" לאספקה מיידית, "מסגרת" להסכם מסגרת עם משיכות עתידיות',
+        status: 'סטטוס הדרישה - מצב עדכני של הדרישה במערכת'
     },
 
     // Withdrawals
     withdrawals: {
         withdrawal_number: 'מספר בקשת המשיכה הייחודי',
-        framework_order_number_snapshot: 'מספר הזמנת המסגרת ממנה מבוצעת המשיכה',
+        framework_order_number_snapshot: 'מספר הסכם המסגרת ממנו מבוצעת המשיכה',
         supplier_snapshot: 'שם הספק ממנו מבוצעת המשיכה',
         request_date: 'תאריך הגשת בקשת המשיכה',
         requested_delivery_date: 'תאריך אספקה מבוקש',

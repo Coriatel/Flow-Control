@@ -1171,23 +1171,23 @@ export default function NewDeliveryPage() {
                 );
                 setItems(preFilledDeliveryItems);
                 toast({
-                  title: "נתונים נטענו מההזמנה",
-                  description: `נטענו ${preFilledDeliveryItems.length} פריטים מההזמנה`,
+                  title: "נתונים נטענו מהדרישה",
+                  description: `נטענו ${preFilledDeliveryItems.length} פריטים מהדרישה`,
                   variant: "default",
                 });
               } else {
                 toast({
-                  title: "הזמנה ללא יתרה",
+                  title: "דרישה ללא יתרה",
                   description:
-                    "ההזמנה המקושרת אינה מכילה פריטים עם יתרה לקבלה.",
+                    "הדרישה המקושרת אינה מכילה פריטים עם יתרה לקבלה.",
                   variant: "default",
                 });
                 setItems([]);
               }
             } catch (itemFetchError) {
               toast({
-                title: "שגיאה בטעינת פריטי הזמנה",
-                description: `לא ניתן לטעון פריטים עבור הזמנה זו.`,
+                title: "שגיאה בטעינת פריטי דרישה",
+                description: `לא ניתן לטעון פריטים עבור דרישה זו.`,
                 variant: "destructive",
               });
               setItems([]);
@@ -1579,7 +1579,7 @@ export default function NewDeliveryPage() {
   const handleSaveDelivery = async (isFinal = true) => {
     lockSystem(
       "מעבד קליטת משלוח...",
-      ["ניהול מלאי", "דוחות ומעקב", "סטטוס הזמנות"],
+      ["ניהול מלאי", "דוחות ומעקב", "סטטוס דרישות"],
       items.length * 0.5 + 5,
     );
 
@@ -2148,7 +2148,7 @@ export default function NewDeliveryPage() {
               <span className="text-lg font-normal text-blue-600 me-2">
                 (מ
                 {preFilledSourceInfo.object_type === "Order"
-                  ? "הזמנה"
+                  ? "דרישה"
                   : "בקשת משיכה"}
                 :
                 {preFilledSourceInfo.object_type === "Order"
@@ -2204,7 +2204,7 @@ export default function NewDeliveryPage() {
                 <strong>
                   קליטה מ
                   {preFilledSourceInfo.object_type === "Order"
-                    ? "הזמנה"
+                    ? "דרישה"
                     : "בקשת משיכה"}
                   :
                 </strong>
@@ -2216,7 +2216,7 @@ export default function NewDeliveryPage() {
                 <span className="text-sm text-gray-600">
                   הפרטים נטענו אוטומטית מ
                   {preFilledSourceInfo.object_type === "Order"
-                    ? "ההזמנה"
+                    ? "הדרישה"
                     : "בקשת המשיכה"}
                   . אשר כל פריט כדי להעבירו לרשימת הפריטים שהתקבלו.
                 </span>
@@ -2254,7 +2254,7 @@ export default function NewDeliveryPage() {
               <Badge className="me-2 bg-blue-100 text-blue-800">
                 מקושר ל
                 {preFilledSourceInfo.object_type === "Order"
-                  ? "הזמנה"
+                  ? "דרישה"
                   : "משיכה"}
               </Badge>
             )}
@@ -2307,7 +2307,7 @@ export default function NewDeliveryPage() {
                       <p className="text-xs text-blue-600">
                         ספק נקבע אוטומטית מ
                         {preFilledSourceInfo.object_type === "Order"
-                          ? "ההזמנה"
+                          ? "הדרישה"
                           : "המשיכה"}{" "}
                         המקושרת
                       </p>
@@ -2436,7 +2436,7 @@ export default function NewDeliveryPage() {
                                   key={`order_${order.id}`}
                                   value={`order_${order.id}`}
                                 >
-                                  הזמנה:{" "}
+                                  דרישה:{" "}
                                   {order.order_number_temp ||
                                     order.order_number_permanent}{" "}
                                   - {order.supplier_name_snapshot}

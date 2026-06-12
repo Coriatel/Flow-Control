@@ -29,7 +29,7 @@ export const NavGroupAccordion = ({ navItems, adminNavItems, userRole }) => {
       border: 'border-blue-200'
     },
     procurement: {
-      title: 'רכש והזמנות',
+      title: 'רכש ודרישות',
       emoji: '🛒',
       color: 'text-amber-800',
       bg: 'bg-amber-50',
