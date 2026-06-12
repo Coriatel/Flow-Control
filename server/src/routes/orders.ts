@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { orderService } from "../services";
 import prisma from "../utils/prisma";
 import { asyncHandler, AppError } from "../middleware/errorHandler";
+import { authorize } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
   createOrderSchema,
@@ -244,9 +245,10 @@ router.post(
  */
 router.post(
   "/:id/approve",
+  authorize("ADMIN", "MANAGER"),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { approvedBy } = req.body;
+    const approvedBy = req.user?.id ?? req.body.approvedBy;
 
     const data = await orderService.approve(id, approvedBy);
 

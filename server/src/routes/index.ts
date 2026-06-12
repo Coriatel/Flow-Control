@@ -35,7 +35,7 @@ const router = Router();
 router.use("/functions", functionsRoutes);
 
 // System settings
-router.use("/systemsettings", systemSettingsRoutes);
+router.use("/systemsettings", authenticate, systemSettingsRoutes);
 
 // Authentication (public)
 router.use("/auth", authRoutes);
@@ -44,23 +44,23 @@ router.use("/auth", authRoutes);
 router.use("/files", filesRoutes);
 
 // Core routes (protected)
-router.use("/dashboard", dashboardRoutes);
-router.use("/reagents", reagentsRoutes);
-router.use("/inventory", inventoryRoutes);
-router.use("/batches", batchesRoutes);
-router.use("/suppliers", suppliersRoutes);
-router.use("/orders", ordersRoutes);
+router.use("/dashboard", authenticate, dashboardRoutes);
+router.use("/reagents", authenticate, reagentsRoutes);
+router.use("/inventory", authenticate, inventoryRoutes);
+router.use("/batches", authenticate, batchesRoutes);
+router.use("/suppliers", authenticate, suppliersRoutes);
+router.use("/orders", authenticate, ordersRoutes);
 
 // Logistics routes (protected)
 router.use("/deliveries", deliveriesRoutes);
 router.use("/withdrawals", withdrawalsRoutes);
 router.use("/shipments", shipmentsRoutes);
-router.use("/deliveryitems", deliveryItemsRoutes);
-router.use("/withdrawalitems", withdrawalItemsRoutes);
-router.use("/shipmentitems", shipmentItemsRoutes);
-router.use("/inventorytransactions", inventoryTransactionsRoutes);
-router.use("/expiredproductlogs", expiredProductLogsRoutes);
-router.use("/reagentreceiptevents", reagentReceiptEventsRoutes);
+router.use("/deliveryitems", authenticate, deliveryItemsRoutes);
+router.use("/withdrawalitems", authenticate, withdrawalItemsRoutes);
+router.use("/shipmentitems", authenticate, shipmentItemsRoutes);
+router.use("/inventorytransactions", authenticate, inventoryTransactionsRoutes);
+router.use("/expiredproductlogs", authenticate, expiredProductLogsRoutes);
+router.use("/reagentreceiptevents", authenticate, reagentReceiptEventsRoutes);
 
 // Dispensing & Barcode routes (protected)
 router.use("/barcode", barcodeRoutes);
