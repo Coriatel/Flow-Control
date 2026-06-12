@@ -98,6 +98,11 @@ export const createReagentSchema = z.object({
   isConsumable: z.boolean().optional().default(false),
   requiresBatches: z.boolean().optional().default(true),
   notes: z.string().optional(),
+  // Min/max stock policy (units). Legacy snake_case aliases still sent by the UI.
+  minStockLevel: z.number().min(0).nullable().optional(),
+  maxStockLevel: z.number().min(0).nullable().optional(),
+  custom_min_stock: z.number().min(0).nullable().optional(),
+  custom_max_stock: z.number().min(0).nullable().optional(),
 });
 
 export const updateReagentSchema = createReagentSchema

@@ -94,6 +94,10 @@ model Reagent {
   manualMonthlyUsage    Float?
   useManualUsage        Boolean  @default(false)
 
+  // מדיניות מינימום/מקסימום (ביחידות): מינימום = נקודת הזמנה, מקסימום = יעד מילוי
+  minStockLevel         Float?
+  maxStockLevel         Float?
+
   // מטא
   isConsumable          Boolean  @default(false)
   requiresBatches       Boolean  @default(true)

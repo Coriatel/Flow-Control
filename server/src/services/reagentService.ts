@@ -12,10 +12,35 @@ export interface CreateReagentInput {
   requiresBatches?: boolean;
   notes?: string;
   manualMonthlyUsage?: number;
+  minStockLevel?: number | null;
+  maxStockLevel?: number | null;
+  /** Legacy aliases still sent by the UI (base44-era field names). */
+  custom_min_stock?: number | null;
+  custom_max_stock?: number | null;
 }
 
 export interface UpdateReagentInput extends Partial<CreateReagentInput> {
   useManualUsage?: boolean;
+}
+
+/**
+ * Extract the canonical min/max stock fields from an input payload,
+ * honoring the legacy custom_min_stock/custom_max_stock aliases.
+ */
+function normalizeStockLevels(data: {
+  minStockLevel?: number | null;
+  maxStockLevel?: number | null;
+  custom_min_stock?: number | null;
+  custom_max_stock?: number | null;
+}): { minStockLevel?: number | null; maxStockLevel?: number | null } {
+  const out: { minStockLevel?: number | null; maxStockLevel?: number | null } = {};
+  const min =
+    data.minStockLevel !== undefined ? data.minStockLevel : data.custom_min_stock;
+  const max =
+    data.maxStockLevel !== undefined ? data.maxStockLevel : data.custom_max_stock;
+  if (min !== undefined) out.minStockLevel = min;
+  if (max !== undefined) out.maxStockLevel = max;
+  return out;
 }
 
 export interface ReagentWithBatches extends Omit<Reagent, "supplier"> {
@@ -186,6 +211,7 @@ class ReagentService {
       );
     }
 
+    const stockLevels = normalizeStockLevels(data);
     const result = await prisma.reagent.create({
       data: {
         name: data.name,
@@ -196,6 +222,7 @@ class ReagentService {
         requiresBatches: data.requiresBatches ?? true,
         notes: data.notes,
         manualMonthlyUsage: data.manualMonthlyUsage,
+        ...stockLevels,
       },
     });
     return {
@@ -215,9 +242,10 @@ class ReagentService {
       throw new AppError("Reagent not found", 404);
     }
 
+    const { custom_min_stock, custom_max_stock, ...rest } = data as any;
     const result = await prisma.reagent.update({
       where: { id },
-      data,
+      data: { ...rest, ...normalizeStockLevels(data) },
     });
     return {
       ...result,
