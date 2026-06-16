@@ -216,6 +216,8 @@ VITE_API_URL=/api
 - `DOCS/complete-requirements-analysis.md` - Full requirements
 - `DOCS/data-dictionary.md` - Data dictionary
 - `DOCS/backend-work-plan.md` - Backend implementation plan
+- `DOCS/FLOW_CONTROL_SPEC.md` - System specification: business logic, data model, state machines, workflows (reconciled to live code, 2026-06)
+- `DOCS/FLOW_CONTROL_SCREENS_AND_FEATURES.md` - Screen-by-screen inventory & feature catalog (reconciled to live code, 2026-06)
 
 ## Recent Updates
 
