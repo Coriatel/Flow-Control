@@ -165,6 +165,12 @@ const receiveItemSchema = z.object({
 
 export const receiveOrderSchema = z.object({
   items: z.array(receiveItemSchema).min(1, "At least one item is required"),
+  deliveryReference: z
+    .string()
+    .trim()
+    .min(1, "Delivery reference is required")
+    .max(100, "Delivery reference is too long"),
+  deliveryDate: z.coerce.date(),
   receivedBy: z.string().optional(),
 });
 

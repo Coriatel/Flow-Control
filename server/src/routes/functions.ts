@@ -1661,6 +1661,10 @@ router.post(
             ? Number(r.manualMonthlyUsage) || 0
             : Number(r.averageMonthlyUsage) || 0,
           months_of_stock: Number(r.monthsOfStock) || 0,
+          min_stock_level:
+            r.minStockLevel == null ? null : Number(r.minStockLevel),
+          max_stock_level:
+            r.maxStockLevel == null ? null : Number(r.maxStockLevel),
         }));
 
         const transformedBatches = activeBatches.map((b: any) => ({
@@ -1771,6 +1775,7 @@ router.post(
         const supplierIdParam = params.supplierId || params.supplier_id;
         let supplierId = supplierIdParam || null;
         let supplierName = null;
+        let supplierLeadTimeDays = 7;
 
         if (!supplierId && supplierParam) {
           if (typeof supplierParam === "string") {
@@ -1788,11 +1793,13 @@ router.post(
           });
           supplierId = supplier?.id || null;
           supplierName = supplier?.name || supplierName;
+          supplierLeadTimeDays = supplier?.leadTimeDays || 7;
         } else {
           const supplier = await prisma.supplier.findUnique({
             where: { id: supplierId },
           });
           supplierName = supplier?.name || supplierName;
+          supplierLeadTimeDays = supplier?.leadTimeDays || 7;
         }
 
         if (!supplierId) {
@@ -1804,31 +1811,43 @@ router.post(
         const orderType =
           orderTypeParam === "framework" ? "FRAMEWORK" : "IMMEDIATE";
 
-        const orderNumber = await orderService.generateOrderNumber();
-        const order = await prisma.order.create({
-          data: {
-            tempNumber: orderNumber,
-            supplierId,
-            supplierSnapshot: supplierName || supplierId,
-            orderType,
-            status: "DRAFT",
-            internalNotes: "נוצר אוטומטית מהשלמות",
-          },
-        });
-
         const items = Array.isArray(params.items) ? params.items : [];
-        for (const item of items) {
-          if (!item?.reagent_id) continue;
-          await prisma.orderItem.create({
-            data: {
-              orderId: order.id,
-              reagentId: item.reagent_id,
-              requestedQuantity: Number(item.quantity) || 0,
-              notes: item.notes || null,
-            },
-          });
+        const orderItems = items
+          .filter(
+            (item: any) =>
+              item?.reagent_id && Number(item.quantity) > 0,
+          )
+          .map((item: any) => ({
+            reagentId: item.reagent_id,
+            requestedQuantity: Number(item.quantity),
+            notes: item.notes || undefined,
+          }));
+        if (orderItems.length === 0) {
+          result = {
+            success: false,
+            error: "At least one positive-quantity item is required",
+          };
+          break;
         }
 
+        const expectedDeliveryStart = new Date();
+        expectedDeliveryStart.setUTCDate(
+          expectedDeliveryStart.getUTCDate() + supplierLeadTimeDays,
+        );
+        const expectedDeliveryEnd = new Date(expectedDeliveryStart);
+        expectedDeliveryEnd.setUTCDate(
+          expectedDeliveryEnd.getUTCDate() + 3,
+        );
+
+        const order = await orderService.create({
+          supplierId,
+          items: orderItems,
+          orderType,
+          expectedDeliveryStart,
+          expectedDeliveryEnd,
+          notes: "נוצר אוטומטית מהשלמות",
+          createdBy: req.user?.id,
+        });
         result = {
           success: true,
           orderId: order.id,

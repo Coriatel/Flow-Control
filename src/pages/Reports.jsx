@@ -52,6 +52,7 @@ import {
 
 import { generateReports } from '@/api/functions';
 import { getAdvancedAnalytics } from '@/api/functions';
+import { normalizeAnalyticsPayload } from '@/lib/demoReadiness';
 
 export default function ReportsPage() {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ export default function ReportsPage() {
       const success = response?.success ?? response?.data?.success;
       const payload = response?.data?.data ?? response?.data ?? response ?? {};
       if (success) {
-        setAnalyticsData(payload);
+        setAnalyticsData(normalizeAnalyticsPayload(payload));
       } else {
         toast({
           title: "שגיאה בטעינת נתונים",
@@ -227,6 +228,25 @@ export default function ReportsPage() {
         </TabsList>
 
         <TabsContent value="analytics">
+          {!analyticsData && !analyticsLoading && (
+            <Card className="border-amber-200 bg-amber-50/80 shadow-sm">
+              <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+                <BarChart3 className="h-10 w-10 text-amber-600" />
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-800">
+                    ניתוחים מתקדמים אינם זמינים כרגע
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    מנוע הניתוחים עדיין אינו מחובר לנתוני המערכת. ניתן להמשיך
+                    להשתמש בדוחות המסורתיים ללא פגיעה בניווט.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setActiveTab('reports')}>
+                  מעבר לדוחות מסורתיים
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           {analyticsData && (
             <>
               {/* Period Selection */}

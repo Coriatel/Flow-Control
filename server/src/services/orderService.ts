@@ -18,6 +18,9 @@ export interface CreateOrderItemInput {
 export interface CreateOrderInput {
   supplierId: string;
   items: CreateOrderItemInput[];
+  orderType?: "IMMEDIATE" | "FRAMEWORK";
+  expectedDeliveryStart?: Date;
+  expectedDeliveryEnd?: Date;
   notes?: string;
   createdBy?: string;
 }
@@ -27,7 +30,13 @@ export interface ReceiveItemInput {
   receivedQuantity: number;
   batchNumber: string;
   expiryDate: Date;
+  storageLocation?: string;
   notes?: string;
+}
+
+export interface ReceiveOrderOptions {
+  deliveryReference: string;
+  deliveryDate: Date;
 }
 
 export const orderService = {
@@ -112,6 +121,9 @@ export const orderService = {
             supplierId: data.supplierId,
             supplierSnapshot: supplier?.name || data.supplierId,
             status: OrderStatus.DRAFT,
+            orderType: data.orderType || "IMMEDIATE",
+            expectedDeliveryStart: data.expectedDeliveryStart,
+            expectedDeliveryEnd: data.expectedDeliveryEnd,
             internalNotes: data.notes,
           },
         });
@@ -126,6 +138,24 @@ export const orderService = {
             },
           });
         }
+
+        await tx.activityLog.create({
+          data: {
+            userId: data.createdBy,
+            action: "order_created",
+            entityType: "order",
+            entityId: created.id,
+            details: JSON.stringify({
+              orderNumber: created.tempNumber,
+              supplierId: data.supplierId,
+              orderType: data.orderType || "IMMEDIATE",
+              items: data.items.map((item) => ({
+                reagentId: item.reagentId,
+                requestedQuantity: item.requestedQuantity,
+              })),
+            }),
+          },
+        });
 
         return created;
       },
@@ -262,96 +292,256 @@ export const orderService = {
     orderId: string,
     items: ReceiveItemInput[],
     receivedBy?: string,
+    options?: ReceiveOrderOptions,
   ) {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-
-    if (!order) {
-      throw new Error("Order not found");
+    if (!options?.deliveryReference?.trim()) {
+      throw new Error("Delivery reference is required");
     }
 
-    const orderItems = await prisma.orderItem.findMany({
-      where: { orderId },
-    });
+    const deliveryReference = options.deliveryReference.trim();
 
-    const results = [];
+    return prisma.$transaction(
+      async (tx) => {
+        const replay = await tx.delivery.findUnique({
+          where: { deliveryNumber: deliveryReference },
+          include: { items: true },
+        });
 
-    for (const item of items) {
-      const orderItem = orderItems.find((i: any) => i.id === item.orderItemId);
-      if (!orderItem) continue;
+        if (replay) {
+          if (replay.orderId !== orderId) {
+            throw new Error(
+              "Delivery reference is already linked to a different order",
+            );
+          }
+          const replayOrder = await tx.order.findUniqueOrThrow({
+            where: { id: orderId },
+            include: { items: true },
+          });
+          const remainingQuantity = replayOrder.items.reduce(
+            (sum, item) =>
+              sum +
+              Math.max(
+                0,
+                Number(item.requestedQuantity) -
+                  Number(item.receivedQuantity),
+              ),
+            0,
+          );
+          return {
+            idempotentReplay: true,
+            delivery: replay,
+            order: {
+              id: replayOrder.id,
+              status: replayOrder.status,
+              remainingQuantity,
+            },
+          };
+        }
 
-      // Update order item received quantity
-      const newReceivedQty =
-        Number(orderItem.receivedQuantity || 0) + item.receivedQuantity;
+        const order = await tx.order.findUnique({
+          where: { id: orderId },
+          include: { supplier: true, items: true },
+        });
+        if (!order) throw new Error("Order not found");
+        if (
+          order.status === OrderStatus.CANCELLED ||
+          order.status === OrderStatus.CLOSED ||
+          order.status === OrderStatus.FULLY_RECEIVED
+        ) {
+          throw new Error(`Order cannot be received in status ${order.status}`);
+        }
 
-      await prisma.orderItem.update({
-        where: { id: item.orderItemId },
-        data: {
-          receivedQuantity: newReceivedQty,
-        },
-      });
+        const requestedItems = items.map((input) => {
+          const orderItem = order.items.find(
+            (candidate) => candidate.id === input.orderItemId,
+          );
+          if (!orderItem) {
+            throw new Error(
+              `Order item ${input.orderItemId} does not belong to this order`,
+            );
+          }
+          const outstanding = Math.max(
+            0,
+            Number(orderItem.requestedQuantity) -
+              Number(orderItem.receivedQuantity),
+          );
+          if (
+            !Number.isFinite(input.receivedQuantity) ||
+            input.receivedQuantity <= 0 ||
+            input.receivedQuantity > outstanding
+          ) {
+            throw new Error(
+              `Received quantity for ${input.orderItemId} must be between 0 and ${outstanding}`,
+            );
+          }
+          return { input, orderItem };
+        });
 
-      // Create batch for received reagent
-      const batch = await prisma.reagentBatch.create({
-        data: {
-          reagentId: orderItem.reagentId,
-          batchNumber: item.batchNumber,
-          expiryDate: item.expiryDate,
-          initialQuantity: item.receivedQuantity,
-          currentQuantity: item.receivedQuantity,
-          receivedDate: new Date(),
-          status: "ACTIVE",
-          generalNotes: item.notes,
-        },
-      });
+        const delivery = await tx.delivery.create({
+          data: {
+            deliveryNumber: deliveryReference,
+            supplierId: order.supplierId,
+            supplierSnapshot: order.supplierSnapshot || order.supplier.name,
+            orderId,
+            deliveryDate: options.deliveryDate,
+            status: "PROCESSING",
+            notes: `Receipt for order ${order.tempNumber}`,
+          },
+        });
 
-      // Create receiving transaction
-      await prisma.inventoryTransaction.create({
-        data: {
-          reagentId: orderItem.reagentId,
-          batchId: batch.id,
-          transactionType: TransactionType.RECEIPT,
-          quantityDelta: item.receivedQuantity,
-          performedById: receivedBy,
-          notes: `קבלה מהזמנה ${order.tempNumber}`,
-        },
-      });
+        const affectedReagents = new Set<string>();
+        for (const { input, orderItem } of requestedItems) {
+          const deliveryItem = await tx.deliveryItem.create({
+            data: {
+              deliveryId: delivery.id,
+              reagentId: orderItem.reagentId,
+              batchNumber: input.batchNumber.trim(),
+              quantity: input.receivedQuantity,
+              acceptedQuantity: input.receivedQuantity,
+              expiryDate: input.expiryDate,
+            },
+          });
 
-      // Update reagent aggregates
-      await this.updateReagentAggregates(orderItem.reagentId);
+          const existingBatch = await tx.reagentBatch.findUnique({
+            where: {
+              reagentId_batchNumber: {
+                reagentId: orderItem.reagentId,
+                batchNumber: input.batchNumber.trim(),
+              },
+            },
+          });
+          const batch = existingBatch
+            ? await tx.reagentBatch.update({
+                where: { id: existingBatch.id },
+                data: {
+                  initialQuantity: {
+                    increment: input.receivedQuantity,
+                  },
+                  currentQuantity: {
+                    increment: input.receivedQuantity,
+                  },
+                  expiryDate: input.expiryDate,
+                  status: "ACTIVE",
+                  storageLocation:
+                    input.storageLocation || existingBatch.storageLocation,
+                },
+              })
+            : await tx.reagentBatch.create({
+                data: {
+                  reagentId: orderItem.reagentId,
+                  batchNumber: input.batchNumber.trim(),
+                  expiryDate: input.expiryDate,
+                  initialQuantity: input.receivedQuantity,
+                  currentQuantity: input.receivedQuantity,
+                  receivedDate: options.deliveryDate,
+                  deliveryId: delivery.id,
+                  status: "ACTIVE",
+                  qcStatus: "PENDING",
+                  storageLocation: input.storageLocation,
+                  generalNotes: input.notes,
+                },
+              });
 
-      results.push({ orderItemId: item.orderItemId, batch });
-    }
+          await tx.inventoryTransaction.create({
+            data: {
+              reagentId: orderItem.reagentId,
+              batchId: batch.id,
+              transactionType: TransactionType.RECEIPT,
+              quantityDelta: input.receivedQuantity,
+              sourceType: "delivery",
+              sourceId: delivery.id,
+              performedById: receivedBy,
+              notes: `Receipt ${delivery.deliveryNumber} from order ${order.tempNumber}; item ${deliveryItem.id}`,
+            },
+          });
 
-    // Update order status based on received quantities
-    const updatedItems = await prisma.orderItem.findMany({
-      where: { orderId },
-    });
+          const newReceivedQuantity =
+            Number(orderItem.receivedQuantity) + input.receivedQuantity;
+          await tx.orderItem.update({
+            where: { id: orderItem.id },
+            data: {
+              receivedQuantity: newReceivedQuantity,
+              remainingQuantity: Math.max(
+                0,
+                Number(orderItem.requestedQuantity) - newReceivedQuantity,
+              ),
+            },
+          });
+          affectedReagents.add(orderItem.reagentId);
+        }
 
-    const allReceived = updatedItems.every(
-      (i: any) => Number(i.receivedQuantity) >= Number(i.requestedQuantity),
+        for (const reagentId of affectedReagents) {
+          await updateReagentAggregates(reagentId, tx);
+        }
+
+        const updatedItems = await tx.orderItem.findMany({
+          where: { orderId },
+        });
+        const allReceived = updatedItems.every(
+          (item) =>
+            Number(item.receivedQuantity) >=
+            Number(item.requestedQuantity),
+        );
+        const newStatus = allReceived
+          ? OrderStatus.FULLY_RECEIVED
+          : OrderStatus.PARTIALLY_RECEIVED;
+        const remainingQuantity = updatedItems.reduce(
+          (sum, item) =>
+            sum +
+            Math.max(
+              0,
+              Number(item.requestedQuantity) -
+                Number(item.receivedQuantity),
+            ),
+          0,
+        );
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: newStatus,
+            closedDate: allReceived ? new Date() : null,
+          },
+        });
+        const completedDelivery = await tx.delivery.update({
+          where: { id: delivery.id },
+          data: { status: "COMPLETED" },
+          include: { items: true },
+        });
+        await tx.activityLog.create({
+          data: {
+            userId: receivedBy,
+            action: "delivery_received",
+            entityType: "delivery",
+            entityId: delivery.id,
+            details: JSON.stringify({
+              deliveryNumber: delivery.deliveryNumber,
+              orderId,
+              orderNumber: order.tempNumber,
+              receiptState: allReceived ? "full" : "partial",
+              remainingQuantity,
+              items: requestedItems.map(({ input, orderItem }) => ({
+                orderItemId: orderItem.id,
+                reagentId: orderItem.reagentId,
+                batchNumber: input.batchNumber,
+                quantity: input.receivedQuantity,
+              })),
+            }),
+          },
+        });
+
+        return {
+          idempotentReplay: false,
+          delivery: completedDelivery,
+          order: {
+            id: orderId,
+            status: newStatus,
+            remainingQuantity,
+          },
+        };
+      },
+      { isolationLevel: "Serializable" },
     );
-    const someReceived = updatedItems.some(
-      (i: any) => Number(i.receivedQuantity) > 0,
-    );
-
-    let newStatus: OrderStatus = order.status as OrderStatus;
-    if (allReceived) {
-      newStatus = OrderStatus.FULLY_RECEIVED;
-    } else if (someReceived) {
-      newStatus = OrderStatus.PARTIALLY_RECEIVED;
-    }
-
-    if (newStatus !== order.status) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: newStatus,
-          closedDate: allReceived ? new Date() : undefined,
-        },
-      });
-    }
-
-    return results;
   },
 
   /**

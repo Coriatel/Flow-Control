@@ -26,6 +26,17 @@ import barcodeRoutes from "./barcode";
 import dispenseRoutes from "./dispense";
 import disposalRoutes from "./disposal";
 import messagesRoutes from "./messages";
+import { inventoryService } from "../services";
+import { asyncHandler } from "../middleware/errorHandler";
+import { authenticate } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import {
+  createDashboardNoteSchema,
+  updateDashboardNoteSchema,
+  createDocumentationNoteSchema,
+  updateDocumentationNoteSchema,
+} from "../validation/schemas";
+import prisma from "../utils/prisma";
 
 const router = Router();
 
@@ -84,17 +95,6 @@ router.get("/health", (_req, res) => {
 });
 
 // Legacy/Frontend Compatibility Routes
-import { inventoryService } from "../services";
-import { asyncHandler } from "../middleware/errorHandler";
-import { authenticate } from "../middleware/auth";
-import { validateBody } from "../middleware/validate";
-import {
-  createDashboardNoteSchema,
-  updateDashboardNoteSchema,
-  createDocumentationNoteSchema,
-  updateDocumentationNoteSchema,
-} from "../validation/schemas";
-import prisma from "../utils/prisma";
 
 // Gate all legacy compatibility routes behind authentication
 router.use("/inventorycountdrafts", authenticate);

@@ -443,7 +443,7 @@ const DeliveryItemRow = ({
             <div className="mt-6 pt-4 border-t border-gray-200/80 flex justify-center">
               <Button
                 onClick={() => toggleApprove(item.key)}
-                className={`${item.approved ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-green-100 text-green-700 hover:bg-green-200"} px-6 py-2 text-lg font-medium transition-colors`}
+                className={`${item.approved ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-green-100 text-green-700 hover:bg-green-200"} min-h-11 px-6 py-2 text-lg font-medium transition-colors`}
                 title={
                   item.approved
                     ? "בטל אישור והחזר לעריכה"
@@ -778,6 +778,7 @@ export default function NewDeliveryPage() {
                   $in: [
                     "approved",
                     "partially_received",
+                    "pending_sap_details",
                     "pending_sap_permanent_id",
                     "pending_sap_po_number",
                   ],
@@ -1731,6 +1732,40 @@ export default function NewDeliveryPage() {
 
       if (!supplierMatch?.id) {
         throw new Error("לא נמצא מזהה ספק. נסה לבחור את הספק מחדש.");
+      }
+
+      if (actualLinkedOrderId) {
+        updateLockProgress(20, "קולט משלוח ומעדכן מלאי...");
+        const response = await apiClient.post(
+          `/orders/${actualLinkedOrderId}/receive`,
+          {
+            deliveryReference: deliveryData.delivery_number,
+            deliveryDate: deliveryData.delivery_date,
+            items: itemsToProcess.map((item) => ({
+              orderItemId: item.linked_item_id,
+              receivedQuantity: Number(item.quantity_received),
+              batchNumber: item.batch_number,
+              expiryDate: item.expiry_date,
+              storageLocation: item.storage_location || undefined,
+              notes: item.notes || undefined,
+            })),
+          },
+        );
+        const receipt = response?.data ?? response;
+        updateLockProgress(100, "קליטת המשלוח הושלמה");
+        toast({
+          title: receipt.idempotentReplay
+            ? "המשלוח כבר נקלט"
+            : "המשלוח נקלט בהצלחה",
+          description:
+            receipt.order?.status === "FULLY_RECEIVED"
+              ? "הדרישה התקבלה במלואה והמלאי עודכן."
+              : `קליטה חלקית נשמרה. נותרו ${receipt.order?.remainingQuantity ?? 0} יחידות.`,
+          variant: "default",
+        });
+        setNewDeliveryId(receipt.delivery.id);
+        setShowPrintDialog(true);
+        return;
       }
 
       const deliveryDocData = {
@@ -2687,6 +2722,7 @@ export default function NewDeliveryPage() {
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
+            className="min-h-11"
             onClick={() => handleSaveDelivery(false)}
             disabled={saving || isLocked || items.length === 0}
           >
@@ -2694,7 +2730,7 @@ export default function NewDeliveryPage() {
             שמור טיוטה
           </Button>
           <Button
-            className="bg-amber-500 hover:bg-amber-600 text-white"
+            className="min-h-11 bg-amber-500 hover:bg-amber-600 text-white"
             onClick={() => handleSaveDelivery(true)}
             disabled={
               saving || isLocked || items.filter((i) => i.approved).length === 0

@@ -291,12 +291,18 @@ router.post(
  */
 router.post(
   "/:id/receive",
+  authorize("ADMIN", "MANAGER"),
   validateBody(receiveOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { items, receivedBy } = req.body;
+    const { items, receivedBy, deliveryReference, deliveryDate } = req.body;
 
-    const data = await orderService.receiveItems(id, items, receivedBy);
+    const data = await orderService.receiveItems(
+      id,
+      items,
+      req.user?.id ?? receivedBy,
+      { deliveryReference, deliveryDate },
+    );
 
     const response: ApiResponse = {
       success: true,

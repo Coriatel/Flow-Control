@@ -74,6 +74,7 @@ import {
 import SmartTooltip from "@/components/ui/SmartTooltip";
 import TableHeaderTooltip from "@/components/ui/TableHeaderTooltip";
 import { COLUMN_DESCRIPTIONS } from "@/components/utils/tooltipDescriptions";
+import { calculateMinMaxSuggestion } from "@/lib/demoReadiness";
 
 const calculateSuggestionsLogic = (
   reagentsToProcess,
@@ -143,7 +144,12 @@ const calculateSuggestionsLogic = (
 
     let current_stock_status = "in_stock";
     if (currentStock === 0) current_stock_status = "out_of_stock";
-    else if (months_of_stock < 1) current_stock_status = "low_stock";
+    else if (
+      (Number(reagent.min_stock_level) > 0 &&
+        currentStock < Number(reagent.min_stock_level)) ||
+      months_of_stock < 1
+    )
+      current_stock_status = "low_stock";
 
     const planningHorizonUsage = effectiveMonthlyUsage * planningHorizonMonths;
     const safetyStockUsage = (effectiveMonthlyUsage / 4.33) * 2;
@@ -151,16 +157,31 @@ const calculateSuggestionsLogic = (
 
     const totalInTransit = quantityInTransitByReagent[reagent.id] || 0;
     const netStock = currentStock + totalInTransit;
-    let suggestedQuantity = Math.round(totalRequired - netStock);
-    if (suggestedQuantity < 0) suggestedQuantity = 0;
+    let suggestedQuantity = calculateMinMaxSuggestion({
+      currentQuantity: currentStock,
+      incomingQuantity: totalInTransit,
+      minStockLevel: reagent.min_stock_level,
+      maxStockLevel: reagent.max_stock_level,
+    });
+    if (suggestedQuantity === null) {
+      suggestedQuantity = Math.max(0, Math.round(totalRequired - netStock));
+    }
 
     const totalInTransitWithoutTemp =
       quantityInTransitWithoutTempByReagent[reagent.id] || 0;
     const netStockWithoutTemp = currentStock + totalInTransitWithoutTemp;
-    let suggestedQuantityWithoutTemp = Math.round(
-      totalRequired - netStockWithoutTemp,
-    );
-    if (suggestedQuantityWithoutTemp < 0) suggestedQuantityWithoutTemp = 0;
+    let suggestedQuantityWithoutTemp = calculateMinMaxSuggestion({
+      currentQuantity: currentStock,
+      incomingQuantity: totalInTransitWithoutTemp,
+      minStockLevel: reagent.min_stock_level,
+      maxStockLevel: reagent.max_stock_level,
+    });
+    if (suggestedQuantityWithoutTemp === null) {
+      suggestedQuantityWithoutTemp = Math.max(
+        0,
+        Math.round(totalRequired - netStockWithoutTemp),
+      );
+    }
 
     const quantityInPendingWithdrawals =
       pendingWithdrawalByReagent[reagent.id] || 0;
@@ -1264,18 +1285,19 @@ export default function InventoryReplenishmentPage() {
                     </div>
                   )}
                   <div className="flex items-start gap-3">
-                    <Checkbox
-                      className="mt-1"
-                      checked={[...selectedReagents].some(
-                        (item) => item.id === reagent.id,
-                      )}
-                      onCheckedChange={() =>
-                        handleSelectReagent(
-                          reagent.id,
-                          reagent.suggested_order_quantity,
-                        )
-                      }
-                    />
+                    <div className="min-h-11 min-w-11 flex items-start justify-center pt-1">
+                      <Checkbox
+                        checked={[...selectedReagents].some(
+                          (item) => item.id === reagent.id,
+                        )}
+                        onCheckedChange={() =>
+                          handleSelectReagent(
+                            reagent.id,
+                            reagent.suggested_order_quantity,
+                          )
+                        }
+                      />
+                    </div>
                     <div className="flex-grow">
                       <div className="text-center mb-2">
                         <SmartTooltip

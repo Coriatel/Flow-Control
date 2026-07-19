@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { User as UserEntity } from "@/api/entities";
 import { SystemSettings } from "@/api/entities";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAdminRole } from "@/lib/demoReadiness";
 import {
   FileText,
   Home,
@@ -515,7 +516,7 @@ export default function Layout({ children, currentPageName }) {
     );
     if (activeMainNavItem) {
       activeGroup = activeMainNavItem.group;
-    } else if (user?.role === "admin") {
+    } else if (isAdminRole(user?.role)) {
       const activeAdminNavItem = adminNavItems.find((item) =>
         isNavItemActive(item.href),
       );
@@ -585,11 +586,13 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  const showSidebarLabels = mobileMenuOpen || !sidebarCollapsed;
+
   const sidebarContent = (
     <>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-4 mb-4">
-          {!sidebarCollapsed && (
+          {showSidebarLabels && (
             <>
               <img
                 src={systemDisplay.logoUrl}
@@ -605,7 +608,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Search Field */}
-        {!sidebarCollapsed && (
+        {showSidebarLabels && (
           <div className="px-4 mb-4">
             <div className="relative">
               <input
@@ -651,7 +654,7 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Quick Shortcuts */}
-        {!sidebarCollapsed && !searchTerm && (
+        {showSidebarLabels && !searchTerm && (
           <div className="px-4 mb-3 space-y-2">
             {/* הכנסה למלאי */}
             <Link
@@ -744,7 +747,7 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Accordion for Expanded Sidebar */}
-        {!sidebarCollapsed && (
+        {showSidebarLabels && (
           <Accordion
             type="multiple"
             value={openAccordionGroups}
@@ -808,7 +811,7 @@ export default function Layout({ children, currentPageName }) {
               );
             })}
 
-            {user?.role === "admin" && filteredAdminNavItems.length > 0 && (
+            {isAdminRole(user?.role) && filteredAdminNavItems.length > 0 && (
               <AccordionItem value="admin" className="border-none">
                 <AccordionTrigger className="w-full px-3 py-2 text-right hover:no-underline hover:bg-slate-700/30 rounded-lg">
                   <div className="flex items-center w-full text-sm font-bold text-red-200 uppercase tracking-wider">
@@ -846,7 +849,7 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Icon-only view for Collapsed Sidebar */}
-        {sidebarCollapsed && (
+        {sidebarCollapsed && !mobileMenuOpen && (
           <nav className="mt-2 flex-1 px-2 space-y-1">
             {navItems.map((item) => {
               const groupInfo =
@@ -873,7 +876,7 @@ export default function Layout({ children, currentPageName }) {
                 </Link>
               );
             })}
-            {user?.role === "admin" &&
+            {isAdminRole(user?.role) &&
               adminNavItems.map((item) => (
                 <Link
                   key={item.name}
@@ -892,7 +895,7 @@ export default function Layout({ children, currentPageName }) {
           </nav>
         )}
 
-        {!sidebarCollapsed && <SidebarNotifications />}
+        {showSidebarLabels && <SidebarNotifications />}
       </div>
     </>
   );
@@ -924,12 +927,13 @@ export default function Layout({ children, currentPageName }) {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="relative flex-1 flex flex-col max-w-xs w-full glassmorphism-dark shadow-2xl"
+                className="fixed inset-y-0 end-0 flex flex-col w-[calc(100vw-3rem)] max-w-xs glassmorphism-dark shadow-2xl"
               >
                 <div className="absolute top-0 start-0 -ms-12 pt-2">
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="ms-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 glassmorphism"
+                    className="ms-1 flex items-center justify-center h-11 w-11 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 glassmorphism"
+                    aria-label="סגור תפריט"
                   >
                     <X className="h-6 w-6 text-white" />
                   </button>
@@ -961,7 +965,8 @@ export default function Layout({ children, currentPageName }) {
                 {/* Mobile hamburger - far right in RTL */}
                 <button
                   onClick={() => setMobileMenuOpen(true)}
-                  className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-600 focus:outline-none"
+                  className="lg:hidden h-11 w-11 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-600 focus:outline-none"
+                  aria-label="פתח תפריט"
                 >
                   <Menu className="h-6 w-6" />
                 </button>

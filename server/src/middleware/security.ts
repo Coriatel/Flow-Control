@@ -10,11 +10,13 @@ import { Request, Response } from 'express';
 
 /**
  * General API rate limiter
- * 100 requests per 15 minutes per IP
+ * Default 1000 requests per 15 minutes per IP. The SPA loads several related
+ * resources per workflow; authentication and sensitive actions retain their
+ * own stricter limiters below.
  */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  max: Number(process.env.GENERAL_RATE_LIMIT_MAX || 1000),
   message: {
     success: false,
     error: 'Too many requests, please try again later'
