@@ -53,7 +53,7 @@ import { toast as sonnerToast } from "sonner";
 import BarcodeScanner from "@/components/ui/BarcodeScanner";
 import { createPageUrl } from "@/utils";
 
-import { Reagent, ReagentBatch, Supplier } from "@/api/entities";
+import { Reagent, Supplier } from "@/api/entities";
 import { apiClient } from "@/api/client";
 
 function unwrapResponse(response) {
@@ -145,6 +145,7 @@ export default function InventoryRemoval() {
   const [dispensePurpose, setDispensePurpose] = useState("");
   const [dispenseNotes, setDispenseNotes] = useState("");
   const [dispenseDialogOpen, setDispenseDialogOpen] = useState(false);
+  const [dispenseRequestId, setDispenseRequestId] = useState(null);
 
   // Other tab state
   const [otherBatch, setOtherBatch] = useState(null);
@@ -162,7 +163,7 @@ export default function InventoryRemoval() {
       const [candidatesRes, batchData, reagentData, historyRes] =
         await Promise.all([
           apiClient.get("/disposal/destruction-candidates"),
-          ReagentBatch.list({ status: "ACTIVE" }),
+          apiClient.get("/batches/quality?limit=200"),
           Reagent.list(),
           apiClient.get("/dispense/history?limit=5"),
         ]);
@@ -187,7 +188,17 @@ export default function InventoryRemoval() {
       setItemReasons(defaultReasons);
       setItemWaste(defaultWaste);
 
-      setBatches(Array.isArray(batchData) ? batchData : []);
+      const qualityBatches = unwrapResponse(batchData);
+      setBatches(
+        (Array.isArray(qualityBatches) ? qualityBatches : []).map((batch) => ({
+          ...batch,
+          reagentId: batch.reagent?.id ?? batch.reagentId,
+          batchNumber: batch.batchNumber ?? batch.batch_number,
+          currentQuantity: batch.availableQuantity,
+          reagentName: batch.reagent?.name,
+          catalogNumber: batch.reagent?.catalogNumber,
+        })),
+      );
       setReagents(Array.isArray(reagentData) ? reagentData : []);
 
       const history = unwrapResponse(historyRes);
@@ -281,6 +292,7 @@ export default function InventoryRemoval() {
           // Active batch
           if (activeTab === "usage") {
             setSelectedBatch(matched);
+            setDispenseRequestId(crypto.randomUUID());
             setDispenseDialogOpen(true);
           } else if (activeTab === "other") {
             setOtherBatch(matched);
@@ -379,6 +391,7 @@ export default function InventoryRemoval() {
     setSubmitting(true);
     try {
       await apiClient.post("/dispense", {
+        clientRequestId: dispenseRequestId || crypto.randomUUID(),
         reagentId: selectedBatch.reagentId,
         batchId: selectedBatch.id,
         quantity: dispenseQuantity,
@@ -388,6 +401,7 @@ export default function InventoryRemoval() {
       sonnerToast.success("פריט הוצא מהמלאי בהצלחה");
       setDispenseDialogOpen(false);
       setSelectedBatch(null);
+      setDispenseRequestId(null);
       setDispenseQuantity(1);
       setDispensePurpose("");
       setDispenseNotes("");
@@ -409,6 +423,7 @@ export default function InventoryRemoval() {
     setSubmitting(true);
     try {
       await apiClient.post("/dispense", {
+        clientRequestId: crypto.randomUUID(),
         reagentId: otherBatch.reagentId,
         batchId: otherBatch.id,
         quantity: otherQuantity,
@@ -749,6 +764,7 @@ export default function InventoryRemoval() {
                                 className="h-7 text-xs gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
                                 onClick={() => {
                                   setSelectedBatch(batch);
+                                  setDispenseRequestId(crypto.randomUUID());
                                   setDispenseDialogOpen(true);
                                 }}
                               >

@@ -4,6 +4,7 @@ import {
   Route,
   Routes,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth";
@@ -26,6 +27,7 @@ const EditDelivery = React.lazy(() => import("./EditDelivery"));
 const Orders = React.lazy(() => import("./Orders"));
 const NewOrder = React.lazy(() => import("./NewOrder"));
 const ManageReagents = React.lazy(() => import("./ManageReagents"));
+const CurrentInventory = React.lazy(() => import("./CurrentInventory"));
 const EditOrder = React.lazy(() => import("./EditOrder"));
 const NewShipment = React.lazy(() => import("./NewShipment"));
 const InventoryReplenishment = React.lazy(
@@ -62,7 +64,6 @@ const BatchAndExpiryTechnicalSpec = React.lazy(
 );
 const EditReagentBatch = React.lazy(() => import("./EditReagentBatch"));
 const Reports = React.lazy(() => import("./Reports"));
-const DispenseItems = React.lazy(() => import("./DispenseItems"));
 const ItemsInUse = React.lazy(() => import("./ItemsInUse"));
 const InventoryRemoval = React.lazy(() => import("./InventoryRemoval"));
 const Messages = React.lazy(() => import("./Messages"));
@@ -81,6 +82,7 @@ const PAGES = {
   Orders,
   NewOrder,
   ManageReagents,
+  CurrentInventory,
   EditOrder,
   NewShipment,
   InventoryReplenishment,
@@ -109,7 +111,6 @@ const PAGES = {
   BatchAndExpiryTechnicalSpec,
   EditReagentBatch,
   Reports,
-  DispenseItems,
   ItemsInUse,
   InventoryRemoval,
   Messages,
@@ -287,6 +288,16 @@ function PagesContent() {
             <ProtectedRoute>
               <Layout currentPageName={currentPage}>
                 <ManageReagents />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/CurrentInventory"
+          element={
+            <ProtectedRoute>
+              <Layout currentPageName={currentPage}>
+                <CurrentInventory />
               </Layout>
             </ProtectedRoute>
           }
@@ -573,13 +584,7 @@ function PagesContent() {
         />
         <Route
           path="/DispenseItems"
-          element={
-            <ProtectedRoute>
-              <Layout currentPageName={currentPage}>
-                <DispenseItems />
-              </Layout>
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/InventoryRemoval?preset=usage" replace />}
         />
         <Route
           path="/ItemsInUse"

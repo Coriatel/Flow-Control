@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createDefaultGridState,
   normalizeGridPreferences,
 } from "@/lib/data-grid/gridState";
 import {
   loadGridPreferences,
+  createGridPreferenceKey,
   resetGridPreferences,
   saveGridPreferences,
 } from "@/lib/data-grid/preferences";
@@ -54,20 +55,21 @@ export default function useDataGridPreferences({
     const saved = loadGridPreferences(storage, identity);
     return normalizeGridPreferences(saved, columns, options);
   });
+  const identityKey = createGridPreferenceKey(identity);
+  const savedIdentityKey = useRef(identityKey);
 
   useEffect(() => {
-    setState((current) =>
-      normalizeGridPreferences(
-        { ...current, version },
-        columns,
-        options,
-      ),
-    );
-  }, [columns, options, version]);
+    const saved = loadGridPreferences(storage, identity);
+    setState(normalizeGridPreferences(saved, columns, options));
+  }, [identityKey, columns, options, storage]);
 
   useEffect(() => {
+    if (savedIdentityKey.current !== identityKey) {
+      savedIdentityKey.current = identityKey;
+      return;
+    }
     saveGridPreferences(storage, identity, { ...state, version });
-  }, [identity, state, storage, version]);
+  }, [identity, identityKey, state, storage, version]);
 
   const reset = useCallback(() => {
     resetGridPreferences(storage, identity);
