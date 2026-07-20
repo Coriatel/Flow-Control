@@ -92,6 +92,12 @@ const initialColumns = [
   { accessor: "supplier", Header: "ספק", width: 100, editable: false },
   { accessor: "status", Header: "סטטוס", width: 80, editable: true },
   {
+    accessor: "qaStatus",
+    Header: "סטטוס QA",
+    width: 110,
+    editable: false,
+  },
+  {
     accessor: "first_use_date",
     Header: "שימוש ראשון",
     width: 110,
@@ -516,6 +522,14 @@ export default function QualityAssurancePage() {
           : "asc",
     }));
   };
+
+  const handleSortStateChange = useCallback((nextSort) => {
+    setSortConfig(
+      nextSort
+        ? { key: nextSort.id, direction: nextSort.direction }
+        : { key: null, direction: null },
+    );
+  }, []);
 
   const handleRowUpdate = async (batchId, updatedFields) => {
     setData((prevData) =>
@@ -1448,6 +1462,7 @@ export default function QualityAssurancePage() {
               sortField={sortConfig.key}
               sortDirection={sortConfig.direction}
               onSort={handleSort}
+              onSortStateChange={handleSortStateChange}
               isEditMode={isEditMode}
               onEdit={handleRowUpdate}
               onDelete={handleDeleteRow}
