@@ -10,6 +10,7 @@ import {
 } from "@/lib/data-grid/preferences";
 
 const DEFAULT_PAGE_SIZES = [10, 25, 50];
+const DEFAULT_PINNED_COLUMNS = [];
 
 export default function useDataGridPreferences({
   gridId,
@@ -17,8 +18,8 @@ export default function useDataGridPreferences({
   columns,
   version = 1,
   initialSort = null,
-  pinnedRight = [],
-  pinnedLeft = [],
+  pinnedRight = DEFAULT_PINNED_COLUMNS,
+  pinnedLeft = DEFAULT_PINNED_COLUMNS,
   pageSize = 25,
   pageSizes = DEFAULT_PAGE_SIZES,
   storage = typeof window !== "undefined" ? window.localStorage : null,

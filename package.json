@@ -12,8 +12,8 @@
     "dev:docker:build": "docker-compose -f docker-compose.dev.yml up --build",
     "build": "vite build",
     "lint": "eslint .",
-    "test:grid": "vitest run src/components/data-grid/DataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/components/ui/ResizableTable.test.jsx && node --test tests/data-grid-kernel.test.mjs tests/data-grid-preferences.test.mjs",
-    "test:grid:coverage": "vitest run --coverage src/components/data-grid/DataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/components/ui/ResizableTable.test.jsx",
+    "test:grid": "vitest run src/components/data-grid/DataGrid.test.jsx src/components/data-grid/ActivityDataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/components/ui/ResizableTable.test.jsx && node --test tests/data-grid-kernel.test.mjs tests/data-grid-preferences.test.mjs",
+    "test:grid:coverage": "vitest run --coverage src/components/data-grid/DataGrid.test.jsx src/components/data-grid/ActivityDataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/components/ui/ResizableTable.test.jsx",
     "preview": "vite preview"
   },
   "dependencies": {
