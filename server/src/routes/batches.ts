@@ -1,9 +1,8 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { batchService } from '../services';
 import prisma from '../utils/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { validateBody } from '../middleware/validate';
-import { createBatchSchema } from '../validation/schemas';
 import { ApiResponse, BatchStatus } from '../types';
 import { authorize } from '../middleware/auth';
 import { safeParse } from '../middleware/validate';
@@ -134,66 +133,12 @@ router.get(
  */
 router.post(
   '/',
-  (req: Request, _res: Response, next: NextFunction) => {
-    // Normalize snake_case aliases to camelCase for legacy client compatibility
-    const b = req.body || {};
-    req.body = {
-      ...b,
-      reagentId: b.reagentId ?? b.reagent_id,
-      batchNumber: b.batchNumber ?? b.batch_number,
-      expiryDate: b.expiryDate ?? b.expiry_date,
-      initialQuantity: b.initialQuantity ?? b.initial_quantity ?? b.currentQuantity ?? b.current_quantity,
-      currentQuantity: b.currentQuantity ?? b.current_quantity,
-      manufactureDate: b.manufactureDate ?? b.manufacture_date,
-      receivedDate: b.receivedDate ?? b.received_date,
-      storageLocation: b.storageLocation ?? b.storage_location,
-      storageConditions: b.storageConditions ?? b.storage_conditions,
-      reservedQuantity: b.reservedQuantity ?? b.reserved_quantity,
-      qcStatus: b.qcStatus ?? b.qc_status,
-      qcNotes: b.qcNotes ?? b.qc_notes,
-      coaDocumentUrl: b.coaDocumentUrl ?? b.coa_document_url,
-      generalNotes: b.generalNotes ?? b.notes ?? b.general_notes,
-      deliveryId: b.deliveryId ?? b.delivery_id,
-    };
-    next();
-  },
-  validateBody(createBatchSchema.passthrough()),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { reagentId, batchNumber, expiryDate, initialQuantity } = req.body;
-    const currentQuantity = req.body.currentQuantity !== undefined
-      ? parseFloat(req.body.currentQuantity)
-      : initialQuantity;
-
-    const data = await prisma.reagentBatch.create({
-      data: {
-        reagentId,
-        batchNumber,
-        expiryDate,
-        manufactureDate: req.body.manufactureDate ? new Date(req.body.manufactureDate) : undefined,
-        initialQuantity,
-        currentQuantity,
-        reservedQuantity: parseFloat(req.body.reservedQuantity) || 0,
-        receivedDate: req.body.receivedDate ? new Date(req.body.receivedDate) : new Date(),
-        deliveryId: req.body.deliveryId || null,
-        status: req.body.status ? String(req.body.status).toUpperCase() : 'ACTIVE',
-        qcStatus: req.body.qcStatus ? String(req.body.qcStatus).toUpperCase() : undefined,
-        qcNotes: req.body.qcNotes || null,
-        coaDocumentUrl: req.body.coaDocumentUrl || null,
-        storageLocation: req.body.storageLocation || null,
-        storageConditions: req.body.storageConditions || null,
-        generalNotes: req.body.generalNotes || null,
-      },
-      include: { reagent: true },
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(410).json({
+      success: false,
+      error: 'Batches with stock must be created by an authoritative delivery receipt',
+      code: 'AUTHORITATIVE_RECEIPT_REQUIRED',
     });
-
-    await batchService.updateReagentAggregates(reagentId);
-
-    const response: ApiResponse = {
-      success: true,
-      data,
-      message: 'Batch created successfully',
-    };
-    res.status(201).json(response);
   })
 );
 

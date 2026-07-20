@@ -21,7 +21,11 @@ const INVENTORY_HOLDING_STATUSES = [
   "EXPIRED",
 ];
 
-const advisoryLock = async (tx: TransactionClient, namespace: string, value: string) => {
+export const acquireInventoryLock = async (
+  tx: TransactionClient,
+  namespace: string,
+  value: string,
+) => {
   const key = `flow-control:${namespace}:${value}`;
   await tx.$executeRaw`
     SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))
@@ -147,12 +151,18 @@ const calculateSuggestion = (reagent: any, onOrderQuantity: number) => {
   return Math.max(0, Math.ceil(usage * 3 - projected));
 };
 
-const movementSignature = (input: DispenseInventoryInput) => ({
+const movementSignature = (
+  input: DispenseInventoryInput,
+  performedById?: string,
+) => ({
   reagentId: input.reagentId,
   batchId: input.batchId,
   quantity: input.quantity,
   purpose: input.purpose,
   scanMethod: input.scanMethod,
+  rawScanData: input.rawScanData ?? null,
+  notes: input.notes ?? null,
+  performedById: performedById ?? null,
 });
 
 const signaturesEqual = (left: any, right: any) =>
@@ -160,7 +170,10 @@ const signaturesEqual = (left: any, right: any) =>
   left?.batchId === right.batchId &&
   Number(left?.quantity) === Number(right.quantity) &&
   left?.purpose === right.purpose &&
-  left?.scanMethod === right.scanMethod;
+  left?.scanMethod === right.scanMethod &&
+  (left?.rawScanData ?? null) === right.rawScanData &&
+  (left?.notes ?? null) === right.notes &&
+  (left?.performedById ?? null) === right.performedById;
 
 const parseMovementMetadata = (notes?: string | null) => {
   if (!notes) return null;
@@ -495,8 +508,8 @@ export const inventoryQualityService = {
   ) {
     return serializableTransaction(
       async (tx) => {
-        await advisoryLock(tx, "request", input.clientRequestId);
-        await advisoryLock(tx, "batch", batchId);
+        await acquireInventoryLock(tx, "request", input.clientRequestId);
+        await acquireInventoryLock(tx, "batch", batchId);
         const batch = await tx.reagentBatch.findUnique({ where: { id: batchId } });
         if (!batch) throw new InventoryQualityError("Batch not found", "BATCH_UNAVAILABLE", 404);
         const existingAudit = await tx.activityLog.findFirst({
@@ -557,8 +570,8 @@ export const inventoryQualityService = {
   ) {
     return serializableTransaction(
       async (tx) => {
-        await advisoryLock(tx, "request", input.clientRequestId);
-        await advisoryLock(tx, "batch", batchId);
+        await acquireInventoryLock(tx, "request", input.clientRequestId);
+        await acquireInventoryLock(tx, "batch", batchId);
         const batch = await tx.reagentBatch.findUnique({ where: { id: batchId } });
         if (!batch) throw new InventoryQualityError("Batch not found", "BATCH_UNAVAILABLE", 404);
         if (["CONSUMED", "DESTROYED"].includes(batch.status)) {
@@ -667,7 +680,7 @@ export const inventoryQualityService = {
   async dispense(input: DispenseInventoryInput, performedById?: string) {
     return serializableTransaction(
       async (tx) => {
-        await advisoryLock(tx, "request", input.clientRequestId);
+        await acquireInventoryLock(tx, "request", input.clientRequestId);
 
         const replayMovement = await tx.inventoryTransaction.findFirst({
           where: {
@@ -678,7 +691,13 @@ export const inventoryQualityService = {
         });
         if (replayMovement) {
           const metadata = parseMovementMetadata(replayMovement.notes);
-          if (!metadata || !signaturesEqual(metadata.signature, movementSignature(input))) {
+          if (
+            !metadata ||
+            !signaturesEqual(
+              metadata.signature,
+              movementSignature(input, performedById),
+            )
+          ) {
             throw new InventoryQualityError(
               "clientRequestId was already used with different input",
               "IDEMPOTENCY_CONFLICT",
@@ -687,7 +706,7 @@ export const inventoryQualityService = {
           return buildDispenseResult(replayMovement, metadata, true, tx);
         }
 
-        await advisoryLock(tx, "batch", input.batchId);
+        await acquireInventoryLock(tx, "batch", input.batchId);
         const batch = await tx.reagentBatch.findUnique({
           where: { id: input.batchId },
         });
@@ -767,7 +786,7 @@ export const inventoryQualityService = {
             sourceId: input.clientRequestId,
             performedById,
             notes: JSON.stringify({
-              signature: movementSignature(input),
+              signature: movementSignature(input, performedById),
               beforeQuantity,
               dispenseEventId: event.id,
               auditActivityId: audit.id,
@@ -778,7 +797,7 @@ export const inventoryQualityService = {
         return buildDispenseResult(
           movement,
           {
-            signature: movementSignature(input),
+            signature: movementSignature(input, performedById),
             beforeQuantity,
             dispenseEventId: event.id,
             auditActivityId: audit.id,

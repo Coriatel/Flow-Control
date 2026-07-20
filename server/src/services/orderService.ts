@@ -2,6 +2,7 @@ import prisma from "../utils/prisma";
 import { OrderStatus, TransactionType } from "../types";
 import { AppError } from "../middleware/errorHandler";
 import { updateReagentAggregates } from "./reagentAggregates";
+import { acquireInventoryLock } from "./inventoryQualityService";
 
 export interface OrderFilters {
   supplierId?: string;
@@ -413,7 +414,7 @@ export const orderService = {
             },
           });
 
-          const existingBatch = await tx.reagentBatch.findUnique({
+          let existingBatch = await tx.reagentBatch.findUnique({
             where: {
               reagentId_batchNumber: {
                 reagentId: orderItem.reagentId,
@@ -421,6 +422,12 @@ export const orderService = {
               },
             },
           });
+          if (existingBatch) {
+            await acquireInventoryLock(tx, "batch", existingBatch.id);
+            existingBatch = await tx.reagentBatch.findUnique({
+              where: { id: existingBatch.id },
+            });
+          }
           const batch = existingBatch
             ? await tx.reagentBatch.update({
                 where: { id: existingBatch.id },

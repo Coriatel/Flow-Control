@@ -219,6 +219,33 @@ describe("Round B inventory quality functional closure", () => {
     ]);
   });
 
+  it("rejects direct batch creation so stock can only enter through receipt", async () => {
+    const batchNumber = `${namespace}-mint-bypass`;
+
+    const response = await request(app)
+      .post("/api/batches")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        reagentId,
+        batchNumber,
+        initialQuantity: 500,
+        currentQuantity: 500,
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        status: "ACTIVE",
+        qcStatus: "APPROVED",
+        coaDocumentUrl: "/api/files/download/unreviewed.pdf",
+      })
+      .expect(410);
+
+    expect(response.body.code).toBe("AUTHORITATIVE_RECEIPT_REQUIRED");
+    expect(
+      await prisma.reagentBatch.count({ where: { reagentId, batchNumber } }),
+    ).toBe(0);
+    expect(
+      await prisma.inventoryTransaction.count({ where: { reagentId } }),
+    ).toBe(0);
+  });
+
   it("rejects pending, held, rejected, expired, and excessive stock-out", async () => {
     const pending = await createBatch({ suffix: "pending", quantity: 4 });
     const held = await createBatch({
@@ -387,6 +414,42 @@ describe("Round B inventory quality functional closure", () => {
     expect([storedBatch.currentQuantity, movements, events, activities]).toEqual([
       8, 1, 1, 1,
     ]);
+  });
+
+  it("binds an idempotency key to the authenticated actor", async () => {
+    const batch = await createBatch({
+      suffix: "actor-bound-key",
+      qcStatus: "APPROVED",
+      coaDocumentUrl: "/api/files/download/coa.pdf",
+    });
+    await updateReagentAggregates(reagentId);
+    const payload = {
+      clientRequestId: `${namespace}-actor-bound`,
+      reagentId,
+      batchId: batch.id,
+      quantity: 1,
+      purpose: "laboratory use",
+      notes: "actor must be stable",
+    };
+
+    await request(app)
+      .post("/api/dispense")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send(payload)
+      .expect(201);
+
+    const conflict = await request(app)
+      .post("/api/dispense")
+      .set("Authorization", `Bearer ${managerToken}`)
+      .send(payload)
+      .expect(409);
+
+    expect(conflict.body.code).toBe("IDEMPOTENCY_CONFLICT");
+    expect(
+      await prisma.inventoryTransaction.count({
+        where: { sourceType: "dispense_request", sourceId: payload.clientRequestId },
+      }),
+    ).toBe(1);
   });
 
   it("serializes concurrent stock-out so inventory cannot become negative", async () => {
