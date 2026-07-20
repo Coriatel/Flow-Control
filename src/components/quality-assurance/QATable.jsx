@@ -1,297 +1,262 @@
+/* eslint-disable react/prop-types */
+import { useEffect, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
+import { format, isValid, parseISO } from "date-fns";
+import { Edit, Eye, ShieldAlert, Trash2, Upload, Wrench } from "lucide-react";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { format, parseISO, isValid } from 'date-fns';
-import {
-  Edit, Trash2, ChevronUp, ChevronDown, Wrench, Eye, Upload
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { formatQuantity } from '@/components/utils/formatters';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { DataGrid } from "@/components/data-grid";
+import useDataGridPreferences from "@/hooks/useDataGridPreferences";
+import { Badge } from "@/components/ui/badge";
+import { createPageUrl } from "@/utils";
+import { formatQuantity } from "@/components/utils/formatters";
 
-// Sortable Header Component
-const SortableHeader = ({ children, column, sortConfig, onSort }) => {
-  const isSorted = sortConfig.key === column;
+const QA_PINNED_RIGHT = ["reagent_name"];
+const QA_PINNED_LEFT = ["actions"];
+
+function ActionButton({ label, onClick, children, tone = "slate" }) {
+  const tones = {
+    blue: "text-blue-700 hover:bg-blue-50",
+    amber: "text-amber-700 hover:bg-amber-50",
+    red: "text-red-700 hover:bg-red-50",
+    slate: "text-slate-700 hover:bg-slate-100",
+  };
   return (
-    <div
-      className="flex items-center justify-center gap-1 cursor-pointer select-none group"
-      onClick={() => onSort(column)}
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={`min-h-11 min-w-11 rounded-md inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${tones[tone]}`}
     >
-      <span>{children}</span>
-      <div className="flex flex-col">
-        <ChevronUp className={`h-3 w-3 transition-colors ${isSorted && sortConfig.direction === 'asc' ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-600'}`} />
-        <ChevronDown className={`h-3 w-3 -mt-1 transition-colors ${isSorted && sortConfig.direction === 'desc' ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-600'}`} />
-      </div>
+      {children}
+    </button>
+  );
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  const parsed = parseISO(value);
+  return isValid(parsed) ? format(parsed, "dd/MM/yyyy") : "תאריך לא תקין";
+}
+
+function qaStatusCell(item) {
+  const qaStatus = item.qaStatus ?? item.qc_status ?? "UNAVAILABLE";
+  const styles = {
+    RELEASED: "bg-green-100 text-green-800",
+    APPROVED: "bg-green-100 text-green-800",
+    PENDING: "bg-amber-100 text-amber-800",
+    ON_HOLD: "bg-orange-100 text-orange-900",
+    REJECTED: "bg-red-100 text-red-800",
+    UNAVAILABLE: "bg-slate-100 text-slate-700",
+  };
+  const reasons = Array.isArray(item.blockedReasons) ? item.blockedReasons : [];
+  return (
+    <div className="space-y-1">
+      <Badge className={styles[String(qaStatus).toUpperCase()] || styles.UNAVAILABLE}>
+        {qaStatus}
+      </Badge>
+      {reasons.map((reason) => (
+        <div key={reason} className="text-xs text-red-700">
+          {reason}
+        </div>
+      ))}
     </div>
   );
-};
+}
 
 export default function QATable({
-  data,
-  visibleColumns,
+  data = [],
+  visibleColumns = [],
   sortField,
   sortDirection,
   onSort,
-  onHandleItem, // NEW: Handler for the "Handle" action
+  onSortStateChange,
+  onHandleItem,
   onCOAUpload,
   onCOAView,
   onEdit,
-  onDelete
+  onDelete,
+  userId = "anonymous",
 }) {
-  const navigate = useNavigate();
+  const columns = useMemo(
+    () =>
+      visibleColumns.map((column, index) => {
+        const id = column.accessor;
+        const definition = {
+          id,
+          header: column.Header,
+          accessorKey: id,
+          defaultWidth: column.width || 120,
+          mobilePrimary: index === 0,
+          alwaysVisible: id === "actions",
+          enableSorting: id !== "actions",
+        };
 
-  // State and logic for column resizing (RTL-fixed)
-  const [columnWidths, setColumnWidths] = useState({});
-  useEffect(() => {
-    const initialWidths = {};
-    visibleColumns.forEach(c => {
-      initialWidths[c.accessor] = c.width || 120;
-    });
-    setColumnWidths(initialWidths);
-  }, [visibleColumns]);
-
-  const [isResizing, setIsResizing] = useState(null);
-
-  const handleMouseDown = useCallback((column) => {
-    setIsResizing(column);
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(null);
-  }, []);
-
-  // Fixed RTL mouse movement for column resizing
-  const handleMouseMove = useCallback((e) => {
-    if (!isResizing) return;
-    setColumnWidths(prev => ({
-      ...prev,
-      [isResizing]: Math.max(80, prev[isResizing] - e.movementX) // הפוך את הכיוון עבור RTL
-    }));
-  }, [isResizing]);
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing, handleMouseMove, handleMouseUp]);
-
-  // NEW: Check if item can be handled
-  const canBeHandled = (item) => {
-    // Only allow handling if current_quantity > 0 and no action has been taken (assuming action_taken is a relevant flag)
-    return item.current_quantity > 0 && !item.action_taken; 
-  };
-
-  const TableRow = ({ item }) => {
-    const shouldShowHandleButton = canBeHandled(item);
-
-    return (
-      <tr className="hover:bg-slate-50 transition-colors">
-        {visibleColumns.map(column => {
-          if (column.accessor === 'actions') {
-            return (
-              <td key={column.accessor} className="px-2 py-2 lg:py-2.5 text-xs text-slate-700 align-middle border-l border-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">
-                <div className="flex items-center justify-center gap-1">
-                  {/* COA Actions */}
-                  {item.coa_documents && item.coa_documents.length > 0 ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onCOAView(item)}
-                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>הצג תעודת אנליזה</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onCOAUpload(item)}
-                            className="h-8 w-8 text-amber-600 hover:bg-amber-50"
-                          >
-                            <Upload className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>העלה תעודת אנליזה</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-
-                  {/* Handle Button */}
-                  {shouldShowHandleButton && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onHandleItem(item)}
-                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                          >
-                            <Wrench className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>טפל בפריט</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-
-                  {/* Edit Button */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(item)}
-                          className="h-8 w-8 text-slate-600 hover:bg-slate-50"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>ערוך</p></TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Delete Button */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(item)}
-                          className="h-8 w-8 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>מחק</p></TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </td>
-            );
-          }
-
-          const value = item[column.accessor];
-          let cellContent;
-
-          switch (column.accessor) {
-            case 'reagent_name':
-              cellContent = <span className="font-medium text-slate-800 text-xs leading-tight">{value}</span>;
-              break;
-            case 'batch_number':
-              cellContent = <Link to={createPageUrl(`EditReagentBatch?id=${item.reagent_batch_id}`)} className="text-blue-600 hover:underline font-mono text-xs">{value}</Link>;
-              break;
-            case 'expiry_date':
-            case 'receipt_date':
-            case 'first_use_date':
-            case 'manufacture_date':
-              if (!value) cellContent = <span className="text-xs text-gray-400">N/A</span>;
-              else {
-                const date = parseISO(value);
-                cellContent = <span className="text-xs">{isValid(date) ? format(date, 'dd/MM/yyyy') : 'תאריך לא תקין'}</span>;
-              }
-              break;
-            case 'delivery_number':
-              cellContent = item.delivery_id ?
-                <Link to={createPageUrl(`EditDelivery?id=${item.delivery_id}`)} className="text-blue-600 hover:underline text-xs">{value}</Link> :
-                <span className="text-xs text-gray-500">{value || 'N/A'}</span>;
-              break;
-            case 'current_quantity':
-            case 'initial_quantity':
-            case 'receipt_quantity':
-            case 'status_quantity': // ADDED THIS CASE
-              cellContent = <span className="text-xs font-mono">{formatQuantity(value)}</span>;
-              break;
-            case 'status':
-              const statusColors = {
-                active: 'bg-green-100 text-green-800',
-                expired: 'bg-red-100 text-red-800',
-                quarantine: 'bg-yellow-100 text-yellow-800',
-                consumed: 'bg-slate-100 text-slate-700',
-                disposed: 'bg-gray-100 text-gray-800', // Added 'disposed' status
-              };
-              cellContent = <Badge className={`${statusColors[value] || 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`}>{value}</Badge>;
-              break;
-            case 'coa_documents':
-              cellContent = Array.isArray(value) && value.length > 0 ? '✔️' : '❌';
-              break;
-            default:
-              // Handle potential objects or complex values safely
-              if (value === null || value === undefined) {
-                cellContent = <span className="text-xs text-gray-400">N/A</span>;
-              } else if (typeof value === 'object') {
-                // If it's an object, don't render it directly
-                cellContent = <span className="text-xs text-gray-400">—</span>;
-              } else {
-                cellContent = <span className="text-xs">{String(value)}</span>;
-              }
-              break;
-          }
-          
-          return (
-            <td key={column.accessor} className="px-2 py-2 lg:py-2.5 text-xs text-slate-700 align-middle border-l border-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">
-              {cellContent}
-            </td>
+        if (["reagent_name", "batch_number", "status", "qaStatus"].includes(id)) {
+          definition.filter = {
+            type: "text",
+            label: `סינון ${column.Header}`,
+          };
+        }
+        if (
+          [
+            "current_quantity",
+            "initial_quantity",
+            "receipt_quantity",
+            "status_quantity",
+          ].includes(id)
+        ) {
+          definition.type = "number";
+          definition.cell = (item) => formatQuantity(item[id]);
+        } else if (
+          [
+            "expiry_date",
+            "receipt_date",
+            "first_use_date",
+            "manufacture_date",
+          ].includes(id)
+        ) {
+          definition.cell = (item) => formatDate(item[id]);
+          definition.sortFn = (a, b) =>
+            new Date(a || 0).getTime() - new Date(b || 0).getTime();
+        } else if (id === "batch_number") {
+          definition.cell = (item) => (
+            <Link
+              to={createPageUrl(`EditReagentBatch?id=${item.reagent_batch_id}`)}
+              className="font-mono text-blue-700 underline-offset-2 hover:underline"
+            >
+              {item.batch_number || "—"}
+            </Link>
           );
-        })}
-      </tr>
-    );
-  };
+        } else if (id === "qaStatus") {
+          definition.accessorFn = (item) =>
+            item.qaStatus ?? item.qc_status ?? "UNAVAILABLE";
+          definition.cell = qaStatusCell;
+        } else if (id === "status") {
+          definition.cell = (item) => (
+            <Badge variant="outline">{item.status || "—"}</Badge>
+          );
+        } else if (id === "coa_documents") {
+          definition.accessorFn = (item) =>
+            Array.isArray(item.coa_documents) && item.coa_documents.length
+              ? "קיים"
+              : "חסר";
+        } else if (id === "actions") {
+          definition.cell = (item) => {
+            const hasCoa =
+              Array.isArray(item.coa_documents) && item.coa_documents.length > 0;
+            return (
+              <div className="flex flex-wrap items-center gap-1">
+                {hasCoa ? (
+                  <ActionButton
+                    label={`צפה ב-COA ${item.batch_number}`}
+                    onClick={() => onCOAView?.(item)}
+                    tone="blue"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </ActionButton>
+                ) : (
+                  <ActionButton
+                    label={`העלה COA ${item.batch_number}`}
+                    onClick={() => onCOAUpload?.(item)}
+                    tone="amber"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </ActionButton>
+                )}
+
+                {item.canDispense === true && (
+                  <ActionButton
+                    label={`טפל באצווה ${item.batch_number}`}
+                    onClick={() => onHandleItem?.(item)}
+                    tone="blue"
+                  >
+                    <Wrench className="h-4 w-4" />
+                  </ActionButton>
+                )}
+                {item.canDispense !== true &&
+                  Array.isArray(item.blockedReasons) &&
+                  item.blockedReasons.length > 0 && (
+                    <span
+                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-red-700"
+                      title={item.blockedReasons.join(", ")}
+                      aria-label={`האצווה חסומה: ${item.blockedReasons.join(", ")}`}
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                    </span>
+                  )}
+
+                <ActionButton
+                  label={`ערוך אצווה ${item.batch_number}`}
+                  onClick={() => onEdit?.(item)}
+                >
+                  <Edit className="h-4 w-4" />
+                </ActionButton>
+                <ActionButton
+                  label={`מחק אצווה ${item.batch_number}`}
+                  onClick={() => onDelete?.(item)}
+                  tone="red"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </ActionButton>
+              </div>
+            );
+          };
+        }
+        return definition;
+      }),
+    [
+      visibleColumns,
+      onCOAView,
+      onCOAUpload,
+      onHandleItem,
+      onEdit,
+      onDelete,
+    ],
+  );
+  const initialSort = useMemo(
+    () =>
+      sortField
+        ? { id: sortField, direction: sortDirection || "asc" }
+        : null,
+    [sortField, sortDirection],
+  );
+  const { state, setState, reset } = useDataGridPreferences({
+    gridId: "quality-assurance",
+    userId,
+    columns,
+    version: 1,
+    initialSort,
+    pageSize: 25,
+    pinnedRight: QA_PINNED_RIGHT,
+    pinnedLeft: QA_PINNED_LEFT,
+  });
+  const previousSort = useRef(state.sort);
+
+  useEffect(() => {
+    const previous = previousSort.current;
+    const current = state.sort;
+    if (
+      previous?.id === current?.id &&
+      previous?.direction === current?.direction
+    ) {
+      return;
+    }
+    previousSort.current = current;
+    if (onSortStateChange) onSortStateChange(current);
+    else if (current?.id && onSort) onSort(current.id);
+  }, [state.sort, onSortStateChange, onSort]);
 
   return (
-    <div className="w-full border border-slate-200 rounded-lg bg-white shadow-sm">
-      {/* גלילה רוחבית וכותרות דביקות עם תיקון RTL */}
-      <div className="overflow-auto max-h-[75vh]" style={{ overflowX: 'auto', overflowY: 'auto' }}>
-        <table className="w-full" style={{ tableLayout: 'fixed', minWidth: `${visibleColumns.reduce((acc, col) => acc + (columnWidths[col.accessor] || 120), 0)}px` }}>
-          <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-            <tr>
-              {visibleColumns.map(column => (
-                <th
-                  key={column.accessor}
-                  className="px-2 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider border-b-2 border-slate-300 relative bg-slate-50"
-                  style={{ width: columnWidths[column.accessor], minWidth: columnWidths[column.accessor] }}
-                >
-                  <SortableHeader column={column.accessor} sortConfig={{ key: sortField, direction: sortDirection }} onSort={onSort}>
-                    <span className="text-xs leading-tight">{column.Header}</span>
-                  </SortableHeader>
-                  {/* תיקון RTL: מיקום הידית בצד שמאל */}
-                  <div
-                      onMouseDown={() => handleMouseDown(column.accessor)}
-                      className="absolute top-0 left-0 h-full w-1 cursor-col-resize hover:bg-blue-300 transition-colors"
-                  />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {data.map(item => (
-              <TableRow key={item.id} item={item} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataGrid
+      ariaLabel="טבלת בקרת איכות ואצוות"
+      columns={columns}
+      rows={data}
+      state={state}
+      onStateChange={setState}
+      onResetPreferences={reset}
+      rowKey={(item) => item.reagent_batch_id || item.id}
+      pageSizes={[10, 25, 50]}
+    />
   );
 }
