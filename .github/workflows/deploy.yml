@@ -1,23 +1,89 @@
-name: Deploy Flow Control
+name: Stage Flow Control Release Artifact
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full 40-character reviewed commit SHA to stage
+        required: true
+        type: string
+      confirmation:
+        description: Type STAGE_ONLY (this workflow never deploys production)
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  stage:
     runs-on: ubuntu-latest
     steps:
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: Deploy via SSH
+      - name: Validate immutable staging request
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.DEPLOY_HOST }} << 'EOF'
-            set -e
-            cd /opt/flow-control/app
-            git pull
-            docker compose up -d --build
-          EOF
+          set -euo pipefail
+          test "$CONFIRMATION" = "STAGE_ONLY"
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Verify checked-out commit
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+
+      - name: Build frontend artifact
+        run: |
+          npm ci
+          node --test tests/demo-readiness-ui.test.mjs
+          npm run build
+
+      - name: Build backend artifact
+        working-directory: server
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+
+      - name: Write artifact manifest
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-manifest
+          printf 'commit=%s\n' "$CANDIDATE_SHA" > release-manifest/manifest.txt
+          find dist server/dist -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum >> release-manifest/manifest.txt
+
+      - name: Upload immutable staged artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-control-${{ inputs.candidate_sha }}
+          path: |
+            dist
+            server/dist
+            server/package.json
+            server/package-lock.json
+            release-manifest/manifest.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Record production safety boundary
+        run: |
+          {
+            echo '### Stage complete'
+            echo
+            echo 'This workflow created an immutable artifact only.'
+            echo 'It did not connect to, restart, rebuild, or mutate production.'
+          } >> "$GITHUB_STEP_SUMMARY"
