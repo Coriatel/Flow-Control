@@ -8,6 +8,8 @@ describe("Flow Control demo order receipt", () => {
   let userId: string;
   let supplierId: string;
   let reagentId: string;
+  let heldReagentId: string;
+  let heldBatchId: string;
   let orderId: string;
   let orderItemId: string;
 
@@ -63,6 +65,34 @@ describe("Flow Control demo order receipt", () => {
       },
     });
 
+    const heldReagent = await prisma.reagent.create({
+      data: {
+        name: `Held Receipt Demo ${Date.now()}`,
+        catalogNumber: "DEMO-HELD-10",
+        category: "REAGENT",
+        supplierId,
+        totalQuantity: 2,
+        activeBatchesCount: 0,
+        currentStockStatus: "CRITICAL",
+        minStockLevel: 3,
+        maxStockLevel: 6,
+      },
+    });
+    heldReagentId = heldReagent.id;
+    const heldBatch = await prisma.reagentBatch.create({
+      data: {
+        reagentId: heldReagentId,
+        batchNumber: "HELD-260701",
+        expiryDate: new Date("2027-07-19T00:00:00.000Z"),
+        initialQuantity: 2,
+        currentQuantity: 2,
+        receivedDate: new Date("2026-07-01T00:00:00.000Z"),
+        status: "ON_HOLD",
+        qcStatus: "REJECTED",
+      },
+    });
+    heldBatchId = heldBatch.id;
+
     const order = await prisma.order.create({
       data: {
         tempNumber: `ORD-DEMO-${Date.now()}`,
@@ -90,13 +120,23 @@ describe("Flow Control demo order receipt", () => {
 
   afterAll(async () => {
     await prisma.activityLog.deleteMany({ where: { userId } });
-    await prisma.inventoryTransaction.deleteMany({ where: { reagentId } });
-    await prisma.reagentBatch.deleteMany({ where: { reagentId } });
-    await prisma.deliveryItem.deleteMany({ where: { reagentId } });
+    await prisma.inventoryTransaction.deleteMany({
+      where: { reagentId: { in: [reagentId, heldReagentId] } },
+    });
+    await prisma.reagentBatch.deleteMany({
+      where: { reagentId: { in: [reagentId, heldReagentId] } },
+    });
+    await prisma.deliveryItem.deleteMany({
+      where: { reagentId: { in: [reagentId, heldReagentId] } },
+    });
     await prisma.delivery.deleteMany({ where: { supplierId } });
-    await prisma.orderItem.deleteMany({ where: { orderId } });
-    await prisma.order.deleteMany({ where: { id: orderId } });
-    await prisma.reagent.deleteMany({ where: { id: reagentId } });
+    await prisma.orderItem.deleteMany({
+      where: { reagentId: { in: [reagentId, heldReagentId] } },
+    });
+    await prisma.order.deleteMany({ where: { supplierId } });
+    await prisma.reagent.deleteMany({
+      where: { id: { in: [reagentId, heldReagentId] } },
+    });
     await prisma.supplier.deleteMany({ where: { id: supplierId } });
     await prisma.user.deleteMany({ where: { id: userId } });
   });
@@ -119,6 +159,90 @@ describe("Flow Control demo order receipt", () => {
         ],
       });
 
+  it("rejects duplicate order items atomically", async () => {
+    const duplicate = await request(app)
+      .post(`/api/orders/${orderId}/receive`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        deliveryReference: "DEMO-DN-DUPLICATE",
+        deliveryDate: "2026-07-19",
+        items: [
+          {
+            orderItemId,
+            receivedQuantity: 8,
+            batchNumber: "LOT-DUP-001",
+            expiryDate: "2027-07-19",
+          },
+          {
+            orderItemId,
+            receivedQuantity: 8,
+            batchNumber: "LOT-DUP-002",
+            expiryDate: "2027-07-19",
+          },
+        ],
+      });
+
+    expect(duplicate.status).toBe(400);
+    expect(duplicate.body.success).toBe(false);
+
+    const [orderItem, deliveries, movements, batches] = await Promise.all([
+      prisma.orderItem.findUniqueOrThrow({ where: { id: orderItemId } }),
+      prisma.delivery.count({
+        where: { deliveryNumber: "DEMO-DN-DUPLICATE" },
+      }),
+      prisma.inventoryTransaction.count({
+        where: { reagentId, transactionType: "RECEIPT" },
+      }),
+      prisma.reagentBatch.count({ where: { reagentId } }),
+    ]);
+    expect(orderItem.receivedQuantity).toBe(0);
+    expect([deliveries, movements, batches]).toEqual([0, 0, 1]);
+  });
+
+  it("does not reactivate an existing held or rejected batch on receipt", async () => {
+    const heldOrder = await prisma.order.create({
+      data: {
+        tempNumber: `ORD-HELD-${Date.now()}`,
+        supplierId,
+        supplierSnapshot: "Demo Receipt Supplier",
+        status: "APPROVED",
+      },
+    });
+    const heldOrderItem = await prisma.orderItem.create({
+      data: {
+        orderId: heldOrder.id,
+        reagentId: heldReagentId,
+        requestedQuantity: 1,
+        receivedQuantity: 0,
+        remainingQuantity: 1,
+      },
+    });
+
+    const receipt = await request(app)
+      .post(`/api/orders/${heldOrder.id}/receive`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        deliveryReference: "DEMO-DN-HELD-BATCH",
+        deliveryDate: "2026-07-19",
+        items: [
+          {
+            orderItemId: heldOrderItem.id,
+            receivedQuantity: 1,
+            batchNumber: "HELD-260701",
+            expiryDate: "2027-07-19",
+          },
+        ],
+      });
+
+    expect(receipt.status).toBe(200);
+    const batch = await prisma.reagentBatch.findUniqueOrThrow({
+      where: { id: heldBatchId },
+    });
+    expect(batch.currentQuantity).toBe(3);
+    expect(batch.status).toBe("ON_HOLD");
+    expect(batch.qcStatus).toBe("REJECTED");
+  });
+
   it("receives partially, replays exactly once, then receives fully", async () => {
     const partial = await receive("DEMO-DN-20260719-001", 8, "LOT-AD-001");
     expect(partial.status).toBe(200);
@@ -139,6 +263,7 @@ describe("Flow Control demo order receipt", () => {
           userId,
           action: "delivery_received",
           entityType: "delivery",
+          entityId: partial.body.data.delivery.id,
         },
       }),
     ]);
@@ -159,6 +284,7 @@ describe("Flow Control demo order receipt", () => {
           userId,
           action: "delivery_received",
           entityType: "delivery",
+          entityId: partial.body.data.delivery.id,
         },
       }),
     ]);

@@ -1,5 +1,6 @@
 import prisma from "../utils/prisma";
 import { OrderStatus, TransactionType } from "../types";
+import { AppError } from "../middleware/errorHandler";
 import { updateReagentAggregates } from "./reagentAggregates";
 
 export interface OrderFilters {
@@ -299,6 +300,16 @@ export const orderService = {
     }
 
     const deliveryReference = options.deliveryReference.trim();
+    const seenOrderItemIds = new Set<string>();
+    for (const item of items) {
+      if (seenOrderItemIds.has(item.orderItemId)) {
+        throw new AppError(
+          `Duplicate order item ${item.orderItemId} in receipt`,
+          400,
+        );
+      }
+      seenOrderItemIds.add(item.orderItemId);
+    }
 
     return prisma.$transaction(
       async (tx) => {
@@ -421,7 +432,6 @@ export const orderService = {
                     increment: input.receivedQuantity,
                   },
                   expiryDate: input.expiryDate,
-                  status: "ACTIVE",
                   storageLocation:
                     input.storageLocation || existingBatch.storageLocation,
                 },
