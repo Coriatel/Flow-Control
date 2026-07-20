@@ -15,8 +15,6 @@ const IDS = {
 } as const;
 
 const DEMO_EMAIL = "demo-readiness-admin@invalid.local";
-const DEMO_PASSWORD =
-  process.env.FLOW_DEMO_PASSWORD || "Flow-Demo-Isolated-Only-2026!";
 
 async function reset() {
   await prisma.$transaction(async (tx) => {
@@ -99,8 +97,16 @@ async function reset() {
 }
 
 async function apply() {
+  const demoPassword = process.env.FLOW_DEMO_PASSWORD;
+  if (!demoPassword) {
+    throw new Error("FLOW_DEMO_PASSWORD is required to apply the demo fixture");
+  }
+  if (demoPassword.length < 16) {
+    throw new Error("FLOW_DEMO_PASSWORD must be at least 16 characters");
+  }
+
   await reset();
-  const password = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const password = await bcrypt.hash(demoPassword, 10);
 
   await prisma.$transaction(async (tx) => {
     await tx.user.create({

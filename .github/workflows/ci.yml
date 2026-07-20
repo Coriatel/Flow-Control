@@ -84,7 +84,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/flow_control_test?schema=inventory
           JWT_SECRET: test-jwt-secret-for-ci
           NODE_ENV: test
-        run: npm test -- --runInBand src/__tests__/demoReceipt.test.ts src/__tests__/demoOrderCreation.test.ts
+        run: npm test -- --runInBand src/__tests__/demoFixtureSecurity.test.ts src/__tests__/demoReceipt.test.ts src/__tests__/demoOrderCreation.test.ts
 
       - name: Build production backend
         working-directory: ./server
