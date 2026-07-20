@@ -23,26 +23,6 @@ const mapExpiredLog = (log: any) => {
   };
 };
 
-const resolveBatchId = async (reagentId?: string, batchId?: string, batchNumber?: string) => {
-  if (batchId) return batchId;
-  if (!batchNumber) return null;
-
-  if (reagentId) {
-    const match = await prisma.reagentBatch.findFirst({
-      where: {
-        reagentId,
-        batchNumber,
-      },
-    });
-    return match?.id || null;
-  }
-
-  const fallback = await prisma.reagentBatch.findFirst({
-    where: { batchNumber },
-  });
-  return fallback?.id || null;
-};
-
 /**
  * GET /api/expiredproductlogs
  * List expired product logs
@@ -106,45 +86,11 @@ router.get(
  */
 router.post(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const body = req.body || {};
-
-    const reagentId = body.reagent_id || body.reagentId;
-    const batchNumber = body.batch_number_snapshot || body.batch_number || body.batchNumber;
-    const batchId = await resolveBatchId(reagentId, body.batch_id || body.batchId, batchNumber);
-
-    if (!reagentId) {
-      throw new AppError('reagent_id is required', 400);
-    }
-
-    if (!batchId) {
-      throw new AppError('batch_id or batch_number_snapshot is required', 400);
-    }
-
-    const quantity = Number(body.quantity_affected ?? body.quantity ?? 0);
-    const actionTaken = body.action_taken || body.actionTaken || 'other';
-
-    const handledAt = body.documented_date ? new Date(body.documented_date) : (body.handledAt ? new Date(body.handledAt) : undefined);
-
-    const created = await prisma.expiredProductLog.create({
-      data: {
-        reagentId,
-        batchId,
-        quantity,
-        actionTaken,
-        handledById: body.documented_by_user_id || body.handledById || null,
-        handledAt: handledAt || undefined,
-        reason: body.reason || null,
-        notes: body.action_notes || body.notes || null,
-      },
-      include: { batch: { include: { reagent: true } } },
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Expiry evidence is immutable and created by workflow services only',
     });
-
-    const response: ApiResponse = {
-      success: true,
-      data: mapExpiredLog(created),
-    };
-    res.status(201).json(response);
   })
 );
 
@@ -153,28 +99,11 @@ router.post(
  */
 router.put(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const body = req.body || {};
-
-    const updated = await prisma.expiredProductLog.update({
-      where: { id },
-      data: {
-        quantity: body.quantity_affected ?? body.quantity,
-        actionTaken: body.action_taken || body.actionTaken,
-        handledById: body.documented_by_user_id || body.handledById || undefined,
-        handledAt: body.documented_date ? new Date(body.documented_date) : undefined,
-        reason: body.reason || undefined,
-        notes: body.action_notes || body.notes || undefined,
-      },
-      include: { batch: { include: { reagent: true } } },
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Expiry evidence is immutable',
     });
-
-    const response: ApiResponse = {
-      success: true,
-      data: mapExpiredLog(updated),
-    };
-    res.json(response);
   })
 );
 
@@ -183,15 +112,11 @@ router.put(
  */
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    await prisma.expiredProductLog.delete({ where: { id } });
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'Expired product log deleted',
-    };
-    res.json(response);
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Expiry evidence is immutable',
+    });
   })
 );
 

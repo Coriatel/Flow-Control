@@ -2,8 +2,42 @@ import { Router, Request, Response } from 'express';
 import { inventoryService } from '../services';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ApiResponse } from '../types';
+import { safeParse } from '../middleware/validate';
+import { currentInventoryQuerySchema } from '../validation/inventoryQuality';
+import { inventoryQualityService } from '../services/inventoryQualityService';
 
 const router = Router();
+
+/**
+ * GET /api/inventory/current
+ * Physical stock plus backend-authoritative released availability.
+ */
+router.get(
+  '/current',
+  asyncHandler(async (req: Request, res: Response) => {
+    const parsed = safeParse(currentInventoryQuerySchema, req.query);
+    if (parsed.success === false) throw new AppError(parsed.error, 400);
+    const data = await inventoryQualityService.getCurrentInventory(
+      parsed.data.reagentId,
+    );
+    res.json({
+      success: true,
+      data,
+      items: data,
+      meta: {
+        total: data.length,
+        filteredTotal: data.length,
+        page: 1,
+        pageSize: data.length,
+        sort: [],
+        filters: parsed.data.reagentId
+          ? [{ field: 'reagentId', value: parsed.data.reagentId }]
+          : [],
+        asOf: new Date().toISOString(),
+      },
+    });
+  }),
+);
 
 /**
  * GET /api/inventory/count/draft

@@ -19,23 +19,6 @@ const mapTransaction = (tx: any) => ({
   created_date: tx.createdAt?.toISOString() || null,
 });
 
-const resolveBatchId = async (reagentId?: string, batchId?: string, batchNumber?: string) => {
-  if (batchId) return batchId;
-  if (!batchNumber) return null;
-
-  if (reagentId) {
-    const match = await prisma.reagentBatch.findFirst({
-      where: { reagentId, batchNumber },
-    });
-    return match?.id || null;
-  }
-
-  const fallback = await prisma.reagentBatch.findFirst({
-    where: { batchNumber },
-  });
-  return fallback?.id || null;
-};
-
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
@@ -83,124 +66,41 @@ router.get(
 
 router.post(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const body = req.body || {};
-    const reagentId = body.reagent_id || body.reagentId;
-
-    if (!reagentId) {
-      throw new AppError('reagent_id is required', 400);
-    }
-
-    const batchNumber = body.batch_number || body.batchNumber;
-    const batchId = await resolveBatchId(reagentId, body.batch_id || body.batchId, batchNumber);
-
-    const quantityDelta = Number(body.quantity ?? body.quantity_delta ?? body.quantityDelta ?? 0);
-    const transactionType = body.transaction_type || body.transactionType || 'adjustment';
-
-    const created = await prisma.inventoryTransaction.create({
-      data: {
-        reagentId,
-        batchId: batchId || undefined,
-        transactionType,
-        quantityDelta,
-        sourceType: body.source_type || body.sourceType || null,
-        sourceId: body.source_id || body.sourceId || body.document_number || null,
-        performedById: body.performed_by_user_id || body.performedById || null,
-        notes: body.notes || null,
-      },
-      include: { batch: true },
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Inventory movements are immutable and created by workflow services only',
     });
-
-    const response: ApiResponse = {
-      success: true,
-      data: mapTransaction(created),
-    };
-    res.status(201).json(response);
   })
 );
 
 router.post(
   '/bulk',
-  asyncHandler(async (req: Request, res: Response) => {
-    const items = Array.isArray(req.body) ? req.body : req.body?.items;
-
-    if (!Array.isArray(items) || items.length === 0) {
-      throw new AppError('items array is required', 400);
-    }
-
-    const data = [] as any[];
-    for (const item of items) {
-      const reagentId = item.reagent_id || item.reagentId;
-      if (!reagentId) continue;
-      const batchNumber = item.batch_number || item.batchNumber;
-      const batchId = await resolveBatchId(reagentId, item.batch_id || item.batchId, batchNumber);
-      const quantityDelta = Number(item.quantity ?? item.quantity_delta ?? item.quantityDelta ?? 0);
-      const transactionType = item.transaction_type || item.transactionType || 'adjustment';
-
-      data.push({
-        reagentId,
-        batchId: batchId || undefined,
-        transactionType,
-        quantityDelta,
-        sourceType: item.source_type || item.sourceType || null,
-        sourceId: item.source_id || item.sourceId || item.document_number || null,
-        performedById: item.performed_by_user_id || item.performedById || null,
-        notes: item.notes || null,
-      });
-    }
-
-    if (data.length === 0) {
-      throw new AppError('No valid items to create', 400);
-    }
-
-    const result = await prisma.inventoryTransaction.createMany({ data });
-
-    const response: ApiResponse = {
-      success: true,
-      data: { count: result.count },
-    };
-    res.status(201).json(response);
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Inventory movements are immutable and created by workflow services only',
+    });
   })
 );
 
 router.put(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const body = req.body || {};
-
-    const updated = await prisma.inventoryTransaction.update({
-      where: { id },
-      data: {
-        transactionType: body.transaction_type || body.transactionType || undefined,
-        quantityDelta: body.quantity ?? body.quantity_delta ?? body.quantityDelta,
-        sourceType: body.source_type || body.sourceType || undefined,
-        sourceId: body.source_id || body.sourceId || body.document_number || undefined,
-        performedById: body.performed_by_user_id || body.performedById || undefined,
-        notes: body.notes || undefined,
-      },
-      include: { batch: true },
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Inventory movements are immutable',
     });
-
-    const response: ApiResponse = {
-      success: true,
-      data: mapTransaction(updated),
-    };
-    res.json(response);
   })
 );
 
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    await prisma.inventoryTransaction.delete({ where: { id } });
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'Inventory transaction deleted',
-    };
-    res.json(response);
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(405).json({
+      success: false,
+      error: 'Inventory movements are immutable',
+    });
   })
 );
 

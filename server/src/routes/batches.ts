@@ -5,6 +5,15 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { validateBody } from '../middleware/validate';
 import { createBatchSchema } from '../validation/schemas';
 import { ApiResponse, BatchStatus } from '../types';
+import { authorize } from '../middleware/auth';
+import { safeParse } from '../middleware/validate';
+import {
+  linkBatchCoaSchema,
+  qualityDecisionSchema,
+  qualityListQuerySchema,
+} from '../validation/inventoryQuality';
+import { inventoryQualityService } from '../services/inventoryQualityService';
+import { isInventoryQualityError } from '../contracts/inventoryQuality';
 
 const router = Router();
 
@@ -55,6 +64,46 @@ router.get(
       meta: { daysThreshold: days, total: data.length },
     });
   })
+);
+
+/**
+ * GET /api/batches/quality
+ * Stable, authoritative quality and availability view for operational tables.
+ */
+router.get(
+  '/quality',
+  asyncHandler(async (req: Request, res: Response) => {
+    const parsed = safeParse(qualityListQuerySchema, req.query);
+    if (parsed.success === false) throw new AppError(parsed.error, 400);
+    const result = await inventoryQualityService.listQualityBatches(parsed.data);
+    res.json({
+      success: true,
+      data: result.rows,
+      items: result.rows,
+      meta: {
+        total: result.total,
+        filteredTotal: result.total,
+        page: parsed.data.page,
+        pageSize: parsed.data.limit,
+        sort: [],
+        filters: [
+          parsed.data.reagentId && { field: 'reagentId', value: parsed.data.reagentId },
+          parsed.data.search && { field: 'search', value: parsed.data.search },
+          parsed.data.status && { field: 'status', value: parsed.data.status },
+          parsed.data.qcStatus && { field: 'qcStatus', value: parsed.data.qcStatus },
+          parsed.data.expiryFrom && {
+            field: 'expiryFrom',
+            value: parsed.data.expiryFrom.toISOString(),
+          },
+          parsed.data.expiryTo && {
+            field: 'expiryTo',
+            value: parsed.data.expiryTo.toISOString(),
+          },
+        ].filter(Boolean),
+        asOf: new Date().toISOString(),
+      },
+    });
+  }),
 );
 
 /**
@@ -157,6 +206,21 @@ router.put(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const body = req.body || {};
+    const protectedFields = [
+      'currentQuantity',
+      'current_quantity',
+      'status',
+      'qcStatus',
+      'qc_status',
+      'coaDocumentUrl',
+      'coa_document_url',
+    ];
+    if (protectedFields.some((field) => body[field] !== undefined)) {
+      throw new AppError(
+        'Quantity, status, QA, and COA changes require an authoritative workflow endpoint',
+        410,
+      );
+    }
 
     const updateData: any = {};
     if (body.currentQuantity !== undefined || body.current_quantity !== undefined) {
@@ -223,33 +287,75 @@ router.put(
   })
 );
 
+const sendQualityError = (res: Response, error: unknown) => {
+  if (!isInventoryQualityError(error)) return false;
+  res.status(error.statusCode).json({
+    success: false,
+    error: error.message,
+    code: error.code,
+    ...error.details,
+  });
+  return true;
+};
+
+/**
+ * POST /api/batches/:id/coa
+ * Link COA evidence to one exact batch.
+ */
+router.post(
+  '/:id/coa',
+  authorize('ADMIN', 'MANAGER'),
+  validateBody(linkBatchCoaSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const data = await inventoryQualityService.linkCoa(
+        req.params.id,
+        req.body,
+        req.user?.id,
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      if (sendQualityError(res, error)) return;
+      throw error;
+    }
+  }),
+);
+
+/**
+ * POST /api/batches/:id/quality-decision
+ * Backend-authoritative release, hold, or reject transition.
+ */
+router.post(
+  '/:id/quality-decision',
+  authorize('ADMIN', 'MANAGER'),
+  validateBody(qualityDecisionSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const data = await inventoryQualityService.decideQuality(
+        req.params.id,
+        req.body,
+        req.user?.id,
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      if (sendQualityError(res, error)) return;
+      throw error;
+    }
+  }),
+);
+
 /**
  * POST /api/batches/:id/withdraw
- * Withdraw quantity from batch
+ * Retired: laboratory stock-out has one canonical transactional endpoint.
  */
 router.post(
   '/:id/withdraw',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { quantity, performedBy, notes } = req.body;
-
-    if (!quantity || quantity <= 0) {
-      throw new AppError('Valid quantity is required', 400);
-    }
-
-    const data = await batchService.withdraw({
-      batchId: id,
-      quantity: parseFloat(quantity),
-      performedBy,
-      notes,
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(410).json({
+      success: false,
+      error: 'Use POST /api/dispense for laboratory stock-out',
+      code: 'LEGACY_STOCK_OUT_RETIRED',
     });
-
-    const response: ApiResponse = {
-      success: true,
-      data,
-      message: 'Withdrawal completed successfully',
-    };
-    res.json(response);
   })
 );
 
