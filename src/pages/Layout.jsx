@@ -54,7 +54,6 @@ import {
   UserPlus,
   ArrowRight,
   History,
-  ScanLine,
   Hand,
   PackageMinus,
 } from "lucide-react";
@@ -256,12 +255,6 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       name: "הוצאה מהמלאי",
-      href: "DispenseItems",
-      icon: ScanLine,
-      group: "operations",
-    },
-    {
-      name: "הוצאה מאוחדת",
       href: "InventoryRemoval",
       icon: PackageMinus,
       group: "operations",
@@ -273,6 +266,12 @@ export default function Layout({ children, currentPageName }) {
       group: "operations",
     },
     // Inventory management
+    {
+      name: "מלאי נוכחי",
+      href: "CurrentInventory",
+      icon: Package,
+      group: "inventory",
+    },
     {
       name: "ניהול אצוות ופגי תוקף",
       href: "BatchAndExpiryManagement",

@@ -12,6 +12,8 @@
     "dev:docker:build": "docker-compose -f docker-compose.dev.yml up --build",
     "build": "vite build",
     "lint": "eslint .",
+    "test:grid": "vitest run src/components/data-grid/DataGrid.test.jsx src/components/data-grid/ActivityDataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/hooks/useDataGridPreferences.test.jsx && node --test tests/data-grid-kernel.test.mjs tests/data-grid-preferences.test.mjs",
+    "test:grid:coverage": "vitest run --coverage src/components/data-grid/DataGrid.test.jsx src/components/data-grid/ActivityDataGrid.test.jsx src/components/quality-assurance/QATable.test.jsx src/components/ui/ResizableTable.test.jsx",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -68,10 +70,14 @@
   "devDependencies": {
     "@eslint/js": "^9.19.0",
     "@flydotio/dockerfile": "^0.7.8",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.13.5",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.20",
     "concurrently": "^9.2.1",
     "eslint": "^9.19.0",
@@ -79,8 +85,10 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^4.1.10"
   }
 }

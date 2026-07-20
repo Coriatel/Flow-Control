@@ -15,15 +15,21 @@ export async function updateReagentAggregates(
 ): Promise<void> {
   const client = tx || prisma;
 
-  const activeBatches = await client.reagentBatch.findMany({
+  const physicalBatches = await client.reagentBatch.findMany({
     where: {
       reagentId,
-      status: 'ACTIVE',
+      status: { in: ['ACTIVE', 'INCOMING', 'ON_HOLD', 'EXPIRED'] },
+      currentQuantity: { gt: 0 },
     },
     orderBy: { expiryDate: 'asc' },
   });
+  const activeBatches = physicalBatches.filter(
+    (batch: any) => batch.status === 'ACTIVE'
+  );
 
-  const totalQuantity = activeBatches.reduce(
+  // Round A defines the reagent aggregate as physical on-hand. QA and expiry
+  // affect availability, but must not make stock disappear from physical totals.
+  const totalQuantity = physicalBatches.reduce(
     (sum: number, b: any) => sum + Number(b.currentQuantity),
     0
   );

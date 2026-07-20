@@ -6,11 +6,12 @@ import { REFRESH_TOKEN_TTL_MS } from './authCookies';
 let initPromise: Promise<void> | null = null;
 
 const ensureRefreshTokensTableImpl = async (): Promise<void> => {
-  // Schema: inventory (matches DATABASE_URL schema=inventory)
+  // Use the connection's configured schema. This keeps the helper aligned with
+  // Prisma's DATABASE_URL instead of assuming production's historical name.
   await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS inventory.refresh_tokens (
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES inventory.app_users(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
       token_hash TEXT NOT NULL UNIQUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       expires_at TIMESTAMPTZ NOT NULL,
@@ -24,17 +25,17 @@ const ensureRefreshTokensTableImpl = async (): Promise<void> => {
 
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS refresh_tokens_user_id_idx
-    ON inventory.refresh_tokens (user_id);
+    ON refresh_tokens (user_id);
   `);
 
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS refresh_tokens_expires_at_idx
-    ON inventory.refresh_tokens (expires_at);
+    ON refresh_tokens (expires_at);
   `);
 
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS refresh_tokens_revoked_at_idx
-    ON inventory.refresh_tokens (revoked_at);
+    ON refresh_tokens (revoked_at);
   `);
 };
 
@@ -72,7 +73,7 @@ export const createRefreshTokenForUser = async (
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
   await prisma.$executeRaw`
-    INSERT INTO inventory.refresh_tokens (
+    INSERT INTO refresh_tokens (
       id, user_id, token_hash, expires_at, ip, user_agent, device_label
     ) VALUES (
       ${id}, ${userId}, ${tokenHash}, ${expiresAt}, ${meta.ip ?? null}, ${meta.userAgent ?? null}, ${meta.deviceLabel ?? null}
@@ -98,7 +99,7 @@ export const rotateRefreshToken = async (
 
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.$queryRaw<{ user_id: string }[]>`
-      UPDATE inventory.refresh_tokens
+      UPDATE refresh_tokens
       SET revoked_at = ${now}, replaced_by_token_hash = ${newHash}
       WHERE token_hash = ${oldHash}
         AND revoked_at IS NULL
@@ -113,7 +114,7 @@ export const rotateRefreshToken = async (
     const userId = updated[0].user_id;
 
     await tx.$executeRaw`
-      INSERT INTO inventory.refresh_tokens (
+      INSERT INTO refresh_tokens (
         id, user_id, token_hash, expires_at, ip, user_agent, device_label
       ) VALUES (
         ${newId}, ${userId}, ${newHash}, ${newExpiresAt}, ${meta.ip ?? null}, ${meta.userAgent ?? null}, ${meta.deviceLabel ?? null}
@@ -133,10 +134,9 @@ export const revokeRefreshToken = async (token: string): Promise<void> => {
   const now = new Date();
 
   await prisma.$executeRaw`
-    UPDATE inventory.refresh_tokens
+    UPDATE refresh_tokens
     SET revoked_at = ${now}
     WHERE token_hash = ${tokenHash}
       AND revoked_at IS NULL
   `;
 };
-

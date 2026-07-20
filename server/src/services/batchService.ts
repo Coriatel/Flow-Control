@@ -173,57 +173,10 @@ export const batchService = {
    * Withdraw quantity from batch (simplified for basic pg client)
    */
   async withdraw(input: WithdrawInput) {
-    const batch = await prisma.reagentBatch.findUnique({
-      where: { id: input.batchId },
-    });
-
-    if (!batch) {
-      throw new Error("Batch not found");
-    }
-
-    if (batch.status !== "ACTIVE") {
-      throw new Error("Cannot withdraw from inactive batch");
-    }
-
-    const currentQty = Number(batch.currentQuantity);
-    if (input.quantity > currentQty) {
-      throw new Error(
-        `Insufficient quantity. Available: ${currentQty}, Requested: ${input.quantity}`,
-      );
-    }
-
-    const newQuantity = currentQty - input.quantity;
-    const newStatus = newQuantity === 0 ? "CONSUMED" : "ACTIVE";
-
-    // Update batch
-    const updatedBatch = await prisma.reagentBatch.update({
-      where: { id: input.batchId },
-      data: {
-        currentQuantity: newQuantity,
-        status: newStatus as BatchStatus,
-      },
-    });
-
-    // Create withdrawal transaction
-    await prisma.inventoryTransaction.create({
-      data: {
-        reagentId: batch.reagentId,
-        batchId: batch.id,
-        transactionType: TransactionType.WITHDRAWAL,
-        quantityDelta: -input.quantity,
-        performedById: input.performedBy,
-        notes: input.notes,
-      },
-    });
-
-    // Update reagent aggregates
-    await this.updateReagentAggregates(batch.reagentId);
-
-    const reagent = await prisma.reagent.findUnique({
-      where: { id: batch.reagentId },
-    });
-
-    return { ...updatedBatch, reagent };
+    void input;
+    throw new Error(
+      "Legacy batch withdrawal is retired; use the canonical dispense workflow",
+    );
   },
 
   /**

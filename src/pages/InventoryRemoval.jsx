@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,6 @@ import {
   Beaker,
   Truck,
   FileText,
-  ScanLine,
   AlertTriangle,
   CheckCircle2,
   Search,
@@ -53,7 +52,7 @@ import { toast as sonnerToast } from "sonner";
 import BarcodeScanner from "@/components/ui/BarcodeScanner";
 import { createPageUrl } from "@/utils";
 
-import { Reagent, ReagentBatch, Supplier } from "@/api/entities";
+import { Reagent } from "@/api/entities";
 import { apiClient } from "@/api/client";
 
 function unwrapResponse(response) {
@@ -145,6 +144,7 @@ export default function InventoryRemoval() {
   const [dispensePurpose, setDispensePurpose] = useState("");
   const [dispenseNotes, setDispenseNotes] = useState("");
   const [dispenseDialogOpen, setDispenseDialogOpen] = useState(false);
+  const [dispenseRequestId, setDispenseRequestId] = useState(null);
 
   // Other tab state
   const [otherBatch, setOtherBatch] = useState(null);
@@ -162,7 +162,7 @@ export default function InventoryRemoval() {
       const [candidatesRes, batchData, reagentData, historyRes] =
         await Promise.all([
           apiClient.get("/disposal/destruction-candidates"),
-          ReagentBatch.list({ status: "ACTIVE" }),
+          apiClient.get("/batches/quality?limit=200"),
           Reagent.list(),
           apiClient.get("/dispense/history?limit=5"),
         ]);
@@ -187,7 +187,17 @@ export default function InventoryRemoval() {
       setItemReasons(defaultReasons);
       setItemWaste(defaultWaste);
 
-      setBatches(Array.isArray(batchData) ? batchData : []);
+      const qualityBatches = unwrapResponse(batchData);
+      setBatches(
+        (Array.isArray(qualityBatches) ? qualityBatches : []).map((batch) => ({
+          ...batch,
+          reagentId: batch.reagent?.id ?? batch.reagentId,
+          batchNumber: batch.batchNumber ?? batch.batch_number,
+          currentQuantity: batch.availableQuantity,
+          reagentName: batch.reagent?.name,
+          catalogNumber: batch.reagent?.catalogNumber,
+        })),
+      );
       setReagents(Array.isArray(reagentData) ? reagentData : []);
 
       const history = unwrapResponse(historyRes);
@@ -281,6 +291,7 @@ export default function InventoryRemoval() {
           // Active batch
           if (activeTab === "usage") {
             setSelectedBatch(matched);
+            setDispenseRequestId(crypto.randomUUID());
             setDispenseDialogOpen(true);
           } else if (activeTab === "other") {
             setOtherBatch(matched);
@@ -379,6 +390,7 @@ export default function InventoryRemoval() {
     setSubmitting(true);
     try {
       await apiClient.post("/dispense", {
+        clientRequestId: dispenseRequestId || crypto.randomUUID(),
         reagentId: selectedBatch.reagentId,
         batchId: selectedBatch.id,
         quantity: dispenseQuantity,
@@ -388,6 +400,7 @@ export default function InventoryRemoval() {
       sonnerToast.success("פריט הוצא מהמלאי בהצלחה");
       setDispenseDialogOpen(false);
       setSelectedBatch(null);
+      setDispenseRequestId(null);
       setDispenseQuantity(1);
       setDispensePurpose("");
       setDispenseNotes("");
@@ -409,6 +422,7 @@ export default function InventoryRemoval() {
     setSubmitting(true);
     try {
       await apiClient.post("/dispense", {
+        clientRequestId: crypto.randomUUID(),
         reagentId: otherBatch.reagentId,
         batchId: otherBatch.id,
         quantity: otherQuantity,
@@ -702,7 +716,38 @@ export default function InventoryRemoval() {
               </div>
 
               <ScrollArea className="max-h-[400px]">
-                <Table>
+                <div className="space-y-3 md:hidden">
+                  {filteredBatches.length === 0 ? (
+                    <div className="py-8 text-center text-slate-500">
+                      {searchTerm ? "לא נמצאו תוצאות" : "אין אצוות זמינות לשימוש"}
+                    </div>
+                  ) : filteredBatches.slice(0, 50).map((batch) => {
+                    const reagent = reagentMap[batch.reagentId];
+                    return (
+                      <article key={batch.id} className="rounded-lg border p-4 space-y-3">
+                        <div className="font-semibold">{reagent?.name || batch.reagentName || "—"}</div>
+                        <dl className="grid grid-cols-2 gap-2 text-sm">
+                          <div><dt className="text-slate-500">אצווה</dt><dd className="font-mono">{batch.batchNumber}</dd></div>
+                          <div><dt className="text-slate-500">זמין</dt><dd>{batch.currentQuantity} יח׳</dd></div>
+                          <div className="col-span-2"><dt className="text-slate-500">תוקף</dt><dd>{formatDate(batch.expiryDate)}</dd></div>
+                        </dl>
+                        <Button
+                          variant="outline"
+                          className="min-h-11 w-full text-emerald-700 border-emerald-300"
+                          onClick={() => {
+                            setSelectedBatch(batch);
+                            setDispenseRequestId(crypto.randomUUID());
+                            setDispenseDialogOpen(true);
+                          }}
+                        >
+                          <Beaker className="h-4 w-4 ms-1" />
+                          הוצא לשימוש
+                        </Button>
+                      </article>
+                    );
+                  })}
+                </div>
+                <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">ריאגנט</TableHead>
@@ -746,9 +791,10 @@ export default function InventoryRemoval() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-xs gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                                className="min-h-11 text-xs gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
                                 onClick={() => {
                                   setSelectedBatch(batch);
+                                  setDispenseRequestId(crypto.randomUUID());
                                   setDispenseDialogOpen(true);
                                 }}
                               >

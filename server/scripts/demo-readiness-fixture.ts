@@ -16,7 +16,7 @@ const IDS = {
 
 const DEMO_EMAIL = "demo-readiness-admin@invalid.local";
 
-async function reset() {
+async function cleanup() {
   await prisma.$transaction(async (tx) => {
     await tx.activityLog.deleteMany({
       where: {
@@ -35,6 +35,17 @@ async function reset() {
       },
     });
     await tx.inventoryTransaction.deleteMany({
+      where: {
+        reagentId: {
+          in: [
+            IDS.shortageReagent,
+            IDS.controlReagent,
+            IDS.nearExpiryReagent,
+          ],
+        },
+      },
+    });
+    await tx.dispenseEvent.deleteMany({
       where: {
         reagentId: {
           in: [
@@ -105,7 +116,7 @@ async function apply() {
     throw new Error("FLOW_DEMO_PASSWORD must be at least 16 characters");
   }
 
-  await reset();
+  await cleanup();
   const password = await bcrypt.hash(demoPassword, 10);
 
   await prisma.$transaction(async (tx) => {
@@ -202,6 +213,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-anti-d-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 baseline",
         },
         {
@@ -216,6 +228,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-control-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 baseline",
         },
         {
@@ -230,6 +243,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-a1-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 near-expiry baseline",
         },
       ],
@@ -314,7 +328,7 @@ async function verify() {
 async function main() {
   const command = process.argv[2];
   if (command === "apply") await apply();
-  else if (command === "reset") await reset();
+  else if (command === "reset") await apply();
   else if (command === "verify") await verify();
   else {
     throw new Error("Usage: demo-readiness-fixture.ts <apply|reset|verify>");

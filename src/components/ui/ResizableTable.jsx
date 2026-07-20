@@ -3,7 +3,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
  * ResizableTable - טבלה עם עמודות הניתנות לשינוי גודל, תמיכה ב-RTL ומיון
- * 
+ *
  * Props:
  * - columns: מערך של הגדרות עמודות { key, label, defaultWidth, sortable, alwaysVisible }
  * - data: מערך הנתונים להצגה
@@ -68,7 +68,7 @@ export default function ResizableTable({
       // RTL: reverse the movement direction
       const diff = -(e.clientX - resizing.startX);
       const newWidth = Math.max(80, resizing.startWidth + diff);
-      
+
       setColumnWidths(prev => ({
         ...prev,
         [resizing.columnKey]: newWidth

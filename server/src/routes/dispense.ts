@@ -1,7 +1,15 @@
 import { Router } from 'express';
-import { asyncHandler } from '../middleware/errorHandler';
+import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { authenticate, authorize } from '../middleware/auth';
 import { dispenseService } from '../services/dispenseService';
+import { validateBody } from '../middleware/validate';
+import {
+  dispenseHistoryQuerySchema,
+  dispenseInventorySchema,
+} from '../validation/inventoryQuality';
+import { inventoryQualityService } from '../services/inventoryQualityService';
+import { isInventoryQualityError } from '../contracts/inventoryQuality';
+import { safeParse } from '../middleware/validate';
 
 const router = Router();
 
@@ -11,69 +19,94 @@ router.use(authenticate);
 /**
  * POST /api/dispense - Dispense item from inventory
  */
-router.post('/', asyncHandler(async (req, res) => {
-  const { reagentId, batchId, quantity, scanMethod, rawScanData, purpose, notes } = req.body;
-
-  if (!reagentId || !batchId || !quantity) {
-    return res.status(400).json({ success: false, error: 'reagentId, batchId, and quantity are required' });
-  }
-
-  if (quantity <= 0) {
-    return res.status(400).json({ success: false, error: 'quantity must be positive' });
-  }
-
-  const result = await dispenseService.dispenseItem({
-    reagentId,
-    batchId,
-    quantity: Number(quantity),
-    dispensedById: (req as any).user?.id,
-    scanMethod,
-    rawScanData,
-    purpose,
-    notes,
-  });
-
-  res.status(201).json({ success: true, data: result });
-}));
+router.post(
+  '/',
+  authorize('ADMIN', 'MANAGER', 'USER'),
+  validateBody(dispenseInventorySchema),
+  asyncHandler(async (req, res) => {
+    try {
+      const result = await inventoryQualityService.dispense(
+        req.body,
+        req.user?.id,
+      );
+      res
+        .status(result.idempotentReplay ? 200 : 201)
+        .json({ success: true, data: result });
+    } catch (error: any) {
+      if (isInventoryQualityError(error)) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+          ...error.details,
+        });
+      }
+      if (error?.code === 'P2034') {
+        return res.status(409).json({
+          success: false,
+          error: 'Concurrent inventory change; retry the request',
+          code: 'RETRYABLE_CONFLICT',
+          retryable: true,
+        });
+      }
+      throw error;
+    }
+  }),
+);
 
 /**
  * POST /api/dispense/by-scan - Scan barcode to identify + dispense
  */
 router.post('/by-scan', asyncHandler(async (req, res) => {
-  const { rawScanData, quantity, purpose, notes } = req.body;
-
-  if (!rawScanData || !quantity) {
-    return res.status(400).json({ success: false, error: 'rawScanData and quantity are required' });
-  }
-
-  const result = await dispenseService.dispenseByScan({
-    rawScanData,
-    quantity: Number(quantity),
-    dispensedById: (req as any).user?.id,
-    purpose,
-    notes,
+  res.status(410).json({
+    success: false,
+    error:
+      'Parse the scan with /api/barcode/parse, then use canonical POST /api/dispense',
+    code: 'LEGACY_STOCK_OUT_RETIRED',
   });
-
-  res.status(201).json({ success: true, data: result });
 }));
 
 /**
  * GET /api/dispense/history - View dispense history
  */
 router.get('/history', asyncHandler(async (req, res) => {
-  const { reagentId, batchId, dispensedById, fromDate, toDate, limit, offset } = req.query;
-
-  const result = await dispenseService.getHistory({
-    reagentId: reagentId as string,
-    batchId: batchId as string,
-    dispensedById: dispensedById as string,
-    fromDate: fromDate ? new Date(fromDate as string) : undefined,
-    toDate: toDate ? new Date(toDate as string) : undefined,
-    limit: limit ? Number(limit) : undefined,
-    offset: offset ? Number(offset) : undefined,
+  const parsed = safeParse(dispenseHistoryQuerySchema, req.query);
+  if (parsed.success === false) throw new AppError(parsed.error, 400);
+  const { reagentId, batchId, dispensedById, fromDate, toDate } = parsed.data;
+  const pageSize = parsed.data.limit;
+  const page = parsed.data.offset === undefined
+    ? parsed.data.page
+    : Math.floor(parsed.data.offset / pageSize) + 1;
+  const result = await inventoryQualityService.getDispenseHistory({
+    reagentId,
+    batchId,
+    dispensedById,
+    fromDate,
+    toDate,
+    page,
+    limit: pageSize,
   });
 
-  res.json({ success: true, data: result.events, meta: { total: result.total } });
+  res.json({
+    success: true,
+    data: result.rows,
+    items: result.rows,
+    meta: {
+      total: result.total,
+      filteredTotal: result.total,
+      page,
+      pageSize,
+      sort: [{ field: 'createdAt', direction: 'desc' }],
+      filters: [
+        reagentId && { field: 'reagentId', value: reagentId },
+        batchId && { field: 'batchId', value: batchId },
+        dispensedById && { field: 'dispensedById', value: dispensedById },
+        fromDate && { field: 'fromDate', value: fromDate.toISOString() },
+        toDate && { field: 'toDate', value: toDate.toISOString() },
+      ].filter(Boolean),
+      asOf: new Date().toISOString(),
+    },
+  });
 }));
 
 /**
