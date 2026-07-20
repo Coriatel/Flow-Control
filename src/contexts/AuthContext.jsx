@@ -53,12 +53,12 @@ export function AuthProvider({ children }) {
           title: "התחברות הצליחה",
           description: `ברוך הבא, ${userData.name || userData.email}!`,
         });
-        navigate("/dashboard");
+        navigate("/Dashboard");
         return { success: true };
       }
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || error.message || "התחברות נכשלה";
+        error.data?.error || error.data?.message || error.message || "התחברות נכשלה";
       toast({
         title: "שגיאת התחברות",
         description: errorMessage,

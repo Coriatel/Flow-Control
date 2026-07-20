@@ -92,13 +92,13 @@ export default function DeliveriesPage() {
       { key: "supplier", label: "ספק", defaultWidth: 150, sortable: true },
       {
         key: "order_number_temp",
-        label: "מס' הזמנה זמני",
+        label: "מס' דרישה פנימי",
         defaultWidth: 140,
         sortable: true,
       },
       {
         key: "order_number_permanent",
-        label: "מס' הזמנה קבוע",
+        label: "מס' הזמנת רכש (SAP)",
         defaultWidth: 140,
         sortable: true,
       },
@@ -325,7 +325,7 @@ export default function DeliveriesPage() {
             delivery.order_number_temp
           )
         ) : (
-          "ללא הזמנה"
+          "ללא דרישה"
         );
       case "order_number_permanent":
         return delivery.order_number_permanent || "-";
@@ -354,7 +354,7 @@ export default function DeliveriesPage() {
         );
       case "delivery_type":
         const types = {
-          with_order: "עם הזמנה",
+          with_order: "עם דרישה",
           no_charge: "ללא תמורה",
           replacement: "החלפה",
           other: "אחר",
@@ -463,7 +463,7 @@ export default function DeliveriesPage() {
                         break;
                       case "delivery_type":
                         const types = {
-                          with_order: "עם הזמנה",
+                          with_order: "עם דרישה",
                           no_charge: "ללא תמורה",
                           replacement: "החלפה",
                           other: "אחר",
@@ -512,7 +512,7 @@ export default function DeliveriesPage() {
   };
 
   const typeLabels = {
-    with_order: "עם הזמנה",
+    with_order: "עם דרישה",
     no_charge: "ללא תמורה",
     replacement: "החלפה",
     other: "אחר",
@@ -602,7 +602,7 @@ export default function DeliveriesPage() {
         <div className="relative flex-1 min-w-[200px] sm:min-w-[unset]">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="חיפוש לפי מס' תעודה, ספק או הזמנה..."
+            placeholder="חיפוש לפי מס' תעודה, ספק או דרישה..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pe-10"
@@ -973,7 +973,7 @@ export default function DeliveriesPage() {
                   </div>
                   {delivery.order_number_temp && (
                     <div>
-                      <span className="text-gray-500 text-xs block">הזמנה</span>
+                      <span className="text-gray-500 text-xs block">דרישה</span>
                       {delivery.linked_order_id ? (
                         <Link
                           to={createPageUrl(

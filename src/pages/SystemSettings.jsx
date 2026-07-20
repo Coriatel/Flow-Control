@@ -43,6 +43,37 @@ export default function SystemSettingsPage() {
         fetchSettings();
     }, [toast]);
 
+    // Inventory method settings state (hooks must run on every render — before any early return)
+    const [inventorySettings, setInventorySettings] = useState({
+        consumption_method: 'barcode',
+        manual_entry_policy: 'admin_only',
+        receiving_default_method: 'purchase_request',
+    });
+    const [savingInventorySettings, setSavingInventorySettings] = useState(false);
+
+    useEffect(() => {
+        const fetchInventorySettings = async () => {
+            try {
+                const response = await apiClient.get('/systemsettings');
+                const allSettings = Array.isArray(response) ? response : (response?.data || response || []);
+                const settingsArray = Array.isArray(allSettings) ? allSettings : [];
+                const invSettings = {};
+                const invKeys = ['consumption_method', 'manual_entry_policy', 'receiving_default_method'];
+                settingsArray.forEach(s => {
+                    if (invKeys.includes(s.key)) {
+                        invSettings[s.key] = s.value;
+                    }
+                });
+                if (Object.keys(invSettings).length > 0) {
+                    setInventorySettings(prev => ({ ...prev, ...invSettings }));
+                }
+            } catch (e) {
+                // Settings may not exist yet
+            }
+        };
+        fetchInventorySettings();
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setSettings(prev => ({ ...prev, [name]: value }));
@@ -101,37 +132,6 @@ export default function SystemSettingsPage() {
             </div>
         );
     }
-
-    // Inventory method settings state
-    const [inventorySettings, setInventorySettings] = useState({
-        consumption_method: 'barcode',
-        manual_entry_policy: 'admin_only',
-        receiving_default_method: 'purchase_request',
-    });
-    const [savingInventorySettings, setSavingInventorySettings] = useState(false);
-
-    useEffect(() => {
-        const fetchInventorySettings = async () => {
-            try {
-                const response = await apiClient.get('/systemsettings');
-                const allSettings = Array.isArray(response) ? response : (response?.data || response || []);
-                const settingsArray = Array.isArray(allSettings) ? allSettings : [];
-                const invSettings = {};
-                const invKeys = ['consumption_method', 'manual_entry_policy', 'receiving_default_method'];
-                settingsArray.forEach(s => {
-                    if (invKeys.includes(s.key)) {
-                        invSettings[s.key] = s.value;
-                    }
-                });
-                if (Object.keys(invSettings).length > 0) {
-                    setInventorySettings(prev => ({ ...prev, ...invSettings }));
-                }
-            } catch (e) {
-                // Settings may not exist yet
-            }
-        };
-        fetchInventorySettings();
-    }, []);
 
     const handleSaveInventorySettings = async () => {
         setSavingInventorySettings(true);

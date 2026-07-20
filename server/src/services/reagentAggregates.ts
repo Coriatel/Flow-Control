@@ -43,15 +43,29 @@ export async function updateReagentAggregates(
       ? Number(reagent.manualMonthlyUsage)
       : averageMonthlyUsage;
 
-  // Calculate months of stock and status
+  // Calculate months of stock and status.
+  // Hybrid policy: when a per-reagent minimum stock level (minStockLevel) is set,
+  // it is the reorder point — below it the reagent is CRITICAL (must order),
+  // within 25% above it LOW. Otherwise fall back to months-of-stock thresholds.
   let monthsOfStock: number | null = null;
   let currentStockStatus: string = StockStatus.NORMAL;
+
+  if (effectiveUsage > 0) {
+    monthsOfStock = totalQuantity / effectiveUsage;
+  }
+
+  const minLevel = Number(reagent.minStockLevel ?? 0);
 
   if (totalQuantity === 0) {
     currentStockStatus = StockStatus.OUT_OF_STOCK;
     monthsOfStock = 0;
-  } else if (effectiveUsage > 0) {
-    monthsOfStock = totalQuantity / effectiveUsage;
+  } else if (minLevel > 0) {
+    if (totalQuantity < minLevel) {
+      currentStockStatus = StockStatus.CRITICAL;
+    } else if (totalQuantity < minLevel * 1.25) {
+      currentStockStatus = StockStatus.LOW;
+    }
+  } else if (effectiveUsage > 0 && monthsOfStock !== null) {
     if (monthsOfStock < 1) {
       currentStockStatus = StockStatus.CRITICAL;
     } else if (monthsOfStock < 2) {
@@ -96,7 +110,7 @@ async function calculateAverageUsage(
       reagentId,
       createdAt: { gte: sixMonthsAgo },
       transactionType: {
-        in: ['CONSUMPTION', 'WITHDRAWAL', 'DESTRUCTION'],
+        in: ['CONSUMPTION', 'WITHDRAWAL', 'DESTRUCTION', 'TRANSFER_OUT'],
       },
     },
     orderBy: { createdAt: 'asc' },

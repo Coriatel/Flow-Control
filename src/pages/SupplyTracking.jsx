@@ -398,7 +398,7 @@ export default function SupplyTracking() {
               </CardTitle>
               {summary && (
                 <div className="flex gap-3 mt-2 text-sm text-gray-600">
-                  <span>הזמנות: {summary.ordersCount || 0}</span>
+                  <span>דרישות: {summary.ordersCount || 0}</span>
                   <span>משיכות: {summary.withdrawalsCount || 0}</span>
                   {summary.urgentCount > 0 && (
                     <span className="text-orange-600 font-medium">
@@ -520,7 +520,7 @@ export default function SupplyTracking() {
                 אין אספקות ממתינות
               </p>
               <p className="text-sm text-slate-400">
-                כל האספקות הושלמו או שאין הזמנות פתוחות
+                כל האספקות הושלמו או שאין דרישות פתוחות
               </p>
             </div>
           ) : (

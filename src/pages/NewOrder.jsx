@@ -341,12 +341,12 @@ export default function NewOrderPage() {
                               </Select>
                           </div>
                           <div className="space-y-1.5">
-                              <Label htmlFor="order_type" className="text-sm font-medium">סוג הזמנה *</Label>
+                              <Label htmlFor="order_type" className="text-sm font-medium">סוג דרישה *</Label>
                               <Select value={order.order_type} onValueChange={(v) => setOrder({...order, order_type: v})}>
                                   <SelectTrigger id="order_type"><SelectValue /></SelectTrigger>
                                   <SelectContent>
                                       <SelectItem value="immediate_delivery">לאספקה מיידית</SelectItem>
-                                      <SelectItem value="framework">הזמנת מסגרת</SelectItem>
+                                      <SelectItem value="framework">הסכם מסגרת</SelectItem>
                                   </SelectContent>
                               </Select>
                           </div>

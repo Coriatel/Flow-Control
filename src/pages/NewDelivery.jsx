@@ -443,7 +443,7 @@ const DeliveryItemRow = ({
             <div className="mt-6 pt-4 border-t border-gray-200/80 flex justify-center">
               <Button
                 onClick={() => toggleApprove(item.key)}
-                className={`${item.approved ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-green-100 text-green-700 hover:bg-green-200"} px-6 py-2 text-lg font-medium transition-colors`}
+                className={`${item.approved ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-green-100 text-green-700 hover:bg-green-200"} min-h-11 px-6 py-2 text-lg font-medium transition-colors`}
                 title={
                   item.approved
                     ? "בטל אישור והחזר לעריכה"
@@ -778,6 +778,7 @@ export default function NewDeliveryPage() {
                   $in: [
                     "approved",
                     "partially_received",
+                    "pending_sap_details",
                     "pending_sap_permanent_id",
                     "pending_sap_po_number",
                   ],
@@ -1171,23 +1172,23 @@ export default function NewDeliveryPage() {
                 );
                 setItems(preFilledDeliveryItems);
                 toast({
-                  title: "נתונים נטענו מההזמנה",
-                  description: `נטענו ${preFilledDeliveryItems.length} פריטים מההזמנה`,
+                  title: "נתונים נטענו מהדרישה",
+                  description: `נטענו ${preFilledDeliveryItems.length} פריטים מהדרישה`,
                   variant: "default",
                 });
               } else {
                 toast({
-                  title: "הזמנה ללא יתרה",
+                  title: "דרישה ללא יתרה",
                   description:
-                    "ההזמנה המקושרת אינה מכילה פריטים עם יתרה לקבלה.",
+                    "הדרישה המקושרת אינה מכילה פריטים עם יתרה לקבלה.",
                   variant: "default",
                 });
                 setItems([]);
               }
             } catch (itemFetchError) {
               toast({
-                title: "שגיאה בטעינת פריטי הזמנה",
-                description: `לא ניתן לטעון פריטים עבור הזמנה זו.`,
+                title: "שגיאה בטעינת פריטי דרישה",
+                description: `לא ניתן לטעון פריטים עבור דרישה זו.`,
                 variant: "destructive",
               });
               setItems([]);
@@ -1579,7 +1580,7 @@ export default function NewDeliveryPage() {
   const handleSaveDelivery = async (isFinal = true) => {
     lockSystem(
       "מעבד קליטת משלוח...",
-      ["ניהול מלאי", "דוחות ומעקב", "סטטוס הזמנות"],
+      ["ניהול מלאי", "דוחות ומעקב", "סטטוס דרישות"],
       items.length * 0.5 + 5,
     );
 
@@ -1731,6 +1732,40 @@ export default function NewDeliveryPage() {
 
       if (!supplierMatch?.id) {
         throw new Error("לא נמצא מזהה ספק. נסה לבחור את הספק מחדש.");
+      }
+
+      if (actualLinkedOrderId) {
+        updateLockProgress(20, "קולט משלוח ומעדכן מלאי...");
+        const response = await apiClient.post(
+          `/orders/${actualLinkedOrderId}/receive`,
+          {
+            deliveryReference: deliveryData.delivery_number,
+            deliveryDate: deliveryData.delivery_date,
+            items: itemsToProcess.map((item) => ({
+              orderItemId: item.linked_item_id,
+              receivedQuantity: Number(item.quantity_received),
+              batchNumber: item.batch_number,
+              expiryDate: item.expiry_date,
+              storageLocation: item.storage_location || undefined,
+              notes: item.notes || undefined,
+            })),
+          },
+        );
+        const receipt = response?.data ?? response;
+        updateLockProgress(100, "קליטת המשלוח הושלמה");
+        toast({
+          title: receipt.idempotentReplay
+            ? "המשלוח כבר נקלט"
+            : "המשלוח נקלט בהצלחה",
+          description:
+            receipt.order?.status === "FULLY_RECEIVED"
+              ? "הדרישה התקבלה במלואה והמלאי עודכן."
+              : `קליטה חלקית נשמרה. נותרו ${receipt.order?.remainingQuantity ?? 0} יחידות.`,
+          variant: "default",
+        });
+        setNewDeliveryId(receipt.delivery.id);
+        setShowPrintDialog(true);
+        return;
       }
 
       const deliveryDocData = {
@@ -2148,7 +2183,7 @@ export default function NewDeliveryPage() {
               <span className="text-lg font-normal text-blue-600 me-2">
                 (מ
                 {preFilledSourceInfo.object_type === "Order"
-                  ? "הזמנה"
+                  ? "דרישה"
                   : "בקשת משיכה"}
                 :
                 {preFilledSourceInfo.object_type === "Order"
@@ -2204,7 +2239,7 @@ export default function NewDeliveryPage() {
                 <strong>
                   קליטה מ
                   {preFilledSourceInfo.object_type === "Order"
-                    ? "הזמנה"
+                    ? "דרישה"
                     : "בקשת משיכה"}
                   :
                 </strong>
@@ -2216,7 +2251,7 @@ export default function NewDeliveryPage() {
                 <span className="text-sm text-gray-600">
                   הפרטים נטענו אוטומטית מ
                   {preFilledSourceInfo.object_type === "Order"
-                    ? "ההזמנה"
+                    ? "הדרישה"
                     : "בקשת המשיכה"}
                   . אשר כל פריט כדי להעבירו לרשימת הפריטים שהתקבלו.
                 </span>
@@ -2254,7 +2289,7 @@ export default function NewDeliveryPage() {
               <Badge className="me-2 bg-blue-100 text-blue-800">
                 מקושר ל
                 {preFilledSourceInfo.object_type === "Order"
-                  ? "הזמנה"
+                  ? "דרישה"
                   : "משיכה"}
               </Badge>
             )}
@@ -2307,7 +2342,7 @@ export default function NewDeliveryPage() {
                       <p className="text-xs text-blue-600">
                         ספק נקבע אוטומטית מ
                         {preFilledSourceInfo.object_type === "Order"
-                          ? "ההזמנה"
+                          ? "הדרישה"
                           : "המשיכה"}{" "}
                         המקושרת
                       </p>
@@ -2436,7 +2471,7 @@ export default function NewDeliveryPage() {
                                   key={`order_${order.id}`}
                                   value={`order_${order.id}`}
                                 >
-                                  הזמנה:{" "}
+                                  דרישה:{" "}
                                   {order.order_number_temp ||
                                     order.order_number_permanent}{" "}
                                   - {order.supplier_name_snapshot}
@@ -2687,6 +2722,7 @@ export default function NewDeliveryPage() {
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
+            className="min-h-11"
             onClick={() => handleSaveDelivery(false)}
             disabled={saving || isLocked || items.length === 0}
           >
@@ -2694,7 +2730,7 @@ export default function NewDeliveryPage() {
             שמור טיוטה
           </Button>
           <Button
-            className="bg-amber-500 hover:bg-amber-600 text-white"
+            className="min-h-11 bg-amber-500 hover:bg-amber-600 text-white"
             onClick={() => handleSaveDelivery(true)}
             disabled={
               saving || isLocked || items.filter((i) => i.approved).length === 0

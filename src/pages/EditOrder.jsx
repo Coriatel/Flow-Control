@@ -68,7 +68,7 @@ export default function EditOrderPage() {
       ]);
 
       if (!orderData || orderData.length === 0) {
-        throw new Error("הזמנה לא נמצאה");
+        throw new Error("דרישת רכש לא נמצאה");
       }
 
       setOrder(orderData[0]);
@@ -95,7 +95,7 @@ export default function EditOrderPage() {
       setLoading(false);
       toast({
         title: "שגיאה בטעינת נתונים",
-        description: "לא נמצא מזהה הזמנה בקישור. חזור לרשימת ההזמנות ונסה שוב.",
+        description: "לא נמצא מזהה דרישה בקישור. חזור לרשימת הדרישות ונסה שוב.",
         variant: "destructive",
       });
     }
@@ -112,7 +112,7 @@ export default function EditOrderPage() {
         notes: order.notes,
       });
 
-      sonnerToast.success("ההזמנה עודכנה בהצלחה");
+      sonnerToast.success("הדרישה עודכנה בהצלחה");
       setIsEditMode(false);
       loadData();
     } catch (error) {
@@ -139,10 +139,10 @@ export default function EditOrderPage() {
         deleted_reason: "נמחק על ידי המשתמש",
       });
 
-      sonnerToast.success("ההזמנה נמחקה בהצלחה");
+      sonnerToast.success("הדרישה נמחקה בהצלחה");
       navigate(createPageUrl("Orders"));
     } catch (error) {
-      sonnerToast.error("שגיאה במחיקת ההזמנה", {
+      sonnerToast.error("שגיאה במחיקת הדרישה", {
         description: error.message,
       });
     }
@@ -186,7 +186,7 @@ export default function EditOrderPage() {
           <CardContent className="py-12">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-lg text-gray-700">הזמנה לא נמצאה</p>
+              <p className="text-lg text-gray-700">דרישת רכש לא נמצאה</p>
               <Button
                 onClick={() => navigate(createPageUrl("Orders"))}
                 className="mt-4"
@@ -215,7 +215,7 @@ export default function EditOrderPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              הזמנה: {order.order_number_temp}
+              דרישת רכש: {order.order_number_temp}
             </h1>
             <p className="text-sm text-gray-600">
               נוצר:{" "}
@@ -315,20 +315,20 @@ export default function EditOrderPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="h-5 w-5 ms-2 text-blue-600" />
-              פרטי הזמנה
+              פרטי דרישה
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>מספר הזמנה זמני</Label>
+                <Label>מספר דרישה פנימי</Label>
                 <p className="mt-1 text-sm font-medium">
                   {order.order_number_temp}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="order_number_permanent">מספר הזמנה קבוע</Label>
+                <Label htmlFor="order_number_permanent">מספר הזמנת רכש (SAP)</Label>
                 {isEditMode ? (
                   <Input
                     id="order_number_permanent"
@@ -339,7 +339,7 @@ export default function EditOrderPage() {
                         order_number_permanent: e.target.value,
                       })
                     }
-                    placeholder="הזן מספר הזמנה קבוע"
+                    placeholder="הזן מספר הזמנת רכש (SAP)"
                   />
                 ) : (
                   <p className="mt-1 text-sm">
@@ -383,7 +383,7 @@ export default function EditOrderPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>תאריך הזמנה</Label>
+                <Label>תאריך דרישה</Label>
                 <p className="mt-1 text-sm">
                   {format(parseISO(order.order_date), "dd/MM/yyyy", {
                     locale: he,
@@ -392,7 +392,7 @@ export default function EditOrderPage() {
               </div>
 
               <div>
-                <Label>סוג הזמנה</Label>
+                <Label>סוג דרישה</Label>
                 <div className="mt-1">
                   {getOrderTypeBadge(order.order_type)}
                 </div>
@@ -558,7 +558,7 @@ export default function EditOrderPage() {
                 className="flex items-center justify-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors text-blue-700 text-sm font-medium"
               >
                 <Plus className="h-4 w-4" />
-                קלוט משלוח להזמנה זו
+                קלוט משלוח לדרישה זו
               </Link>
             )}
 
@@ -570,7 +570,7 @@ export default function EditOrderPage() {
               </div>
               <div className="flex items-center text-xs text-gray-500">
                 <Calendar className="h-3 w-3 ms-1" />
-                תאריך הזמנה:{" "}
+                תאריך דרישה:{" "}
                 {format(parseISO(order.order_date), "dd/MM/yyyy", {
                   locale: he,
                 })}
@@ -585,7 +585,7 @@ export default function EditOrderPage() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Package className="h-5 w-5 ms-2 text-green-600" />
-            פריטים בהזמנה ({items.length})
+            פריטים בדרישה ({items.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -655,7 +655,7 @@ export default function EditOrderPage() {
                       colSpan="7"
                       className="px-4 py-8 text-center text-gray-500"
                     >
-                      אין פריטים בהזמנה
+                      אין פריטים בדרישה
                     </td>
                   </tr>
                 )}
@@ -669,9 +669,9 @@ export default function EditOrderPage() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle>האם למחוק את ההזמנה?</AlertDialogTitle>
+            <AlertDialogTitle>האם למחוק את הדרישה?</AlertDialogTitle>
             <AlertDialogDescription>
-              פעולה זו תמחק את ההזמנה ואת כל הפריטים הקשורים אליה. המחיקה היא
+              פעולה זו תמחק את הדרישה ואת כל הפריטים הקשורים אליה. המחיקה היא
               סופית ולא ניתנת לשחזור.
             </AlertDialogDescription>
           </AlertDialogHeader>

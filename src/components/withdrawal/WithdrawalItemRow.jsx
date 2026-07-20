@@ -121,12 +121,12 @@ export default function WithdrawalItemRow({
                     </Tooltip>
                 </TooltipProvider>
                 <span className="text-slate-400">|</span>
-                <span>יתרה בהזמנה: {item.max_quantity}</span>
+                <span>יתרה בהסכם: {item.max_quantity}</span>
             </div>
             {hasWarning && (
                 <div className="flex items-center text-red-600">
                     <AlertCircle className="h-3 w-3 ms-1" />
-                    <span>{isOverMax ? 'חריגה מיתרת ההזמנה' : 'חריגה מיתרת המלאי'}</span>
+                    <span>{isOverMax ? 'חריגה מיתרת ההסכם' : 'חריגה מיתרת המלאי'}</span>
                 </div>
             )}
         </div>

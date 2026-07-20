@@ -10,12 +10,23 @@ services:
       POSTGRES_DB: flow_control
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5440:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    # Hostinger Resource Guard: mandatory limits
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          memory: 512M
+    shm_size: '256m'
 
   frontend:
     build:
@@ -27,6 +38,14 @@ services:
     ports:
       - "127.0.0.1:8080:80"
     restart: unless-stopped
+    # Hostinger Resource Guard: mandatory limits
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          memory: 256M
 
 volumes:
   postgres_data:

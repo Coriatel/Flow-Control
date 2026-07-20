@@ -79,7 +79,7 @@ export default function HistoryDocumentPrint({
     switch (documentType) {
       case 'delivery': return 'תעודת קליטת משלוח';
       case 'shipment': return 'תעודת שליחת ריאגנטים';
-      case 'order': return 'מסמך רכש/הזמנה';
+      case 'order': return 'מסמך דרישת רכש';
       case 'inventory_count': return 'דוח ספירת מלאי';
       case 'withdrawal': return 'מסמך משיכת ריאגנטים'; // Added withdrawal document type
       default: return 'מסמך';
@@ -689,7 +689,7 @@ const generateDeliveryContent = async (rows, delivery, deliveryItems, escapeCsvF
     escapeCsvField("ספק:"),
     escapeCsvField(delivery.supplier || "לא ידוע"),
     "",
-    escapeCsvField("מספר הזמנה:"),
+    escapeCsvField("מספר דרישה:"),
     escapeCsvField(delivery.order_number || "לא ידוע"),
     ""
   ].join(","));
@@ -815,7 +815,7 @@ const generateOrderContent = async (rows, order, orderItems, escapeCsvField) => 
     escapeCsvField("ספק:"),
     escapeCsvField(order.supplier || "לא ידוע"),
     "",
-    escapeCsvField("סוג הזמנה:"),
+    escapeCsvField("סוג דרישה:"),
     escapeCsvField(order.order_type || "לא ידוע"),
     ""
   ].join(","));
@@ -825,7 +825,7 @@ const generateOrderContent = async (rows, order, orderItems, escapeCsvField) => 
       escapeCsvField("מס' דרישה קבוע:"),
       escapeCsvField(order.order_number_permanent),
       "",
-      escapeCsvField("מס' הזמנה SAP:"),
+      escapeCsvField("מס' הזמנת רכש (SAP):"),
       escapeCsvField(order.purchase_order_number_sap || "לא ידוע"),
       ""
     ].join(","));

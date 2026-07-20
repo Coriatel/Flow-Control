@@ -17,6 +17,10 @@ export interface ReplenishmentData {
   name: string;
   supplier: string;
   currentQuantity: number;
+  onOrderQuantity: number;
+  minStockLevel: number | null;
+  maxStockLevel: number | null;
+  policy: "min_max" | "usage";
   averageUsage: number;
   monthsOfStock: number;
   suggestedQuantity: number;
@@ -233,6 +237,7 @@ class InventoryService {
         OR: [
           { averageMonthlyUsage: { gt: 0 } },
           { manualMonthlyUsage: { gt: 0 } },
+          { minStockLevel: { gt: 0 } },
         ],
       },
       include: {
@@ -240,22 +245,70 @@ class InventoryService {
       },
     });
 
+    // Open (ordered but not yet received) quantity per reagent, so we never
+    // suggest re-ordering stock that is already on its way.
+    const openItems = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: {
+            in: ["DRAFT", "PENDING_SAP", "APPROVED", "PARTIALLY_RECEIVED"],
+          },
+        },
+      },
+      select: { reagentId: true, requestedQuantity: true, receivedQuantity: true },
+    });
+    const onOrderByReagent = new Map<string, number>();
+    for (const item of openItems) {
+      const open = Math.max(
+        0,
+        Number(item.requestedQuantity) - Number(item.receivedQuantity || 0),
+      );
+      onOrderByReagent.set(
+        item.reagentId,
+        (onOrderByReagent.get(item.reagentId) || 0) + open,
+      );
+    }
+
     return reagents
-      .map((r) => {
+      .map((r): ReplenishmentData => {
         const avgUsage = r.useManualUsage
           ? Number(r.manualMonthlyUsage || 0)
           : Number(r.averageMonthlyUsage || 0);
 
         const currentQty = Number(r.totalQuantity);
+        const onOrderQty = onOrderByReagent.get(r.id) || 0;
+        const minLevel = Number((r as any).minStockLevel || 0);
+        const maxLevel = Number((r as any).maxStockLevel || 0);
         const monthsOfStock = avgUsage > 0 ? currentQty / avgUsage : 999;
-        const targetQty = avgUsage * targetMonths;
-        const suggestedQty = Math.max(0, targetQty - currentQty);
+        const projected = currentQty + onOrderQty;
+
+        let suggestedQty = 0;
+        let policy: ReplenishmentData["policy"] = "usage";
+
+        if (minLevel > 0) {
+          // Min/max policy: below minimum (reorder point) → fill up to maximum.
+          policy = "min_max";
+          if (projected < minLevel) {
+            const target = maxLevel > minLevel ? maxLevel : minLevel;
+            suggestedQty = target - projected;
+          }
+        } else {
+          const targetQty = avgUsage * targetMonths;
+          suggestedQty = Math.max(0, targetQty - projected);
+          if (maxLevel > 0) {
+            suggestedQty = Math.min(suggestedQty, Math.max(0, maxLevel - projected));
+          }
+        }
 
         return {
           reagentId: r.id,
           name: r.name,
           supplier: r.supplier?.name || "",
           currentQuantity: currentQty,
+          onOrderQuantity: onOrderQty,
+          minStockLevel: minLevel > 0 ? minLevel : null,
+          maxStockLevel: maxLevel > 0 ? maxLevel : null,
+          policy,
           averageUsage: avgUsage,
           monthsOfStock: Math.round(monthsOfStock * 10) / 10,
           suggestedQuantity: Math.ceil(suggestedQty),

@@ -99,7 +99,12 @@ export default function PrintDialog({
       documentNumber = documentData.delivery_number;
       documentDate = documentData.delivery_date;
       principalPartyLabel = 'ספק';
-      principalPartyValue = documentData.supplier;
+      principalPartyValue =
+        typeof documentData.supplier === 'string'
+          ? documentData.supplier
+          : documentData.supplier?.name ||
+            documentData.supplierSnapshot ||
+            '-';
     } else if (isShipment) {
       documentTitle = 'תעודת משלוח יוצא';
       documentNumber = documentData.shipment_number;

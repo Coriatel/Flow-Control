@@ -192,7 +192,7 @@ export default function NewWithdrawalRequestPage() {
           } else {
             toast({
               title: "שגיאה",
-              description: "הזמנת המסגרת שצוינה לא נמצאה או שאינה פעילה.",
+              description: "הסכם המסגרת שצוין לא נמצא או שאינו פעיל.",
               variant: "destructive",
             });
           }
@@ -253,7 +253,7 @@ export default function NewWithdrawalRequestPage() {
     if (!selectedOrder) {
       toast({
         title: "שגיאה",
-        description: "יש לבחור הזמנת מסגרת.",
+        description: "יש לבחור הסכם מסגרת.",
         variant: "destructive",
       });
       setSavingRequest(false);
@@ -265,7 +265,7 @@ export default function NewWithdrawalRequestPage() {
     if (!supplierId) {
       toast({
         title: "שגיאה",
-        description: "לא נמצא ספק להזמנת המסגרת שנבחרה.",
+        description: "לא נמצא ספק להסכם המסגרת שנבחר.",
         variant: "destructive",
       });
       setSavingRequest(false);
@@ -346,7 +346,7 @@ export default function NewWithdrawalRequestPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <BackButton /> {/* Replaced ArrowLeft button with BackButton */}
-            <h1 className="text-2xl font-bold">בקשת משיכה מהזמנת מסגרת</h1>
+            <h1 className="text-2xl font-bold">בקשת משיכה מהסכם מסגרת</h1>
           </div>
         </div>
 
@@ -400,7 +400,7 @@ export default function NewWithdrawalRequestPage() {
                 </Select>
               </div>
               <div className="lg:col-span-1">
-                <Label htmlFor="framework_order_id">הזמנת מסגרת *</Label>
+                <Label htmlFor="framework_order_id">הסכם מסגרת *</Label>
                 <Select
                   value={withdrawalForm.framework_order_id}
                   onValueChange={handleFrameworkOrderChange}
@@ -408,7 +408,7 @@ export default function NewWithdrawalRequestPage() {
                   disabled={loading || frameworkOrders.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="בחר הזמנת מסגרת..." />
+                    <SelectValue placeholder="בחר הסכם מסגרת..." />
                   </SelectTrigger>
                   <SelectContent>
                     {frameworkOrders.map((order) => (
@@ -471,7 +471,7 @@ export default function NewWithdrawalRequestPage() {
           {withdrawalForm.framework_order_id && (
             <Card>
               <CardHeader>
-                <CardTitle>פריטים למשיכה מהזמנת המסגרת</CardTitle>
+                <CardTitle>פריטים למשיכה מהסכם המסגרת</CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px] p-2">
@@ -486,7 +486,7 @@ export default function NewWithdrawalRequestPage() {
                       ))
                     ) : (
                       <div className="text-center py-10 text-gray-500">
-                        לא נמצאו פריטים זמינים למשיכה בהזמנה זו.
+                        לא נמצאו פריטים זמינים למשיכה בהסכם זה.
                       </div>
                     )}
                   </div>

@@ -227,6 +227,8 @@ export interface LowStockReagent {
   monthsOfStock: number;
   averageUsage: number;
   supplier: string;
+  minStockLevel: number | null;
+  maxStockLevel: number | null;
 }
 
 export interface PendingOrder {

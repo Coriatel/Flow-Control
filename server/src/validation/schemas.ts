@@ -98,6 +98,11 @@ export const createReagentSchema = z.object({
   isConsumable: z.boolean().optional().default(false),
   requiresBatches: z.boolean().optional().default(true),
   notes: z.string().optional(),
+  // Min/max stock policy (units). Legacy snake_case aliases still sent by the UI.
+  minStockLevel: z.number().min(0).nullable().optional(),
+  maxStockLevel: z.number().min(0).nullable().optional(),
+  custom_min_stock: z.number().min(0).nullable().optional(),
+  custom_max_stock: z.number().min(0).nullable().optional(),
 });
 
 export const updateReagentSchema = createReagentSchema
@@ -160,6 +165,12 @@ const receiveItemSchema = z.object({
 
 export const receiveOrderSchema = z.object({
   items: z.array(receiveItemSchema).min(1, "At least one item is required"),
+  deliveryReference: z
+    .string()
+    .trim()
+    .min(1, "Delivery reference is required")
+    .max(100, "Delivery reference is too long"),
+  deliveryDate: z.coerce.date(),
   receivedBy: z.string().optional(),
 });
 

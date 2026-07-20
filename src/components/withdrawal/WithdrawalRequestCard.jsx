@@ -78,12 +78,12 @@ const WithdrawalRequestCard = ({ request }) => {
                     <div className="flex justify-between items-center">
                         {request.framework_order_id ? (
                             <Link to={createPageUrl(`EditOrder?id=${request.framework_order_id}`)} className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
-                                {request.framework_order_number_snapshot || 'פתח הזמנה'}
+                                {request.framework_order_number_snapshot || 'פתח דרישה'}
                             </Link>
                         ) : (
-                            <span className="font-medium text-amber-700">ללא הזמנת מסגרת</span>
+                            <span className="font-medium text-amber-700">ללא הסכם מסגרת</span>
                         )}
-                        <span className="flex items-center text-slate-500"><ShoppingCart className="w-3 h-3 ms-1"/>הזמנת מסגרת</span>
+                        <span className="flex items-center text-slate-500"><ShoppingCart className="w-3 h-3 ms-1"/>הסכם מסגרת</span>
                     </div>
                      <div className="flex justify-between items-center">
                          <span className="font-medium text-slate-700">

@@ -149,6 +149,8 @@ class DashboardService {
           r.useManualUsage ? r.manualMonthlyUsage : r.averageMonthlyUsage,
         ) || 0,
       supplier: r.supplier?.name || "",
+      minStockLevel: (r as any).minStockLevel ?? null,
+      maxStockLevel: (r as any).maxStockLevel ?? null,
     }));
   }
 

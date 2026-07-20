@@ -88,7 +88,7 @@ const initialColumns = [
     inputType: "date",
   },
   { accessor: "delivery_number", Header: "משלוח", width: 90, editable: false },
-  { accessor: "order_number", Header: "הזמנה", width: 90, editable: false },
+  { accessor: "order_number", Header: "דרישה", width: 90, editable: false },
   { accessor: "supplier", Header: "ספק", width: 100, editable: false },
   { accessor: "status", Header: "סטטוס", width: 80, editable: true },
   {

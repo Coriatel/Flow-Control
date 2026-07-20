@@ -140,12 +140,12 @@ const InfoCard = ({
                       <RowWrapper
                         key={row.key || index}
                         {...wrapperProps}
-                        className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${scheme.rowHover} ${row.linkTo ? "cursor-pointer" : ""}`}
+                        className={`flow-info-row flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${scheme.rowHover} ${row.linkTo ? "cursor-pointer" : ""}`}
                       >
                         {row.cells.map((cell, cellIndex) => (
                           <span
                             key={cellIndex}
-                            className={`truncate ${cell.className || ""} ${
+                            className={`flow-info-cell truncate ${cell.className || ""} ${
                               cellIndex === 0
                                 ? "flex-1 font-medium text-slate-800"
                                 : "flex-shrink-0 text-slate-600"
