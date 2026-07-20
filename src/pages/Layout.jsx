@@ -54,7 +54,6 @@ import {
   UserPlus,
   ArrowRight,
   History,
-  ScanLine,
   Hand,
   PackageMinus,
 } from "lucide-react";

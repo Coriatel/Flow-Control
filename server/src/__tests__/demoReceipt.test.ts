@@ -123,6 +123,9 @@ describe("Flow Control demo order receipt", () => {
     await prisma.inventoryTransaction.deleteMany({
       where: { reagentId: { in: [reagentId, heldReagentId] } },
     });
+    await prisma.dispenseEvent.deleteMany({
+      where: { reagentId: { in: [reagentId, heldReagentId] } },
+    });
     await prisma.reagentBatch.deleteMany({
       where: { reagentId: { in: [reagentId, heldReagentId] } },
     });
@@ -322,5 +325,70 @@ describe("Flow Control demo order receipt", () => {
       replenishmentPayload.reagentsData || []
     ).find((item: any) => item.id === reagentId);
     expect(remainingSuggestion?.suggested_order_quantity || 0).toBe(0);
+  });
+
+  it("moves a received batch through COA, QA release, and replay-safe laboratory use", async () => {
+    const batch = await prisma.reagentBatch.findUniqueOrThrow({
+      where: {
+        reagentId_batchNumber: { reagentId, batchNumber: "LOT-AD-002" },
+      },
+    });
+    const payload = {
+      clientRequestId: "DEMO-ABC-STOCKOUT-20260720",
+      reagentId,
+      batchId: batch.id,
+      quantity: 2,
+      purpose: "laboratory use",
+      scanMethod: "MANUAL",
+      notes: "Integrated Round B proof",
+    };
+
+    await request(app)
+      .post("/api/dispense")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send(payload)
+      .expect(409);
+
+    await request(app)
+      .post(`/api/batches/${batch.id}/coa`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        clientRequestId: "DEMO-ABC-COA-20260720",
+        documentUrl: "/api/files/download/demo-abc-coa.pdf",
+      })
+      .expect(200);
+    await request(app)
+      .post(`/api/batches/${batch.id}/quality-decision`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        clientRequestId: "DEMO-ABC-QA-20260720",
+        decision: "APPROVE",
+        notes: "COA reviewed for presentation fixture",
+      })
+      .expect(200);
+
+    const first = await request(app)
+      .post("/api/dispense")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send(payload)
+      .expect(201);
+    const replay = await request(app)
+      .post("/api/dispense")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send(payload)
+      .expect(200);
+    expect(first.body.data.idempotentReplay).toBe(false);
+    expect(replay.body.data.idempotentReplay).toBe(true);
+
+    const [updatedBatch, reagent, movements] = await Promise.all([
+      prisma.reagentBatch.findUniqueOrThrow({ where: { id: batch.id } }),
+      prisma.reagent.findUniqueOrThrow({ where: { id: reagentId } }),
+      prisma.inventoryTransaction.findMany({
+        where: { sourceType: "dispense_request", sourceId: payload.clientRequestId },
+      }),
+    ]);
+    expect(updatedBatch.currentQuantity).toBe(10);
+    expect(reagent.totalQuantity).toBe(22);
+    expect(movements).toHaveLength(1);
   });
 });

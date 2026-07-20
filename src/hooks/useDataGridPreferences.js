@@ -61,7 +61,7 @@ export default function useDataGridPreferences({
   useEffect(() => {
     const saved = loadGridPreferences(storage, identity);
     setState(normalizeGridPreferences(saved, columns, options));
-  }, [identityKey, columns, options, storage]);
+  }, [identity, identityKey, columns, options, storage]);
 
   useEffect(() => {
     if (savedIdentityKey.current !== identityKey) {

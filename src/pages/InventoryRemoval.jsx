@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,6 @@ import {
   Beaker,
   Truck,
   FileText,
-  ScanLine,
   AlertTriangle,
   CheckCircle2,
   Search,
@@ -53,7 +52,7 @@ import { toast as sonnerToast } from "sonner";
 import BarcodeScanner from "@/components/ui/BarcodeScanner";
 import { createPageUrl } from "@/utils";
 
-import { Reagent, Supplier } from "@/api/entities";
+import { Reagent } from "@/api/entities";
 import { apiClient } from "@/api/client";
 
 function unwrapResponse(response) {
