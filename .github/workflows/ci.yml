@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,7 +34,7 @@ jobs:
         run: npm run build
 
       - name: Verify patch whitespace
-        run: git diff --check HEAD^ HEAD
+        run: git diff --check "$(git merge-base origin/main HEAD)"..HEAD
 
   backend:
     name: Backend transactional tests and build
