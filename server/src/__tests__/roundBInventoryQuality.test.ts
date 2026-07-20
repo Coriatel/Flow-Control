@@ -121,6 +121,15 @@ describe("Round B inventory quality functional closure", () => {
       })
       .expect(403);
 
+    await request(app)
+      .post(`/api/batches/${batch.id}/coa`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        clientRequestId: `${namespace}-coa-external`,
+        documentUrl: "https://untrusted.invalid/coa.pdf",
+      })
+      .expect(400);
+
     const coa = await request(app)
       .post(`/api/batches/${batch.id}/coa`)
       .set("Authorization", `Bearer ${adminToken}`)

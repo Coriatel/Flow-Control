@@ -17,11 +17,10 @@ const documentUrl = z
   .max(2048, "documentUrl is too long")
   .refine(
     (value) =>
-      value.startsWith("/api/files/download/") ||
-      value.startsWith("https://") ||
-      value.startsWith("http://127.0.0.1/") ||
-      value.startsWith("http://localhost/"),
-    "documentUrl must be an uploaded file path or an HTTPS URL",
+      /^\/api\/files\/download\/[A-Za-z0-9._-]+\.pdf(?:\?[A-Za-z0-9._~=&-]+)?$/i.test(
+        value,
+      ),
+    "documentUrl must reference an authorized internal PDF",
   );
 
 export const dispenseInventorySchema = z.object({

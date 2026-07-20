@@ -16,7 +16,7 @@ const IDS = {
 
 const DEMO_EMAIL = "demo-readiness-admin@invalid.local";
 
-async function reset() {
+async function cleanup() {
   await prisma.$transaction(async (tx) => {
     await tx.activityLog.deleteMany({
       where: {
@@ -116,7 +116,7 @@ async function apply() {
     throw new Error("FLOW_DEMO_PASSWORD must be at least 16 characters");
   }
 
-  await reset();
+  await cleanup();
   const password = await bcrypt.hash(demoPassword, 10);
 
   await prisma.$transaction(async (tx) => {
@@ -328,7 +328,7 @@ async function verify() {
 async function main() {
   const command = process.argv[2];
   if (command === "apply") await apply();
-  else if (command === "reset") await reset();
+  else if (command === "reset") await apply();
   else if (command === "verify") await verify();
   else {
     throw new Error("Usage: demo-readiness-fixture.ts <apply|reset|verify>");
