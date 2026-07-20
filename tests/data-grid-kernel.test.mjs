@@ -74,6 +74,23 @@ test("column order, resize, and mandatory visibility are safely normalized", () 
   assert.equal(normalized.pageSize, 25);
 });
 
+test("saved column widths remain stable across repeated normalization", () => {
+  const columns = [{ id: "name", defaultWidth: 140 }];
+  const saved = {
+    ...createDefaultGridState(columns, { version: 1 }),
+    version: 1,
+    columnWidths: { name: 160 },
+  };
+  const once = normalizeGridPreferences(saved, columns, { version: 1 });
+  const twice = normalizeGridPreferences(
+    { ...once, version: 1 },
+    columns,
+    { version: 1 },
+  );
+  assert.equal(once.columnWidths.name, 160);
+  assert.equal(twice.columnWidths.name, 160);
+});
+
 test("export rows preserve filtered and sorted order but ignore pagination", () => {
   const state = {
     ...createDefaultGridState(columns, { pageSize: 1 }),

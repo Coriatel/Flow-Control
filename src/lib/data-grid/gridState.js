@@ -92,13 +92,9 @@ export function normalizeGridPreferences(
   for (const column of columns) {
     const storedWidth = Number(preferences.columnWidths?.[column.id]);
     if (Number.isFinite(storedWidth)) {
-      columnWidths[column.id] = resizeColumn(
-        0,
-        storedWidth,
-        {
-          min: column.minWidth ?? DEFAULT_MIN_WIDTH,
-          max: column.maxWidth ?? DEFAULT_MAX_WIDTH,
-        },
+      columnWidths[column.id] = Math.min(
+        column.maxWidth ?? DEFAULT_MAX_WIDTH,
+        Math.max(column.minWidth ?? DEFAULT_MIN_WIDTH, storedWidth),
       );
     }
   }

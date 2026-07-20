@@ -45,6 +45,17 @@ async function reset() {
         },
       },
     });
+    await tx.dispenseEvent.deleteMany({
+      where: {
+        reagentId: {
+          in: [
+            IDS.shortageReagent,
+            IDS.controlReagent,
+            IDS.nearExpiryReagent,
+          ],
+        },
+      },
+    });
     await tx.deliveryItem.deleteMany({
       where: {
         reagentId: {
@@ -202,6 +213,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-anti-d-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 baseline",
         },
         {
@@ -216,6 +228,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-control-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 baseline",
         },
         {
@@ -230,6 +243,7 @@ async function apply() {
           storageConditions: "2-8°C",
           status: "ACTIVE",
           qcStatus: "APPROVED",
+          coaDocumentUrl: "/api/files/download/demo-baseline-a1-coa.pdf",
           generalNotes: "FLOW_DEMO_20260719 near-expiry baseline",
         },
       ],

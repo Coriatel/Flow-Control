@@ -716,7 +716,38 @@ export default function InventoryRemoval() {
               </div>
 
               <ScrollArea className="max-h-[400px]">
-                <Table>
+                <div className="space-y-3 md:hidden">
+                  {filteredBatches.length === 0 ? (
+                    <div className="py-8 text-center text-slate-500">
+                      {searchTerm ? "לא נמצאו תוצאות" : "אין אצוות זמינות לשימוש"}
+                    </div>
+                  ) : filteredBatches.slice(0, 50).map((batch) => {
+                    const reagent = reagentMap[batch.reagentId];
+                    return (
+                      <article key={batch.id} className="rounded-lg border p-4 space-y-3">
+                        <div className="font-semibold">{reagent?.name || batch.reagentName || "—"}</div>
+                        <dl className="grid grid-cols-2 gap-2 text-sm">
+                          <div><dt className="text-slate-500">אצווה</dt><dd className="font-mono">{batch.batchNumber}</dd></div>
+                          <div><dt className="text-slate-500">זמין</dt><dd>{batch.currentQuantity} יח׳</dd></div>
+                          <div className="col-span-2"><dt className="text-slate-500">תוקף</dt><dd>{formatDate(batch.expiryDate)}</dd></div>
+                        </dl>
+                        <Button
+                          variant="outline"
+                          className="min-h-11 w-full text-emerald-700 border-emerald-300"
+                          onClick={() => {
+                            setSelectedBatch(batch);
+                            setDispenseRequestId(crypto.randomUUID());
+                            setDispenseDialogOpen(true);
+                          }}
+                        >
+                          <Beaker className="h-4 w-4 ms-1" />
+                          הוצא לשימוש
+                        </Button>
+                      </article>
+                    );
+                  })}
+                </div>
+                <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">ריאגנט</TableHead>
@@ -760,7 +791,7 @@ export default function InventoryRemoval() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-xs gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                                className="min-h-11 text-xs gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
                                 onClick={() => {
                                   setSelectedBatch(batch);
                                   setDispenseRequestId(crypto.randomUUID());
