@@ -1,46 +1,26 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import ActivityDataGrid from "@/components/data-grid/ActivityDataGrid";
 import { createPageUrl } from "@/utils";
 import { getAggregatedActivityLog } from '@/api/functions';
 import {
   ArrowLeft,
   Activity,
-  Calendar,
-  User,
-  Package,
-  Truck,
-  FileText,
-  ShoppingCart,
   Loader2,
   Search,
   Filter,
-  Eye,
   Download,
   RefreshCw,
-  ListChecks,
-  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
-import { he } from "date-fns/locale";
-
-const iconMap = {
-  'Truck': Truck,
-  'ListChecks': ListChecks,
-  'Package': Package,
-  'FileText': FileText,
-  'Activity': Activity,
-  'AlertTriangle': AlertTriangle
-};
 
 /**
  * FRONTEND LOGIC (מופחת בצורה דרמטית):
@@ -122,6 +102,7 @@ export default function ActivityLogPage() {
 
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
+  const [activityViewRows, setActivityViewRows] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [filteredCount, setFilteredCount] = useState(0);
 
@@ -129,7 +110,7 @@ export default function ActivityLogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activityTypeFilter, setActivityTypeFilter] = useState('all');
   const [dateRangeFilter, setDateRangeFilter] = useState('month'); // week, month, all
-  const [userFilter, setUserFilter] = useState('all');
+  const [userFilter] = useState('all');
 
   /**
    * 🎯 הפונקציה המרכזית - קריאה אחת לשרת בלבד!
@@ -161,7 +142,7 @@ export default function ActivityLogPage() {
       } else {
         throw new Error(response?.data?.error || response?.error || 'Failed to fetch activities');
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "שגיאה בטעינת פעילות",
         description: "לא ניתן לטעון את יומן הפעילות",
@@ -184,7 +165,7 @@ export default function ActivityLogPage() {
   const downloadActivityReport = () => {
     const csvContent = [
       ['תאריך', 'פעולה', 'תיאור', 'פרטים', 'משתמש', 'השפעה על מלאי'],
-      ...activities.map(activity => [
+      ...activityViewRows.map(activity => [
         activity.date ? format(new Date(activity.date), 'dd/MM/yyyy HH:mm') : '',
         activity.action,
         activity.description,
@@ -274,7 +255,7 @@ export default function ActivityLogPage() {
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-blue-300 text-sm">
-            <strong>סטטיסטיקה:</strong> מציג {activities.length} פעילויות מתוך {filteredCount} (סה"כ {totalCount} פעילויות במערכת)
+            <strong>סטטיסטיקה:</strong> מציג {activities.length} פעילויות מתוך {filteredCount} (סה&quot;כ {totalCount} פעילויות במערכת)
           </div>
         </CardContent>
       </Card>
@@ -354,55 +335,10 @@ export default function ActivityLogPage() {
               </AlertDescription>
             </Alert>
           ) : (
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-3">
-                {activities.map((activity) => {
-                  const IconComponent = iconMap[activity.icon] || Activity;
-
-                  return (
-                    <div key={activity.id} className="flex items-start space-x-3 space-x-reverse p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex-shrink-0">
-                        <div className={`p-2 rounded-full ${activity.color || 'bg-gray-100'}`}>
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                      </div>
-
-                      <div className="flex-grow min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-gray-900">{activity.action}</h4>
-                          <div className="flex items-center gap-2">
-                            <Badge className={activity.color}>
-                              {activity.label}
-                            </Badge>
-                            <span className="text-xs text-gray-500">
-                              {activity.date ? format(new Date(activity.date), 'dd/MM/yyyy HH:mm') : 'לא ידוע'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.details}</p>
-
-                        {activity.impact && (
-                          <div className="flex items-center mt-2">
-                            <Package className="h-3 w-3 me-1 text-orange-500" />
-                            <span className="text-xs text-orange-600 font-medium">
-                              השפעה על מלאי: {activity.impact}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-400">
-                            משתמש: {activity.user || 'לא ידוע'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+            <ActivityDataGrid
+              activities={activities}
+              onViewRowsChange={setActivityViewRows}
+            />
           )}
         </CardContent>
       </Card>
